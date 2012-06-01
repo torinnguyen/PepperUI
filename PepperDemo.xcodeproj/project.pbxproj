@@ -1,0 +1,285 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		42523BC115793492000323EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC015793492000323EE /* UIKit.framework */; };
+		42523BC315793492000323EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC215793492000323EE /* Foundation.framework */; };
+		42523BC515793492000323EE /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC415793492000323EE /* CoreGraphics.framework */; };
+		42523BCB15793492000323EE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42523BC915793492000323EE /* InfoPlist.strings */; };
+		42523BCD15793492000323EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BCC15793492000323EE /* main.m */; };
+		42523BD115793492000323EE /* PPAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BD015793492000323EE /* PPAppDelegate.m */; };
+		42523BD415793492000323EE /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BD315793492000323EE /* PPViewController.m */; };
+		42523BD715793492000323EE /* PPViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 42523BD515793492000323EE /* PPViewController.xib */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		42523BBC15793492000323EE /* PepperDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PepperDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		42523BC015793492000323EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		42523BC215793492000323EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		42523BC415793492000323EE /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		42523BC815793492000323EE /* PepperDemo-Info.plist */ = {isa = PBXFileReference; path = "PepperDemo-Info.plist"; sourceTree = "<group>"; };
+		42523BCA15793492000323EE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		42523BCC15793492000323EE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		42523BCE15793492000323EE /* PepperDemo-Prefix.pch */ = {isa = PBXFileReference; path = "PepperDemo-Prefix.pch"; sourceTree = "<group>"; };
+		42523BCF15793492000323EE /* PPAppDelegate.h */ = {isa = PBXFileReference; path = PPAppDelegate.h; sourceTree = "<group>"; };
+		42523BD015793492000323EE /* PPAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PPAppDelegate.m; sourceTree = "<group>"; };
+		42523BD215793492000323EE /* PPViewController.h */ = {isa = PBXFileReference; path = PPViewController.h; sourceTree = "<group>"; };
+		42523BD315793492000323EE /* PPViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PPViewController.m; sourceTree = "<group>"; };
+		42523BD615793492000323EE /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PPViewController.xib; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		42523BB915793492000323EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42523BC115793492000323EE /* UIKit.framework in Frameworks */,
+				42523BC315793492000323EE /* Foundation.framework in Frameworks */,
+				42523BC515793492000323EE /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		42523BB115793492000323EE = {
+			isa = PBXGroup;
+			children = (
+				42523BC615793492000323EE /* PepperDemo */,
+				42523BBF15793492000323EE /* Frameworks */,
+				42523BBD15793492000323EE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		42523BBD15793492000323EE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				42523BBC15793492000323EE /* PepperDemo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		42523BBF15793492000323EE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				42523BC015793492000323EE /* UIKit.framework */,
+				42523BC215793492000323EE /* Foundation.framework */,
+				42523BC415793492000323EE /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		42523BC615793492000323EE /* PepperDemo */ = {
+			isa = PBXGroup;
+			children = (
+				42523BCF15793492000323EE /* PPAppDelegate.h */,
+				42523BD015793492000323EE /* PPAppDelegate.m */,
+				42523BD215793492000323EE /* PPViewController.h */,
+				42523BD315793492000323EE /* PPViewController.m */,
+				42523BD515793492000323EE /* PPViewController.xib */,
+				42523BC715793492000323EE /* Supporting Files */,
+			);
+			path = PepperDemo;
+			sourceTree = "<group>";
+		};
+		42523BC715793492000323EE /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				42523BC815793492000323EE /* PepperDemo-Info.plist */,
+				42523BC915793492000323EE /* InfoPlist.strings */,
+				42523BCC15793492000323EE /* main.m */,
+				42523BCE15793492000323EE /* PepperDemo-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		42523BBB15793492000323EE /* PepperDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 42523BDA15793492000323EE /* Build configuration list for PBXNativeTarget "PepperDemo" */;
+			buildPhases = (
+				42523BB815793492000323EE /* Sources */,
+				42523BB915793492000323EE /* Frameworks */,
+				42523BBA15793492000323EE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PepperDemo;
+			productName = PepperDemo;
+			productReference = 42523BBC15793492000323EE /* PepperDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		42523BB315793492000323EE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = PP;
+				LastUpgradeCheck = 0430;
+				ORGANIZATIONNAME = "torinnguyen@gmail.com";
+			};
+			buildConfigurationList = 42523BB615793492000323EE /* Build configuration list for PBXProject "PepperDemo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 42523BB115793492000323EE;
+			productRefGroup = 42523BBD15793492000323EE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				42523BBB15793492000323EE /* PepperDemo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		42523BBA15793492000323EE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42523BCB15793492000323EE /* InfoPlist.strings in Resources */,
+				42523BD715793492000323EE /* PPViewController.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		42523BB815793492000323EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42523BCD15793492000323EE /* main.m in Sources */,
+				42523BD115793492000323EE /* PPAppDelegate.m in Sources */,
+				42523BD415793492000323EE /* PPViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		42523BC915793492000323EE /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				42523BCA15793492000323EE /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		42523BD515793492000323EE /* PPViewController.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				42523BD615793492000323EE /* en */,
+			);
+			name = PPViewController.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		42523BD815793492000323EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		42523BD915793492000323EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		42523BDB15793492000323EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "PepperDemo/PepperDemo-Prefix.pch";
+				INFOPLIST_FILE = "PepperDemo/PepperDemo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		42523BDC15793492000323EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "PepperDemo/PepperDemo-Prefix.pch";
+				INFOPLIST_FILE = "PepperDemo/PepperDemo-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		42523BB615793492000323EE /* Build configuration list for PBXProject "PepperDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42523BD815793492000323EE /* Debug */,
+				42523BD915793492000323EE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		42523BDA15793492000323EE /* Build configuration list for PBXNativeTarget "PepperDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42523BDB15793492000323EE /* Debug */,
+				42523BDC15793492000323EE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 42523BB315793492000323EE /* Project object */;
+}
