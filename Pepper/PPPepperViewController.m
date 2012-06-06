@@ -8,11 +8,11 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import <Foundation/Foundation.h>
+#import "PPPepperContants.h"
 #import "PPPepperViewController.h"
 #import "PPPageViewContentWrapper.h"
 #import "PPPageViewDetailWrapper.h"
 
-#define EDGE_PADDING                 5            //Don't change this after graphic is fixed
 #define FRAME_WIDTH_LANDSCAPE        (768*0.4)
 #define FRAME_HEIGHT_LANDSCAPE       (1034*0.4)
 #define FRAME_SCALE_PORTRAIT         0.9f
@@ -1948,7 +1948,9 @@ static float layer3WidthAt90 = 0;
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
   
-  //Flattern other pages to avoid cutting into z-index of the front pages
+  NSLog(@"scale: %.2f", scale);
+  
+  //Hide unneccessary pages
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   for (int i=0; i <pageCount; i++)
   {
@@ -1972,14 +1974,42 @@ static float layer3WidthAt90 = 0;
       page.hidden = YES;
       continue;
     }
-    
-    //Showing fullscreen, hide the pages behind
+
     if (self.controlAngle > -THRESHOLD_FULL_ANGLE || fabs(self.controlIndex - i) > 5.5) {
       page.hidden = YES;
       continue;
     }
     
+    //Active page already cover the screen, no need to show these pages any more
+    if (self.oneSideZoom && scale > 1.15) {
+      if (i > self.controlIndex) {
+        if (self.zoomOnLeft) {
+          page.hidden = YES;
+          continue;
+        }
+      }
+      else {
+        if (!self.zoomOnLeft) {
+          page.hidden = YES;
+          continue;
+        }
+      }
+    }
+    
     page.hidden = NO;
+  }
+  
+  //Quickly flattern other pages to avoid cutting into z-index of the front pages
+  for (int i=0; i <pageCount; i++)
+  {
+    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+    if (page == nil)
+      continue;
+    if ([page isEqual:self.leftView] || [page isEqual:self.rightView])
+      continue;
+    if (page.hidden)
+      continue;
+
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
@@ -1997,8 +2027,6 @@ static float layer3WidthAt90 = 0;
       layerRight.transform = transform;
     }
   }
-  
-#warning Fix this
   
   //Other pages position
   
@@ -2020,8 +2048,6 @@ static float layer3WidthAt90 = 0;
       continue;
     if ([page isEqual:self.leftView] || [page isEqual:self.rightView])      //always centered
       continue;
-    
-    //Skip hidden pages
     if (page.hidden)
       continue;
         
@@ -2384,13 +2410,13 @@ static float layer3WidthAt90 = 0;
 }
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
 {
-  frame.size.height *= 1.5;   //allow scrolling & zooming
-  frame.size.width *= 1.5;    //allow scrolling & zooming
+  frame.size.height *= 1.0;   //allow scrolling & zooming
+  frame.size.width *= 1.0;    //allow scrolling & zooming
   UIView *view = [[UIView alloc] initWithFrame:frame];
-  view.backgroundColor = [UIColor whiteColor];
+  view.backgroundColor = [UIColor clearColor];
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
-  label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\nPage index: %d", pageIndex];
+  label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\n\n\n\nDetailed page index: %d", pageIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
   label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;

@@ -7,10 +7,10 @@
 //
 
 #import <QuartzCore/QuartzCore.h>
+#import "PPPepperContants.h"
 #import "PPPageViewContentWrapper.h"
 
 #define EDGE_ALPHA            0.1
-#define EDGE_PADDING          10
 
 @interface PPPageViewContentWrapper()
 @property (nonatomic, retain) UIImageView *background;

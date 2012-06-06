@@ -6,6 +6,7 @@
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
 //
 
+#import "PPPepperContants.h"
 #import "PPPageBaseView.h"
 
 @interface PPPageBaseView()

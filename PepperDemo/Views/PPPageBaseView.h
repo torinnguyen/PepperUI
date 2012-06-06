@@ -8,8 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-#define EDGE_PADDING          10
-
 @interface PPPageBaseView : UIView
 
 @property (nonatomic, strong) UIImageView *imageView;
