@@ -7,30 +7,68 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		421C04A7157949C700A5698B /* PPPageViewDetailWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */; };
+		423941E4157D494C0053E0FA /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E3157D494C0053E0FA /* Icon-72.png */; };
+		423941E7157D494F0053E0FA /* Icon-144.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E6157D494F0053E0FA /* Icon-144.png */; };
 		42523BC115793492000323EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC015793492000323EE /* UIKit.framework */; };
 		42523BC315793492000323EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC215793492000323EE /* Foundation.framework */; };
 		42523BC515793492000323EE /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC415793492000323EE /* CoreGraphics.framework */; };
 		42523BCB15793492000323EE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42523BC915793492000323EE /* InfoPlist.strings */; };
 		42523BCD15793492000323EE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BCC15793492000323EE /* main.m */; };
 		42523BD115793492000323EE /* PPAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BD015793492000323EE /* PPAppDelegate.m */; };
-		42523BD415793492000323EE /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BD315793492000323EE /* PPViewController.m */; };
 		42523BD715793492000323EE /* PPViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 42523BD515793492000323EE /* PPViewController.xib */; };
+		42523BE6157934BF000323EE /* page_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42523BDE157934BF000323EE /* page_bg.png */; };
+		42523BE7157934BF000323EE /* page_edge.png in Resources */ = {isa = PBXBuildFile; fileRef = 42523BDF157934BF000323EE /* page_edge.png */; };
+		42523BE9157934BF000323EE /* PPPageViewContentWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BE3157934BF000323EE /* PPPageViewContentWrapper.m */; };
+		42523BEA157934BF000323EE /* PPPepperViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BE5157934BF000323EE /* PPPepperViewController.m */; };
+		42523BEC157934EB000323EE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BEB157934EA000323EE /* QuartzCore.framework */; };
+		4276D0E3157A8EC500C27FFB /* Book.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E0157A8EC500C27FFB /* Book.m */; };
+		4276D0E4157A8EC500C27FFB /* Page.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E2157A8EC500C27FFB /* Page.m */; };
+		4276D0EA157A8EDE00C27FFB /* book_cover.png in Resources */ = {isa = PBXBuildFile; fileRef = 4276D0E6157A8EDE00C27FFB /* book_cover.png */; };
+		4276D0F3157A8F1600C27FFB /* PPBookOrPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */; };
+		4276D0F4157A8F1600C27FFB /* PPPageViewDetail.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */; };
+		4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F7157A8F5F00C27FFB /* PPViewController.m */; };
+		4276D0FB157A8FB300C27FFB /* PPPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */; };
+		42AB47BD157B77B50001AE94 /* book_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AB47BC157B77B50001AE94 /* book_bg.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		421C04A5157949C700A5698B /* PPPageViewDetailWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetailWrapper.h; sourceTree = "<group>"; };
+		421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetailWrapper.m; sourceTree = "<group>"; };
+		423941E3157D494C0053E0FA /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
+		423941E6157D494F0053E0FA /* Icon-144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-144.png"; sourceTree = "<group>"; };
 		42523BBC15793492000323EE /* PepperDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PepperDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42523BC015793492000323EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		42523BC215793492000323EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		42523BC415793492000323EE /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		42523BC815793492000323EE /* PepperDemo-Info.plist */ = {isa = PBXFileReference; path = "PepperDemo-Info.plist"; sourceTree = "<group>"; };
+		42523BC815793492000323EE /* PepperDemo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "PepperDemo-Info.plist"; sourceTree = "<group>"; };
 		42523BCA15793492000323EE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		42523BCC15793492000323EE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		42523BCE15793492000323EE /* PepperDemo-Prefix.pch */ = {isa = PBXFileReference; path = "PepperDemo-Prefix.pch"; sourceTree = "<group>"; };
-		42523BCF15793492000323EE /* PPAppDelegate.h */ = {isa = PBXFileReference; path = PPAppDelegate.h; sourceTree = "<group>"; };
+		42523BCE15793492000323EE /* PepperDemo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PepperDemo-Prefix.pch"; sourceTree = "<group>"; };
+		42523BCF15793492000323EE /* PPAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PPAppDelegate.h; sourceTree = "<group>"; };
 		42523BD015793492000323EE /* PPAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PPAppDelegate.m; sourceTree = "<group>"; };
-		42523BD215793492000323EE /* PPViewController.h */ = {isa = PBXFileReference; path = PPViewController.h; sourceTree = "<group>"; };
-		42523BD315793492000323EE /* PPViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PPViewController.m; sourceTree = "<group>"; };
 		42523BD615793492000323EE /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PPViewController.xib; sourceTree = "<group>"; };
+		42523BDE157934BF000323EE /* page_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_bg.png; sourceTree = "<group>"; };
+		42523BDF157934BF000323EE /* page_edge.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_edge.png; sourceTree = "<group>"; };
+		42523BE2157934BF000323EE /* PPPageViewContentWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewContentWrapper.h; sourceTree = "<group>"; };
+		42523BE3157934BF000323EE /* PPPageViewContentWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewContentWrapper.m; sourceTree = "<group>"; };
+		42523BE4157934BF000323EE /* PPPepperViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPepperViewController.h; sourceTree = "<group>"; };
+		42523BE5157934BF000323EE /* PPPepperViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPepperViewController.m; sourceTree = "<group>"; };
+		42523BEB157934EA000323EE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		4276D0DF157A8EC500C27FFB /* Book.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Book.h; sourceTree = "<group>"; };
+		4276D0E0157A8EC500C27FFB /* Book.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Book.m; sourceTree = "<group>"; };
+		4276D0E1157A8EC500C27FFB /* Page.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Page.h; sourceTree = "<group>"; };
+		4276D0E2157A8EC500C27FFB /* Page.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Page.m; sourceTree = "<group>"; };
+		4276D0E6157A8EDE00C27FFB /* book_cover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_cover.png; sourceTree = "<group>"; };
+		4276D0EF157A8F1600C27FFB /* PPBookOrPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPBookOrPageView.h; sourceTree = "<group>"; };
+		4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPBookOrPageView.m; sourceTree = "<group>"; };
+		4276D0F1157A8F1600C27FFB /* PPPageViewDetail.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetail.h; sourceTree = "<group>"; };
+		4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetail.m; sourceTree = "<group>"; };
+		4276D0F6157A8F5F00C27FFB /* PPViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPViewController.h; sourceTree = "<group>"; };
+		4276D0F7157A8F5F00C27FFB /* PPViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPViewController.m; sourceTree = "<group>"; };
+		4276D0F9157A8FB300C27FFB /* PPPageBaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageBaseView.h; sourceTree = "<group>"; };
+		4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageBaseView.m; sourceTree = "<group>"; };
+		42AB47BC157B77B50001AE94 /* book_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_bg.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				42523BEC157934EB000323EE /* QuartzCore.framework in Frameworks */,
 				42523BC115793492000323EE /* UIKit.framework in Frameworks */,
 				42523BC315793492000323EE /* Foundation.framework in Frameworks */,
 				42523BC515793492000323EE /* CoreGraphics.framework in Frameworks */,
@@ -50,6 +89,9 @@
 		42523BB115793492000323EE = {
 			isa = PBXGroup;
 			children = (
+				423941E6157D494F0053E0FA /* Icon-144.png */,
+				423941E3157D494C0053E0FA /* Icon-72.png */,
+				42523BDD157934BF000323EE /* Pepper */,
 				42523BC615793492000323EE /* PepperDemo */,
 				42523BBF15793492000323EE /* Frameworks */,
 				42523BBD15793492000323EE /* Products */,
@@ -67,6 +109,7 @@
 		42523BBF15793492000323EE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				42523BEB157934EA000323EE /* QuartzCore.framework */,
 				42523BC015793492000323EE /* UIKit.framework */,
 				42523BC215793492000323EE /* Foundation.framework */,
 				42523BC415793492000323EE /* CoreGraphics.framework */,
@@ -77,10 +120,10 @@
 		42523BC615793492000323EE /* PepperDemo */ = {
 			isa = PBXGroup;
 			children = (
-				42523BCF15793492000323EE /* PPAppDelegate.h */,
-				42523BD015793492000323EE /* PPAppDelegate.m */,
-				42523BD215793492000323EE /* PPViewController.h */,
-				42523BD315793492000323EE /* PPViewController.m */,
+				4276D0EE157A8F1600C27FFB /* Views */,
+				4276D0DE157A8EC500C27FFB /* Models */,
+				4276D0F5157A8F5F00C27FFB /* Controllers */,
+				4276D0E5157A8EDE00C27FFB /* Assets */,
 				42523BD515793492000323EE /* PPViewController.xib */,
 				42523BC715793492000323EE /* Supporting Files */,
 			);
@@ -90,12 +133,71 @@
 		42523BC715793492000323EE /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				42523BCF15793492000323EE /* PPAppDelegate.h */,
+				42523BD015793492000323EE /* PPAppDelegate.m */,
 				42523BC815793492000323EE /* PepperDemo-Info.plist */,
 				42523BC915793492000323EE /* InfoPlist.strings */,
 				42523BCC15793492000323EE /* main.m */,
 				42523BCE15793492000323EE /* PepperDemo-Prefix.pch */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		42523BDD157934BF000323EE /* Pepper */ = {
+			isa = PBXGroup;
+			children = (
+				42AB47BC157B77B50001AE94 /* book_bg.png */,
+				42523BDE157934BF000323EE /* page_bg.png */,
+				42523BDF157934BF000323EE /* page_edge.png */,
+				421C04A5157949C700A5698B /* PPPageViewDetailWrapper.h */,
+				421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */,
+				42523BE2157934BF000323EE /* PPPageViewContentWrapper.h */,
+				42523BE3157934BF000323EE /* PPPageViewContentWrapper.m */,
+				42523BE4157934BF000323EE /* PPPepperViewController.h */,
+				42523BE5157934BF000323EE /* PPPepperViewController.m */,
+			);
+			path = Pepper;
+			sourceTree = "<group>";
+		};
+		4276D0DE157A8EC500C27FFB /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4276D0DF157A8EC500C27FFB /* Book.h */,
+				4276D0E0157A8EC500C27FFB /* Book.m */,
+				4276D0E1157A8EC500C27FFB /* Page.h */,
+				4276D0E2157A8EC500C27FFB /* Page.m */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4276D0E5157A8EDE00C27FFB /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				4276D0E6157A8EDE00C27FFB /* book_cover.png */,
+			);
+			path = Assets;
+			sourceTree = "<group>";
+		};
+		4276D0EE157A8F1600C27FFB /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4276D0F9157A8FB300C27FFB /* PPPageBaseView.h */,
+				4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */,
+				4276D0EF157A8F1600C27FFB /* PPBookOrPageView.h */,
+				4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */,
+				4276D0F1157A8F1600C27FFB /* PPPageViewDetail.h */,
+				4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		4276D0F5157A8F5F00C27FFB /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				4276D0F6157A8F5F00C27FFB /* PPViewController.h */,
+				4276D0F7157A8F5F00C27FFB /* PPViewController.m */,
+			);
+			path = Controllers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -152,6 +254,12 @@
 			files = (
 				42523BCB15793492000323EE /* InfoPlist.strings in Resources */,
 				42523BD715793492000323EE /* PPViewController.xib in Resources */,
+				42523BE6157934BF000323EE /* page_bg.png in Resources */,
+				42523BE7157934BF000323EE /* page_edge.png in Resources */,
+				4276D0EA157A8EDE00C27FFB /* book_cover.png in Resources */,
+				42AB47BD157B77B50001AE94 /* book_bg.png in Resources */,
+				423941E4157D494C0053E0FA /* Icon-72.png in Resources */,
+				423941E7157D494F0053E0FA /* Icon-144.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,7 +272,15 @@
 			files = (
 				42523BCD15793492000323EE /* main.m in Sources */,
 				42523BD115793492000323EE /* PPAppDelegate.m in Sources */,
-				42523BD415793492000323EE /* PPViewController.m in Sources */,
+				42523BE9157934BF000323EE /* PPPageViewContentWrapper.m in Sources */,
+				42523BEA157934BF000323EE /* PPPepperViewController.m in Sources */,
+				421C04A7157949C700A5698B /* PPPageViewDetailWrapper.m in Sources */,
+				4276D0E3157A8EC500C27FFB /* Book.m in Sources */,
+				4276D0E4157A8EC500C27FFB /* Page.m in Sources */,
+				4276D0F3157A8F1600C27FFB /* PPBookOrPageView.m in Sources */,
+				4276D0F4157A8F1600C27FFB /* PPPageViewDetail.m in Sources */,
+				4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */,
+				4276D0FB157A8FB300C27FFB /* PPPageBaseView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,10 +356,12 @@
 		42523BDB15793492000323EE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "PepperDemo/PepperDemo-Prefix.pch";
 				INFOPLIST_FILE = "PepperDemo/PepperDemo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -251,10 +369,12 @@
 		42523BDC15793492000323EE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "PepperDemo/PepperDemo-Prefix.pch";
 				INFOPLIST_FILE = "PepperDemo/PepperDemo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -278,6 +398,7 @@
 				42523BDC15793492000323EE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

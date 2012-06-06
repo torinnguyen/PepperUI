@@ -1,0 +1,20 @@
+//
+//  PPPageViewContent.h
+//  pepper
+//
+//  Created by Torin Nguyen on 26/4/12.
+//  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+#define EDGE_PADDING          10
+
+@interface PPPageBaseView : UIView
+
+@property (nonatomic, strong) UIImageView *imageView;
+@property (nonatomic, strong) UIActivityIndicatorView *loadingIndicator;
+
+- (void)fetchImageWithUrl:(NSString *)stringUrl;
+
+@end
