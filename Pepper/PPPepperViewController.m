@@ -25,16 +25,20 @@
 #define THRESHOLD_FULL_ANGLE         8
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
-#define LEFT_RIGHT_ANGLE_DIFF        14.9         //should be perfect 15, but we cheated
-#define MAXIMUM_ANGLE                88.5
+#define LEFT_RIGHT_ANGLE_DIFF        9.9          //should be perfect 10, but we cheated
+#define MAXIMUM_ANGLE                89.0         //near 90, but cannot be 90
 #define MINIMUM_SCALE                0.3
 #define MINIMUM_SCALE_PAGES          6
 #define NUM_REUSE_BOOK_LANDSCAPE     7            //we can have different number of reusable book views
 #define NUM_REUSE_BOOK_PORTRAIT      7            //for portrait and landscape if needed
 #define NUM_REUSE_DETAIL_VIEW        3
-#define NUM_REUSE_3D_VIEW            16
+#define NUM_REUSE_3D_VIEW            12
 #define NUM_DOWNLOAD_THREAD          2
 #define MIN_CONTROL_INDEX            0.5
+#define MINOR_X_ADJUSTMENT_14        4.0
+#define SCALE_ATTENUATION            0.03
+#define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION above & also edge limit
+#define SCALE_INDEX_DIFF             2.5
 
 @interface PPPepperViewController()
 <
@@ -158,7 +162,7 @@ static float layer3WidthAt90 = 0;
   self.animationSlowmoFactor = 1.0f;
   self.zoomBookInFocus = YES;
   self.rotateBookInFocus = NO;
-  self.pageSpacing = 21.0f;
+  self.pageSpacing = 35.0f;
   self.scaleOnRotation = YES;
 
   //Initial values
@@ -250,7 +254,6 @@ static float layer3WidthAt90 = 0;
   
   //Dealloc Book scrollview
   if (!self.isBookView) {
-    NSLog(@"Remove book views");
     while (self.bookScrollView.subviews.count > 0)
       [[self.bookScrollView.subviews objectAtIndex:0] removeFromSuperview];
     [self.reuseBookViewArray removeAllObjects];
@@ -259,7 +262,6 @@ static float layer3WidthAt90 = 0;
   
   //Dealloc Pepper views
   if (![self isPepperView]) {
-    NSLog(@"Remove Pepper views");
     while (self.pepperView.subviews.count > 0)
       [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
     [self.reusePepperWrapperArray removeAllObjects];
@@ -268,7 +270,6 @@ static float layer3WidthAt90 = 0;
   
   //Dealloc Page scrollview
   if (!self.isDetailView) {
-    NSLog(@"Remove page views");
     while (self.pageScrollView.subviews.count > 0)
       [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
     [self.reusePageViewArray removeAllObjects];
@@ -480,7 +481,7 @@ static float layer3WidthAt90 = 0;
   //in case gestureRecognizerShouldBegin does not work properly
   if ([self isFullscreen])
     return;
-  
+    
   //Remember initial value to calculate based on delta later
   if (recognizer.state == UIGestureRecognizerStateBegan)
     self.touchDownControlIndex = self.controlIndex;
@@ -636,12 +637,19 @@ static float layer3WidthAt90 = 0;
   if (indexDiff < 0)
     return midX;
 
-  indexDiff -= (indexDiff/6) * (indexDiff/6);                                     //attenuation function
+  float distance = indexDiff * self.pageSpacing;
+  float positionScale = 0.5;
+  float magicNumber = layer3WidthAt90 + MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
+  float diffFromMidX = magicNumber + distance;
   
-  float magicNumber = layer3WidthAt90 - layer3WidthAt90 * 0.5 / 4.0;              //see formular for self.theView4.frame, flip to right case
-  float diffFromMidX = magicNumber + indexDiff * self.pageSpacing;
-  float x = 0;
+  //edge limit. maybe not needed because we already have cell reuse & scale limit
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
+  if (isLandscape) {
+    if (diffFromMidX > midX-self.frameWidth)
+      diffFromMidX = midX-self.frameWidth;
+  }
   
+  float x = 0;  
   if (pageIndex < self.controlIndex)    x = midX - diffFromMidX * gapScale;
   else                                  x = midX + diffFromMidX * gapScale;
   return x;
@@ -673,7 +681,6 @@ static float layer3WidthAt90 = 0;
   //No need to re-setup
   if (self.reusePepperWrapperArray != nil || self.reusePepperWrapperArray.count > 0)
     return;
-  NSLog(@"Setup reuseable Pepper views pool");
   
   self.reusePepperWrapperArray = [[NSMutableArray alloc] init];
   
@@ -702,23 +709,52 @@ static float layer3WidthAt90 = 0;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //Visible indexes
-  int range = NUM_REUSE_3D_VIEW/2;
-  int currentIndex = self.controlIndex;
+  int range = NUM_REUSE_3D_VIEW;
+  int currentIndex = [self getCurrentSpecialIndex];
   int startIndex = currentIndex - range;
   if (startIndex < 0)
     startIndex = 0;
-  int endIndex = currentIndex + range;
+  int endIndex = startIndex + range*2;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
+    
+  //Reuse hidden views
+  NSMutableArray *toBeRemoved = [[NSMutableArray alloc] init];
+  for (UIView *subview in self.pepperView.subviews) {
+    int idx = subview.tag;
+    if (idx > currentIndex-2 && idx < currentIndex+2)   //Don't touch the middle 4 pages
+      continue;
+    if (subview.hidden)
+      [toBeRemoved addObject:subview];
+  }
+  while (toBeRemoved.count > 0) {
+    UIView *subview = [toBeRemoved objectAtIndex:0];
+    [self removePageFromPepper:subview.tag];
+    [toBeRemoved removeObjectAtIndex:0];
+  }
   
   //Reuse out of bound views
-  for (int i=0; i<pageCount; i++)
-    if (i < startIndex || i > endIndex)
+  for (int i=0; i<pageCount; i++) {
+    if (i > currentIndex-2 && i < currentIndex+2)   //Don't touch the middle 4 pages
+      continue;
+    if (i < startIndex || i > endIndex) {
       [self removePageFromPepper:i];
+      continue;
+    }
+  }
   
-  //Add new views
-  for (int i=startIndex; i<=endIndex; i++)
+  //Add only relevant new views
+  for (int i=startIndex; i<=endIndex; i++) {
+    if (i > currentIndex-2 && i < currentIndex+2) {
+      [self addPageToPepperView:i];
+      continue;
+    }
+    if (i < currentIndex && i%2!=0)
+      continue;
+    if (i >= currentIndex && i%2==0)
+      continue;
     [self addPageToPepperView:i];
+  }
 }
 
 - (void)addPageToPepperView:(int)index {
@@ -797,7 +833,7 @@ static float layer3WidthAt90 = 0;
 // Hide & reuse all page in Pepper UI
 //
 - (void)destroyAllPeperPage { 
-  NSLog(@"Destroy Pepper views");
+
   while (self.pepperView.subviews.count > 0)
     [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
   [self.reusePepperWrapperArray removeAllObjects];
@@ -844,7 +880,6 @@ static float layer3WidthAt90 = 0;
   //No need to re-setup
   if (self.reuseBookViewArray != nil || self.reuseBookViewArray.count > 0)
     return;
-  //NSLog(@"Setup reuseable book views pool");
   
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int numReuse = isLandscape ? NUM_REUSE_BOOK_LANDSCAPE : NUM_REUSE_BOOK_PORTRAIT;
@@ -1073,7 +1108,6 @@ static float layer3WidthAt90 = 0;
   //No need to re-setup
   if (self.reusePageViewArray != nil || self.reusePageViewArray.count > 0)
     return;
-  NSLog(@"Setup reuseable page views pool");
   
   self.reusePageViewArray = [[NSMutableArray alloc] init];
   
@@ -1193,7 +1227,6 @@ static float layer3WidthAt90 = 0;
   if (pageDetailView == nil)
     return;
   
-  NSLog(@"Add Detail view to scrollview: %d", index);
   pageDetailView.tag = index;
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
@@ -1257,8 +1290,6 @@ static float layer3WidthAt90 = 0;
   float newControlFlipAngle = max - normalizedGroupControlIndex * fabs(max-min);
   self.controlFlipAngle = newControlFlipAngle;
   
-  //NSLog(@"Current index: %.2f, [%.2f, %.2f]", self.controlIndex, normalizedGroupControlIndex, newControlFlipAngle);
-  
   //Reorder-Z for left pages
   int totalPages = pageCount;
   for (int i=0; i < (int)self.controlIndex; i++) {
@@ -1281,7 +1312,7 @@ static float layer3WidthAt90 = 0;
   float angleDiff = -LEFT_RIGHT_ANGLE_DIFF;
   float max = -THRESHOLD_HALF_ANGLE;
   float min = -(180+max+angleDiff);                    //note: this is max for 1 side   //-140
-  
+
   //Limits
   if (angle > max)    angle = max;
   if (angle < min)    angle = min;
@@ -1290,12 +1321,36 @@ static float layer3WidthAt90 = 0;
   [self updateFlipPointers];
   [self updateHiddenPages];
 
+  int frameY = [self getFrameY];
   float angle2 = angle + angleDiff;
   float m34 = M34;
   float positionScale = fabs((angle-min) / fabs(max-min)) - 0.5;
-  float scale = 1.0;
-  int frameY = [self getFrameY];
+  float scale1 = 1.0;
+  float scale4 = 1.0;
+  float indexDiff1 = fabsf(self.controlIndex - self.theView1.tag) - SCALE_INDEX_DIFF;
+  float indexDiff4 = fabsf(self.controlIndex - self.theView4.tag) - SCALE_INDEX_DIFF;
+  float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
   
+  //Center
+  if (fabs(angle) <= 90.0 && fabs(angle2) >= 90.0) {        
+    scale1 = 1.0;
+    scale4 = 1.0;
+  }
+  //Flip to left
+  else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
+    scale1 = 1.0 - indexDiff4 * SCALE_ATTENUATION;   //variable
+    scale4 = 1.0;                                          //fixed
+  }
+  //Flip to right
+  else {
+    scale1 = 1.0;                                          //fixed
+    scale4 = 1.0 - indexDiff1 * SCALE_ATTENUATION;   //variable
+  }
+  if (scale1 > 1)         scale1 = 1;
+  if (scale1 < minScale)  scale1 = minScale;
+  if (scale4 > 1)         scale4 = 1;
+  if (scale4 < minScale)  scale4 = minScale;
+    
   //Static one time calculations
   if (layer23WidthAtMid == 0) {
     CALayer *layer2 = self.theView2.layer;
@@ -1330,7 +1385,7 @@ static float layer3WidthAt90 = 0;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  transform = CATransform3DScale(transform, scale,scale,scale);
+  transform = CATransform3DScale(transform, scale1,scale1,scale1);
   layer1.anchorPoint = CGPointMake(0, 0.5);
   layer1.transform = transform;
   
@@ -1352,7 +1407,7 @@ static float layer3WidthAt90 = 0;
   transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  transform = CATransform3DScale(transform, scale,scale,scale);
+  transform = CATransform3DScale(transform, scale4,scale4,scale4);
   layer4.anchorPoint = CGPointMake(0, 0.5);
   layer4.transform = transform;
   
@@ -1369,7 +1424,8 @@ static float layer3WidthAt90 = 0;
   }
   //Flip to left
   else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
-    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - layer3WidthAt90*positionScale/4, frameY, self.frameWidth, self.frameHeight);
+    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5,
+                                     frameY, self.frameWidth, self.frameHeight);
     self.theView4.frame = CGRectMake(CGRectGetMaxX(layer3.frame), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = YES;
     self.theView3.hidden = NO;
@@ -1377,7 +1433,8 @@ static float layer3WidthAt90 = 0;
   //Flip to right
   else {
     self.theView1.frame = CGRectMake(CGRectGetMinX(layer2.frame), frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer3WidthAt90 - layer3WidthAt90*positionScale/4, frameY, self.frameWidth, self.frameHeight);
+    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer3WidthAt90 + MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5,
+                                     frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
     self.theView3.hidden = YES;
   }
@@ -1407,7 +1464,7 @@ static float layer3WidthAt90 = 0;
     
     page.hidden = NO;
   }
-  
+    
   //Other pages transformation & position
   for (int i=0; i <pageCount; i++) {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
@@ -1417,11 +1474,12 @@ static float layer3WidthAt90 = 0;
       continue;
     if (page.hidden)
       continue;
+        
+    float indexDiff = fabsf(self.controlIndex - i) - SCALE_INDEX_DIFF;
+    float scale = 1.0 - indexDiff * SCALE_ATTENUATION;
+    if (scale > 1)          scale = 1;
+    if (scale < minScale)   scale = minScale;
     
-    //float scale = 1.0 - fabs(indexDiff) * 0.02;
-    float scale = 1.0;
-
-    page.hidden = NO;
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
@@ -1445,15 +1503,22 @@ static float layer3WidthAt90 = 0;
     float frameX = [self getFrameXForPageIndex:i gapScale:1.0];
     page.frame = CGRectMake(frameX, frameY, self.frameWidth, self.frameHeight);
   }
-  
-  //NSLog(@"current angle: %.2f, %.2f, %.2f, %.2f", angle, angle2, position, positionScale);
 }
 
 - (void)updateFlipPointers
-{    
+{
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   float theSpecialIndex = [self getCurrentSpecialIndex];
   int tempIndex = 0;
+  
+  //Detect change of page flipping index for cell reuse purpose
+  static float previousControlIndex = -100;
+  if (previousControlIndex == -100)
+    previousControlIndex = theSpecialIndex;
+  if (previousControlIndex != theSpecialIndex)
+    [self onSpecialControlIndexChanged];
+  previousControlIndex = theSpecialIndex;
+  
   self.theView1 = nil;
   self.theView2 = nil;
   self.theView3 = nil;
@@ -1476,6 +1541,10 @@ static float layer3WidthAt90 = 0;
     self.theView4 = [self getPepperPageAtIndex:tempIndex];
   
   //[self addShadow];
+}
+
+- (void)onSpecialControlIndexChanged {
+  [self reusePepperViews];
 }
 
 - (void)updateHiddenPages
@@ -1879,9 +1948,9 @@ static float layer3WidthAt90 = 0;
   if (newControlAngle > 0)                  newControlAngle = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
-  //NSLog(@"_controlAngle: %.2f", _controlAngle);
   
   float scale = 1;
+  float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
   if (newControlAngle > max)    scale = 1.0 + (1.0 - (newControlAngle/max));    //max zoom 2x
   else                          scale = 1;
   
@@ -1985,13 +2054,6 @@ static float layer3WidthAt90 = 0;
       continue;
     }
 
-    /* Cell reusing pool already took care of this
-    if (self.controlAngle > -THRESHOLD_FULL_ANGLE || fabs(self.controlIndex - i) > 5.5) {
-      page.hidden = YES;
-      continue;
-    }
-     */
-    
     //Active page already cover the screen, no need to show these pages any more
     if (self.oneSideZoom && scale > 1.15) {
       if (i > self.controlIndex) {
@@ -2021,12 +2083,18 @@ static float layer3WidthAt90 = 0;
       continue;
     if (page.hidden)
       continue;
+    
+    float indexDiff = fabsf(self.controlIndex - i) - SCALE_INDEX_DIFF;
+    float scale = 1.0 - indexDiff * SCALE_ATTENUATION;
+    if (scale > 1)          scale = 1;
+    if (scale < minScale)   scale = minScale;
 
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+      transform = CATransform3DScale(transform, scale,scale,scale);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
       layerLeft.transform = transform;
     }
@@ -2035,6 +2103,7 @@ static float layer3WidthAt90 = 0;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+      transform = CATransform3DScale(transform, scale,scale,scale);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
       layerRight.transform = transform;
     }
@@ -2173,10 +2242,7 @@ static float layer3WidthAt90 = 0;
 
 - (void)scrollViewDidEndZooming:(UIScrollView *)theScrollView withView:(UIView *)view atScale:(float)scale {
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
-  {
-    NSLog(@"zoomScale %.2f", theScrollView.zoomScale);
     [self snapControlAngle];
-  }
 }
 
 
