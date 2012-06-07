@@ -743,7 +743,6 @@ static float layer3WidthAt90 = 0;
   if (![pageView isKindOfClass:[PPPageViewContentWrapper class]])    //some sands
     return;
   
-  NSLog(@"Add Page to Pepper view: %d", index);
   pageView.tag = index;
   pageView.index = index;
   pageView.isBook = NO; 
@@ -787,7 +786,7 @@ static float layer3WidthAt90 = 0;
   for (PPPageViewContentWrapper *page in self.pepperView.subviews) {
     if (![page isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
-    if (page.index != index)
+    if (page.tag != index)
       continue;
     return page;
   }
@@ -806,6 +805,36 @@ static float layer3WidthAt90 = 0;
   
   self.pepperView.hidden = YES;
 }
+
+//
+// Find the first visible (even) page index, suitable for book cover replacement
+//
+- (int)getFirstVisiblePepperPageIndex {
+  
+  int firstPageIndex = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  
+  for (UIView *subview in self.pepperView.subviews)
+    if (subview.tag < firstPageIndex
+        && subview.tag%2 == 0
+        && !subview.hidden
+        && [subview isKindOfClass:[PPPageViewContentWrapper class]])
+      firstPageIndex = subview.tag;
+  
+  if (firstPageIndex >= [self getNumberOfPagesForBookIndex:self.currentBookIndex])
+    firstPageIndex = 0;
+  
+  return firstPageIndex;
+}
+
+//
+// Find the first visible (even) page index, suitable for book cover replacement
+//
+- (UIView*)getFirstVisiblePepperPageView {
+  
+  int firstPageIndex = [self getFirstVisiblePepperPageIndex];
+  return [self getPepperPageAtIndex:firstPageIndex];
+}
+
 
 
 #pragma mark - UI Helper functions (Book)
@@ -1054,9 +1083,7 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)setupPageScrollview
-{
-  NSLog(@"Switch to PDF view at index: %d", (int)self.currentPageIndex);
-  
+{  
   //Re-setup due to memory warning
   [self setupReuseablePageViews];
 
@@ -1625,12 +1652,13 @@ static float layer3WidthAt90 = 0;
   
   //Hide fullscreen view
   [self hidePageScrollview];
-  
-  [self showBookCoverInFirstPage];
-  
+    
   //Re-setup book scrollview if needed
   [self setupReuseableBookViews];
   [self reuseBookScrollView];
+  
+  //Replace 1st page by book cover
+  [self showBookCoverInFirstPage];
 
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
@@ -1644,15 +1672,6 @@ static float layer3WidthAt90 = 0;
       [self removeBookCoverFromFirstPage];
       [self destroyAllPeperPage];
     });
-
-    /*
-    [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-
-    } completion:^(BOOL finished) {
-      [self removeBookCoverFromFirstPage];
-      [self destroyAllPeperPage];
-    }];
-     */
   }
   else {
     [self removeBookCoverFromFirstPage];
@@ -1667,6 +1686,9 @@ static float layer3WidthAt90 = 0;
   float m34 = M34;
   float flatAngle = 0;
   float scale = 1.0;
+  
+  //Find the first visible page view (already replaced by book cover)
+  int firstPageIndex = [self getFirstVisiblePepperPageIndex];
 
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   for (int i=0; i<pageCount; i++) {
@@ -1679,9 +1701,11 @@ static float layer3WidthAt90 = 0;
     int frameY = [self getFrameY];
     float x = isLandscape ? (1024/2-self.frameWidth/2) : (768/2-self.frameWidth/2);
     CGRect pageFrame = CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
+    
+    //Alpha
     float alpha = 1;
-    if (i == 0)     alpha = self.hideFirstPage ? 0 : 1;
-    else            alpha = (i <= 2) ? 1 : 0;
+    if (i == firstPageIndex)  alpha = 1;
+    else                      alpha = 0;
     
     //Transformation
     CALayer *layer = page.layer;
@@ -1690,11 +1714,7 @@ static float layer3WidthAt90 = 0;
     transform.m34 = m34;
     
     //Make sure the first page is visible & at the correct initial transformation
-    BOOL isFirstPage = NO;
-    if ((i==0 && !self.hideFirstPage) || (i==1 && self.hideFirstPage))
-      isFirstPage = YES;
-    
-    if (isFirstPage)
+    if (i == firstPageIndex)
     {
       page.hidden = NO;
       [[page superview] bringSubviewToFront:page];
@@ -1752,17 +1772,9 @@ static float layer3WidthAt90 = 0;
   if (self.bookCover == nil)
     return;
   
-  //Find the first visible page index
-  int firstPageIndex = [self getNumberOfPagesForBookIndex:self.currentBookIndex] - 1;
-  for (UIView *subview in self.pepperView.subviews)
-    if (subview.tag < firstPageIndex && [subview isKindOfClass:[PPPageViewContentWrapper class]])
-      firstPageIndex = subview.tag;
-
   //Find the first visible page view
-  UIView *firstPageView = nil;
-  for (UIView *subview in self.pepperView.subviews)
-    if (subview.tag == firstPageIndex && [subview isKindOfClass:[PPPageViewContentWrapper class]])
-      firstPageView = subview;
+  int firstPageIndex = [self getFirstVisiblePepperPageIndex];
+  UIView *firstPageView = [self getPepperPageAtIndex:firstPageIndex];
   if (firstPageView == nil)
     return;
 
@@ -1774,7 +1786,7 @@ static float layer3WidthAt90 = 0;
     self.bookCover.hidden = YES;
     return;
   }
-  
+    
   //Remove layer later (not precise but good enough)
   float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION/2;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
@@ -1947,9 +1959,7 @@ static float layer3WidthAt90 = 0;
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
-  
-  NSLog(@"scale: %.2f", scale);
-  
+    
   //Hide unneccessary pages
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   for (int i=0; i <pageCount; i++)
@@ -1975,10 +1985,12 @@ static float layer3WidthAt90 = 0;
       continue;
     }
 
+    /* Cell reusing pool already took care of this
     if (self.controlAngle > -THRESHOLD_FULL_ANGLE || fabs(self.controlIndex - i) > 5.5) {
       page.hidden = YES;
       continue;
     }
+     */
     
     //Active page already cover the screen, no need to show these pages any more
     if (self.oneSideZoom && scale > 1.15) {
@@ -2385,6 +2397,7 @@ static float layer3WidthAt90 = 0;
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
   label.textColor = [UIColor whiteColor];
+  label.font = [UIFont systemFontOfSize:11];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content for\nthis book cover\n\n\n\n\n\n\nBook index: %d", bookIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
@@ -2401,6 +2414,7 @@ static float layer3WidthAt90 = 0;
   view.backgroundColor = [UIColor clearColor];
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
+  label.font = [UIFont systemFontOfSize:12];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this page\n\n\n\n\n\n\nPage index: %d", pageIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
@@ -2416,6 +2430,7 @@ static float layer3WidthAt90 = 0;
   view.backgroundColor = [UIColor clearColor];
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
+  label.font = [UIFont systemFontOfSize:12];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\n\n\n\nDetailed page index: %d", pageIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
