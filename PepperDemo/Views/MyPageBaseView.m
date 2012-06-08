@@ -1,18 +1,17 @@
 //
-//  PPPageViewContent.m
-//  pepper
+//  MyPageBaseView.m
 //
 //  Created by Torin Nguyen on 26/4/12.
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
 //
 
 #import "PPPepperContants.h"
-#import "PPPageBaseView.h"
+#import "MyPageBaseView.h"
 
-@interface PPPageBaseView()
+@interface MyPageBaseView()
 @end
 
-@implementation PPPageBaseView
+@implementation MyPageBaseView
 
 @synthesize imageView;
 @synthesize loadingIndicator;

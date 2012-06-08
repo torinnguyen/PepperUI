@@ -20,7 +20,6 @@
 
 @implementation PPPageViewContentWrapper
 
-@synthesize index;
 @synthesize isBook = _isBook;
 @synthesize delegate;
 @synthesize background;
@@ -33,7 +32,6 @@
 {
   self = [super initWithFrame:frame];
   if (self) {
-    self.index = -1;
     self.isBook = NO;
     self.layer.doubleSided = YES;
 

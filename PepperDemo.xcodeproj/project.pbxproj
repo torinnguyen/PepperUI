@@ -25,10 +25,10 @@
 		42523BEC157934EB000323EE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BEB157934EA000323EE /* QuartzCore.framework */; };
 		4276D0E3157A8EC500C27FFB /* Book.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E0157A8EC500C27FFB /* Book.m */; };
 		4276D0E4157A8EC500C27FFB /* Page.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E2157A8EC500C27FFB /* Page.m */; };
-		4276D0F3157A8F1600C27FFB /* PPBookOrPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */; };
-		4276D0F4157A8F1600C27FFB /* PPPageViewDetail.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */; };
+		4276D0F3157A8F1600C27FFB /* MyBookOrPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F0157A8F1600C27FFB /* MyBookOrPageView.m */; };
+		4276D0F4157A8F1600C27FFB /* MyPageViewDetail.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F2157A8F1600C27FFB /* MyPageViewDetail.m */; };
 		4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F7157A8F5F00C27FFB /* PPViewController.m */; };
-		4276D0FB157A8FB300C27FFB /* PPPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */; };
+		4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */; };
 		42AB47BD157B77B50001AE94 /* book_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AB47BC157B77B50001AE94 /* book_bg.png */; };
 /* End PBXBuildFile section */
 
@@ -61,14 +61,14 @@
 		4276D0E0157A8EC500C27FFB /* Book.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Book.m; sourceTree = "<group>"; };
 		4276D0E1157A8EC500C27FFB /* Page.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Page.h; sourceTree = "<group>"; };
 		4276D0E2157A8EC500C27FFB /* Page.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Page.m; sourceTree = "<group>"; };
-		4276D0EF157A8F1600C27FFB /* PPBookOrPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPBookOrPageView.h; sourceTree = "<group>"; };
-		4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPBookOrPageView.m; sourceTree = "<group>"; };
-		4276D0F1157A8F1600C27FFB /* PPPageViewDetail.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetail.h; sourceTree = "<group>"; };
-		4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetail.m; sourceTree = "<group>"; };
+		4276D0EF157A8F1600C27FFB /* MyBookOrPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; path = MyBookOrPageView.h; sourceTree = "<group>"; };
+		4276D0F0157A8F1600C27FFB /* MyBookOrPageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyBookOrPageView.m; sourceTree = "<group>"; };
+		4276D0F1157A8F1600C27FFB /* MyPageViewDetail.h */ = {isa = PBXFileReference; fileEncoding = 4; path = MyPageViewDetail.h; sourceTree = "<group>"; };
+		4276D0F2157A8F1600C27FFB /* MyPageViewDetail.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyPageViewDetail.m; sourceTree = "<group>"; };
 		4276D0F6157A8F5F00C27FFB /* PPViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPViewController.h; sourceTree = "<group>"; };
 		4276D0F7157A8F5F00C27FFB /* PPViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPViewController.m; sourceTree = "<group>"; };
-		4276D0F9157A8FB300C27FFB /* PPPageBaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageBaseView.h; sourceTree = "<group>"; };
-		4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageBaseView.m; sourceTree = "<group>"; };
+		4276D0F9157A8FB300C27FFB /* MyPageBaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; path = MyPageBaseView.h; sourceTree = "<group>"; };
+		4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyPageBaseView.m; sourceTree = "<group>"; };
 		42AB47BC157B77B50001AE94 /* book_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_bg.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -183,12 +183,12 @@
 		4276D0EE157A8F1600C27FFB /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				4276D0F9157A8FB300C27FFB /* PPPageBaseView.h */,
-				4276D0FA157A8FB300C27FFB /* PPPageBaseView.m */,
-				4276D0EF157A8F1600C27FFB /* PPBookOrPageView.h */,
-				4276D0F0157A8F1600C27FFB /* PPBookOrPageView.m */,
-				4276D0F1157A8F1600C27FFB /* PPPageViewDetail.h */,
-				4276D0F2157A8F1600C27FFB /* PPPageViewDetail.m */,
+				4276D0F9157A8FB300C27FFB /* MyPageBaseView.h */,
+				4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */,
+				4276D0EF157A8F1600C27FFB /* MyBookOrPageView.h */,
+				4276D0F0157A8F1600C27FFB /* MyBookOrPageView.m */,
+				4276D0F1157A8F1600C27FFB /* MyPageViewDetail.h */,
+				4276D0F2157A8F1600C27FFB /* MyPageViewDetail.m */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -279,10 +279,10 @@
 				421C04A7157949C700A5698B /* PPPageViewDetailWrapper.m in Sources */,
 				4276D0E3157A8EC500C27FFB /* Book.m in Sources */,
 				4276D0E4157A8EC500C27FFB /* Page.m in Sources */,
-				4276D0F3157A8F1600C27FFB /* PPBookOrPageView.m in Sources */,
-				4276D0F4157A8F1600C27FFB /* PPPageViewDetail.m in Sources */,
+				4276D0F3157A8F1600C27FFB /* MyBookOrPageView.m in Sources */,
+				4276D0F4157A8F1600C27FFB /* MyPageViewDetail.m in Sources */,
 				4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */,
-				4276D0FB157A8FB300C27FFB /* PPPageBaseView.m in Sources */,
+				4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

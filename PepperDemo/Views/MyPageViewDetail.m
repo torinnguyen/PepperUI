@@ -1,14 +1,13 @@
 //
-//  PPPageViewDetail.m
-//  PepperDemo
+//  MyPageViewDetail.m
 //
 //  Created by Torin Nguyen on 2/6/12.
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
 //
 
-#import "PPPageViewDetail.h"
+#import "MyPageViewDetail.h"
 
-@implementation PPPageViewDetail
+@implementation MyPageViewDetail
 
 - (id)initWithFrame:(CGRect)frame
 {

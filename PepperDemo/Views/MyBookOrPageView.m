@@ -1,18 +1,17 @@
 //
-//  PPPageViewContent.m
-//  pepper
+//  MyBookOrPageView.m
 //
 //  Created by Torin Nguyen on 26/4/12.
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
 //
 
-#import "PPBookOrPageView.h"
+#import "MyBookOrPageView.h"
 
-@interface PPBookOrPageView()
+@interface MyBookOrPageView()
 @property (nonatomic, strong) id theModel;
 @end
 
-@implementation PPBookOrPageView
+@implementation MyBookOrPageView
 
 @synthesize theModel;
 

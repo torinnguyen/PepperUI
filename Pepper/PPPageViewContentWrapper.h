@@ -21,6 +21,5 @@
 @property (nonatomic, strong) UIView *contentView;
 @property (nonatomic, assign) BOOL isLeft;
 @property (nonatomic, assign) BOOL isBook;
-@property (nonatomic, assign) int index;
 
 @end

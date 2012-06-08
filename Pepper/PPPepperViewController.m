@@ -290,7 +290,7 @@ static float layer3WidthAt90 = 0;
   
   //Relayout the Book views with animation
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews) {
-    int index = subview.index;
+    int index = subview.tag;
     CGRect frame = [self getFrameForBookIndex:index forOrientation:toInterfaceOrientation];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       subview.frame = frame;
@@ -779,7 +779,6 @@ static float layer3WidthAt90 = 0;
     return;
   
   pageView.tag = index;
-  pageView.index = index;
   pageView.isBook = NO; 
   pageView.frame = pageFrame;
   pageView.alpha = 1;
@@ -809,7 +808,7 @@ static float layer3WidthAt90 = 0;
   for (PPPageViewContentWrapper *subview in self.pepperView.subviews) {
     if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
-    if (subview.index != index)
+    if (subview.tag != index)
       continue;
     [self.reusePepperWrapperArray addObject:subview];
     [subview removeFromSuperview];
@@ -996,7 +995,7 @@ static float layer3WidthAt90 = 0;
   
   //Check if we already have this Book in scrollview
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews)
-    if (subview.index == index)
+    if (subview.tag == index)
       return;
   
   CGRect bookFrame = [self getFrameForBookIndex:index];
@@ -1006,7 +1005,6 @@ static float layer3WidthAt90 = 0;
   if (coverPage == nil)
     return;
   
-  coverPage.index = index;
   coverPage.tag = index;
   coverPage.isLeft = NO;
   coverPage.isBook = YES;

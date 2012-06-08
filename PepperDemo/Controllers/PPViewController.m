@@ -10,8 +10,8 @@
 
 #import "PPViewController.h"
 #import "PPPepperViewController.h"
-#import "PPBookOrPageView.h"
-#import "PPPageViewDetail.h"
+#import "MyBookOrPageView.h"
+#import "MyPageViewDetail.h"
 
 @interface PPViewController () <PPScrollListViewControllerDataSource, PPScrollListViewControllerDelegate>
 @property (nonatomic, strong) IBOutlet UIView * menuView;
@@ -229,7 +229,7 @@
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
-  PPBookOrPageView *view = [[PPBookOrPageView alloc] initWithFrame:frame];
+  MyBookOrPageView *view = [[MyBookOrPageView alloc] initWithFrame:frame];
   [view configureWithBookModel:theBook];
   return view;
 }
@@ -238,7 +238,7 @@
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
-  PPBookOrPageView *view = [[PPBookOrPageView alloc] initWithFrame:frame];
+  MyBookOrPageView *view = [[MyBookOrPageView alloc] initWithFrame:frame];
   [view configureWithPageModel:thePage];
   return view;
 }
@@ -247,7 +247,7 @@
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
-  PPPageViewDetail *view = [[PPPageViewDetail alloc] initWithFrame:frame];
+  MyPageViewDetail *view = [[MyPageViewDetail alloc] initWithFrame:frame];
   [view configureWithPageModel:thePage];
   return view;
 }
