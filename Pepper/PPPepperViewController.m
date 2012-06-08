@@ -25,12 +25,12 @@
 #define NUM_REUSE_BOOK_LANDSCAPE     7            //we can have different number of reusable book views
 #define NUM_REUSE_BOOK_PORTRAIT      7            //for portrait and landscape if needed
 #define NUM_REUSE_DETAIL_VIEW        3
-#define NUM_REUSE_3D_VIEW            12
+#define NUM_REUSE_3D_VIEW            13           //12 is minimum
+#define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION & also edge limit
 #define NUM_DOWNLOAD_THREAD          2
 #define MIN_CONTROL_INDEX            0.5
 #define MINOR_X_ADJUSTMENT_14        4.0
 #define SCALE_ATTENUATION            0.03
-#define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION above & also edge limit
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
 
@@ -705,9 +705,9 @@ static float layer3WidthAt90 = 0;
   
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
-  //Visible indexes
+  //Visible range
   int range = NUM_REUSE_3D_VIEW;
-  int currentIndex = [self getCurrentSpecialIndex];
+  float currentIndex = [self getCurrentSpecialIndex];
   int startIndex = currentIndex - range;
   if (startIndex < 0)
     startIndex = 0;
@@ -715,11 +715,21 @@ static float layer3WidthAt90 = 0;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
     
+  //Reuse out of bound views
+  for (int i=0; i<pageCount; i++) {
+    if (i > currentIndex-1.6 && i < currentIndex+1.6)   //Don't touch the middle 4 pages
+      continue;
+    if (i < startIndex || i > endIndex) {
+      [self removePageFromPepper:i];
+      continue;
+    }
+  }
+  
   //Reuse hidden views
   NSMutableArray *toBeRemoved = [[NSMutableArray alloc] init];
   for (UIView *subview in self.pepperView.subviews) {
     int idx = subview.tag;
-    if (idx > currentIndex-2 && idx < currentIndex+2)   //Don't touch the middle 4 pages
+    if (idx > currentIndex-1.6 && idx < currentIndex+1.6)   //Don't touch the middle 4 pages
       continue;
     if (subview.hidden)
       [toBeRemoved addObject:subview];
@@ -729,20 +739,10 @@ static float layer3WidthAt90 = 0;
     [self removePageFromPepper:subview.tag];
     [toBeRemoved removeObjectAtIndex:0];
   }
-  
-  //Reuse out of bound views
-  for (int i=0; i<pageCount; i++) {
-    if (i > currentIndex-2 && i < currentIndex+2)   //Don't touch the middle 4 pages
-      continue;
-    if (i < startIndex || i > endIndex) {
-      [self removePageFromPepper:i];
-      continue;
-    }
-  }
-  
+
   //Add only relevant new views
   for (int i=startIndex; i<=endIndex; i++) {
-    if (i > currentIndex-2 && i < currentIndex+2) {
+    if (i > currentIndex-1.6 && i < currentIndex+1.6) {
       [self addPageToPepperView:i];
       continue;
     }
@@ -1318,7 +1318,7 @@ static float layer3WidthAt90 = 0;
   _controlFlipAngle = angle;
   
   [self updateFlipPointers];
-  [self updateHiddenPages];
+  [self reusePepperViews];
 
   int frameY = [self getFrameY];
   float angle2 = angle + angleDiff;
@@ -1546,37 +1546,6 @@ static float layer3WidthAt90 = 0;
   float theSpecialIndex = [self getCurrentSpecialIndex];
   NSLog(@"theSpecialIndex: %.1f", theSpecialIndex);
   [self reusePepperViews];
-}
-
-- (void)updateHiddenPages
-{
-  //for (UIView *page in self.pepperView.subviews)
-  //  page.hidden = YES;
-  
-  //Get the odd index in order to calculate the edge
-  int theIndex = self.controlIndex;
-  if (theIndex % 2 == 0)
-    theIndex++;
-  float theEdgeIndex = theIndex - 0.5;
-  
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  int tempIndex = 0;
-  UIView *page;
-    
-  for (float i=0.5f; i<=5.5f; i++) {
-    tempIndex = (int)round(theEdgeIndex - i);
-    if (tempIndex >= 0 && tempIndex < pageCount)
-      page = [self getPepperPageAtIndex:tempIndex];
-    page.hidden = NO;
-    
-    tempIndex = (int)round(theEdgeIndex + i);
-    if (tempIndex >= 0 && tempIndex < pageCount)
-      page = [self getPepperPageAtIndex:tempIndex];
-    page.hidden = NO;
-  }
-  
-  if (self.hideFirstPage && pageCount > 2)
-    [self getPepperPageAtIndex:0].hidden = YES;
 }
 
 - (void)addShadow
