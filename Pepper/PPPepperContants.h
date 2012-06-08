@@ -19,5 +19,6 @@
 #define MAX_BOOK_ROTATE              20.0         //degree
 #define M34                          (-1.0 / 1100.0)      //0:flat, more negative: more perspective
 
+#define ENABLE_HIGH_SPEED_SCROLLING  YES
 
 #endif

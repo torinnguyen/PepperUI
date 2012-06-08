@@ -25,7 +25,7 @@
 #define NUM_REUSE_BOOK_LANDSCAPE     7            //we can have different number of reusable book views
 #define NUM_REUSE_BOOK_PORTRAIT      7            //for portrait and landscape if needed
 #define NUM_REUSE_DETAIL_VIEW        3
-#define NUM_REUSE_3D_VIEW            13           //12 is minimum
+#define NUM_REUSE_3D_VIEW            12           //12 is minimum
 #define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION & also edge limit
 #define NUM_DOWNLOAD_THREAD          2
 #define MIN_CONTROL_INDEX            0.5
@@ -513,14 +513,18 @@ static float layer3WidthAt90 = 0;
     }];
     return;
   }
-    
-  CGPoint translation = [recognizer translationInView:self.pepperView];
-  CGPoint velocity = [recognizer velocityInView:self.pepperView];
-  float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 3);
-  if (normalizedVelocityX < 1)        normalizedVelocityX = 1;
-  else if (normalizedVelocityX > 2)   normalizedVelocityX = 2;
   
-  float boost = 9.5f * normalizedVelocityX;
+  float boost = 9.5f;
+  CGPoint translation = [recognizer translationInView:self.pepperView];
+  
+  if (ENABLE_HIGH_SPEED_SCROLLING) {
+    CGPoint velocity = [recognizer velocityInView:self.pepperView];
+    float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2.5);
+    if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
+    else if (normalizedVelocityX > 1.7)   normalizedVelocityX = 1.7;
+    boost *= normalizedVelocityX;
+  }
+  
   float dx = boost * (translation.x / self.view.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
   self.controlIndex = newControlIndex;
@@ -706,9 +710,9 @@ static float layer3WidthAt90 = 0;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //Visible range
-  int range = NUM_REUSE_3D_VIEW;
+  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
   float currentIndex = [self getCurrentSpecialIndex];
-  int startIndex = currentIndex - range;
+  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
   if (startIndex < 0)
     startIndex = 0;
   int endIndex = startIndex + range*2;
@@ -724,15 +728,18 @@ static float layer3WidthAt90 = 0;
       continue;
     }
   }
-  
+    
   //Reuse hidden views
   NSMutableArray *toBeRemoved = [[NSMutableArray alloc] init];
   for (UIView *subview in self.pepperView.subviews) {
     int idx = subview.tag;
     if (idx > currentIndex-1.6 && idx < currentIndex+1.6)   //Don't touch the middle 4 pages
       continue;
-    if (subview.hidden)
-      [toBeRemoved addObject:subview];
+    if (idx > currentIndex && idx%2!=0)
+      continue;
+    if (idx < currentIndex && idx%2==0)
+      continue;
+    [toBeRemoved addObject:subview];
   }
   while (toBeRemoved.count > 0) {
     UIView *subview = [toBeRemoved objectAtIndex:0];
@@ -741,17 +748,23 @@ static float layer3WidthAt90 = 0;
   }
 
   //Add only relevant new views
+  NSMutableArray *toBeAdded = [[NSMutableArray alloc] init];
   for (int i=startIndex; i<=endIndex; i++) {
     if (i > currentIndex-1.6 && i < currentIndex+1.6) {
       [self addPageToPepperView:i];
+      [toBeAdded addObject:[NSString stringWithFormat:@"%d", i]];
       continue;
     }
     if (i < currentIndex && i%2!=0)
       continue;
     if (i >= currentIndex && i%2==0)
       continue;
+
     [self addPageToPepperView:i];
+    [toBeAdded addObject:[NSString stringWithFormat:@"%d", i]];
   }
+  [toBeAdded removeAllObjects];
+  //NSLog(@"%@",[toBeAdded componentsJoinedByString: @","]);
 }
 
 - (void)addPageToPepperView:(int)index {
@@ -1316,7 +1329,6 @@ static float layer3WidthAt90 = 0;
   _controlFlipAngle = angle;
   
   [self updateFlipPointers];
-  [self reusePepperViews];
 
   int frameY = [self getFrameY];
   float angle2 = angle + angleDiff;
@@ -1541,8 +1553,6 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)onSpecialControlIndexChanged {
-  float theSpecialIndex = [self getCurrentSpecialIndex];
-  NSLog(@"theSpecialIndex: %.1f", theSpecialIndex);
   [self reusePepperViews];
 }
 
