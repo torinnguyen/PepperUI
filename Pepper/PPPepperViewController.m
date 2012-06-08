@@ -1087,25 +1087,24 @@ static float layer3WidthAt90 = 0;
         
   //Add page views to Pepper UI
   [self setupReusablePepperViews];
-  for (int i=0; i<pageCount; i++)
-    [self addPageToPepperView:i];
+  [self reusePepperViews];
 
   //Show pepper view
   self.pepperView.hidden = NO;
-    
-  //Notify the delegate to fade out top level menu, if any
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenBookIndex:andDuration:)])
-    [self.delegate ppPepperViewController:self willOpenBookIndex:bookIndex andDuration:self.animationSlowmoFactor*OPEN_BOOK_DURATION];
   
   //Close all pages to get correct initial angle
   [self flattenAllPepperViews:0];
   
-  //This is where magic happens (animation)
-  [self showHalfOpen:YES];
-  
   //Clone the book cover and add to backside of first page
   [self addBookCoverToFirstPage:YES];
   
+  //Notify the delegate to fade out top level menu, if any
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenBookIndex:andDuration:)])
+    [self.delegate ppPepperViewController:self willOpenBookIndex:bookIndex andDuration:self.animationSlowmoFactor*OPEN_BOOK_DURATION];
+
+  //This is where magic happens (animation)
+  [self showHalfOpen:YES];
+     
   //Start downloading thumbnails only
   //[self fetchPageLargeThumbnailsMultithread];
 }
@@ -1475,7 +1474,8 @@ static float layer3WidthAt90 = 0;
   }
     
   //Other pages transformation & position
-  for (int i=0; i <pageCount; i++) {
+  for (int i=0; i <pageCount; i++)
+  {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
@@ -1688,6 +1688,7 @@ static float layer3WidthAt90 = 0;
   if (!animated) {   
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
+    self.controlIndex = self.controlIndex;
     return;
   }
   
@@ -1699,6 +1700,7 @@ static float layer3WidthAt90 = 0;
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
+    self.controlIndex = self.controlIndex;
   }];
 }
 
@@ -1941,15 +1943,6 @@ static float layer3WidthAt90 = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
   
-  //Last defense against memory warning
-  /*
-  if (newControlAngle < 0) {
-    [self setupReusablePepperViews];
-    [self reusePepperViews];
-    self.pepperView.hidden = NO;
-  }
-  */
-  
   float scale = 1;
   float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
   if (newControlAngle > max)    scale = 1.0 + (1.0 - (newControlAngle/max));    //max zoom 2x
@@ -2054,7 +2047,6 @@ static float layer3WidthAt90 = 0;
     }
 
     //If current left & right page already cover this page
-    NSLog(@"%.2f", scale);
     if (self.oneSideZoom && scale > 1) {
       BOOL isCovered = CGRectGetMinX(self.leftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.rightView.frame);
       if (isCovered) {
@@ -2083,7 +2075,8 @@ static float layer3WidthAt90 = 0;
     page.hidden = NO;
   }
   
-  //Quickly flattern other pages to avoid cutting into z-index of the front pages
+  //Other pages scale & transform
+  
   for (int i=0; i <pageCount; i++)
   {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
@@ -2098,6 +2091,10 @@ static float layer3WidthAt90 = 0;
     float scale = 1.0 - indexDiff * SCALE_ATTENUATION;
     if (scale > 1)          scale = 1;
     if (scale < minScale)   scale = minScale;
+    
+    //middle 4 pages
+    if (self.controlIndex-2.6 > i && i < self.controlIndex+2.6)
+      scale = 1;
 
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
