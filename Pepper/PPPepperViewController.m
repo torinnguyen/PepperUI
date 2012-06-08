@@ -13,14 +13,7 @@
 #import "PPPageViewContentWrapper.h"
 #import "PPPageViewDetailWrapper.h"
 
-#define FRAME_WIDTH_LANDSCAPE        (768*0.4)
-#define FRAME_HEIGHT_LANDSCAPE       (1034*0.4)
-#define FRAME_SCALE_PORTRAIT         0.9f
-#define MIN_BOOK_SCALE               0.9          //90%
-#define MAX_BOOK_ROTATE              20.0         //degree
-#define M34                          (-1.0 / 1100.0)      //0:flat, more negative: more perspective
-
-//Don't mess with these if you don't know what you are doing
+//Don't mess with these
 #define OPEN_BOOK_DURATION           0.36
 #define THRESHOLD_FULL_ANGLE         8
 #define THRESHOLD_HALF_ANGLE         25
@@ -39,6 +32,7 @@
 #define SCALE_ATTENUATION            0.03
 #define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION above & also edge limit
 #define SCALE_INDEX_DIFF             2.5
+#define CONTROL_INDEX_USE_TIMER      YES
 
 @interface PPPepperViewController()
 <
@@ -66,8 +60,9 @@
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
 @property (nonatomic, assign) float touchDownControlIndex;
-@property (nonatomic, assign) float controlIndexTarget;
-@property (nonatomic, assign) float controlIndexDx;
+@property (nonatomic, assign) float controlIndexTimerTarget;
+@property (nonatomic, assign) float controlIndexTimerDx;
+@property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
 @property (nonatomic, assign) BOOL zoomOnLeft;
 @property (nonatomic, strong) NSTimer *controlIndexTimer;
 @property (nonatomic, assign) float frameWidth;
@@ -121,7 +116,7 @@
 @synthesize controlFlipAngle = _controlFlipAngle;
 @synthesize touchDownControlAngle;
 @synthesize touchDownControlIndex;
-@synthesize controlIndexTarget, controlIndexDx;
+@synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
 @synthesize zoomOnLeft;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
@@ -472,8 +467,6 @@ static float layer3WidthAt90 = 0;
   float dx = boost * (-90.0) * (1.0-recognizer.scale);
   float newControlAngle = self.touchDownControlAngle + dx;
   self.controlAngle = newControlAngle;
-  
-  //NSLog(@"Current angle: %.2f", self.controlAngle);
 }
 
 - (void)onPanning:(UIPanGestureRecognizer *)recognizer
@@ -503,27 +496,31 @@ static float layer3WidthAt90 = 0;
       return;
     duration *= self.animationSlowmoFactor;
 
-    /*
-    [self animateControlIndexTo:snapTo duration:duration];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, duration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-      [self reusePepperViews];
-      self.controlIndex = snapTo;
-      _controlAngle = -THRESHOLD_HALF_ANGLE;
-    });
-    */
+    //Correct behavior but sluggish
+    if (CONTROL_INDEX_USE_TIMER) {
+      [self animateControlIndexTo:snapTo duration:duration];
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, duration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+      });
+      return;
+    }
     
-    // This has some kind of glitch
+    //This has some kind of glitch
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       self.controlIndex = snapTo;      
     } completion:^(BOOL finished) {
-      [self reusePepperViews];
+      //[self reusePepperViews];
       _controlAngle = -THRESHOLD_HALF_ANGLE;
     }];
     return;
   }
     
-  CGPoint translation = [recognizer translationInView:self.view];
-  float boost = 9.5f;
+  CGPoint translation = [recognizer translationInView:self.pepperView];
+  CGPoint velocity = [recognizer velocityInView:self.pepperView];
+  float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 3);
+  if (normalizedVelocityX < 1)        normalizedVelocityX = 1;
+  else if (normalizedVelocityX > 2)   normalizedVelocityX = 2;
+  
+  float boost = 9.5f * normalizedVelocityX;
   float dx = boost * (translation.x / self.view.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
   self.controlIndex = newControlIndex;
@@ -771,7 +768,9 @@ static float layer3WidthAt90 = 0;
     if (subview.tag == index)
       return;
   
-  CGRect pageFrame = CGRectMake(3000,0, self.frameWidth, self.frameHeight);
+  int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  int frameY = [self getFrameY];
+  CGRect pageFrame = CGRectMake(midX,frameY, self.frameWidth, self.frameHeight);
   PPPageViewContentWrapper *pageView = [self.reusePepperWrapperArray objectAtIndex:0];
   [self.reusePepperWrapperArray removeObjectAtIndex:0];
   if (pageView == nil)
@@ -784,7 +783,7 @@ static float layer3WidthAt90 = 0;
   pageView.isBook = NO; 
   pageView.frame = pageFrame;
   pageView.alpha = 1;
-  pageView.hidden = NO;
+  pageView.hidden = YES;        //control functions will unhide later
   pageView.delegate = self;  
   pageView.isLeft = (index%2==0) ? YES : NO;
   [self.pepperView addSubview:pageView];
@@ -1544,6 +1543,8 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)onSpecialControlIndexChanged {
+  float theSpecialIndex = [self getCurrentSpecialIndex];
+  NSLog(@"theSpecialIndex: %.1f", theSpecialIndex);
   [self reusePepperViews];
 }
 
@@ -1627,25 +1628,39 @@ static float layer3WidthAt90 = 0;
   if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
     return;
   
-  self.controlIndexTarget = index;
-  self.controlIndexDx = (self.controlIndexTarget - self.controlIndex) / (duration / 0.016667);
-  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: 0.016667
+  //0.016667 = 1/60
+  self.controlIndexTimerLastTime = [[NSDate alloc] init];
+  self.controlIndexTimerTarget = index;
+  self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / 0.0166666667);
+  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: 0.0166666667
                                                             target: self
-                                                          selector: @selector(onControlIndexTimer)
+                                                          selector: @selector(onControlIndexTimer:)
                                                           userInfo: nil
                                                            repeats: YES];
 }
 
-- (void)onControlIndexTimer
+- (void)onControlIndexTimer:(NSTimer *)timer
 {
-  float newValue = self.controlIndex + self.controlIndexDx;
-
-  if (fabs(newValue - self.controlIndexTarget) <= fabs(self.controlIndexDx*1.5)) {
-    newValue = self.controlIndexTarget;
-    [self.controlIndexTimer invalidate];
-    self.controlIndexTimer = nil;
+  NSDate *nowDate = [[NSDate alloc] init];
+  float deltaMs = fabsf([self.controlIndexTimerLastTime timeIntervalSinceNow]);
+  self.controlIndexTimerLastTime = nowDate;
+  float deltaDiff = deltaMs / 0.0166666667;
+  
+  float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
+  BOOL finish = fabs(newValue - self.controlIndexTimerTarget) <= fabs(self.controlIndexTimerDx*1.5);
+  
+  if (!finish) {
+    self.controlIndex = newValue;
+    return;
   }
-  self.controlIndex = newValue;
+  
+  newValue = self.controlIndexTimerTarget;
+  [self.controlIndexTimer invalidate];
+  self.controlIndexTimer = nil;
+  
+  [self reusePepperViews];
+  self.controlIndex = self.controlIndexTimerTarget;
+  _controlAngle = -THRESHOLD_HALF_ANGLE;
 }
 
 #pragma mark - Pinch control implementation
@@ -2226,7 +2241,7 @@ static float layer3WidthAt90 = 0;
 // Custom delegate from PDF scrollview
 //
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
-  NSLog(@"zoomScale %.2f", theScrollView.zoomScale);
+  //NSLog(@"zoomScale %.2f", theScrollView.zoomScale);
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
   {
     if (theScrollView.zoomScale >= 1.0)
