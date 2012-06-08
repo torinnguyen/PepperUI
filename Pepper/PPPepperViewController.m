@@ -19,7 +19,7 @@
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
 #define LEFT_RIGHT_ANGLE_DIFF        9.9          //should be perfect 10, but we cheated
-#define MAXIMUM_ANGLE                89.0         //near 90, but cannot be 90
+#define MAXIMUM_ANGLE                89.5         //near 90, but cannot be 90
 #define MINIMUM_SCALE                0.3
 #define MINIMUM_SCALE_PAGES          6
 #define NUM_REUSE_BOOK_LANDSCAPE     7            //we can have different number of reusable book views
@@ -1020,7 +1020,7 @@ static float layer3WidthAt90 = 0;
     coverPage.contentView = [self.dataSource ppPepperViewController:self viewForBookIndex:index withFrame:coverPage.bounds];
   else
     coverPage.contentView = nil;
-
+  
   [self.bookScrollView addSubview:coverPage];
   
   /*
@@ -1964,6 +1964,15 @@ static float layer3WidthAt90 = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
   
+  //Last defense against memory warning
+  /*
+  if (newControlAngle < 0) {
+    [self setupReusablePepperViews];
+    [self reusePepperViews];
+    self.pepperView.hidden = NO;
+  }
+  */
+  
   float scale = 1;
   float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
   if (newControlAngle > max)    scale = 1.0 + (1.0 - (newControlAngle/max));    //max zoom 2x
@@ -1992,7 +2001,6 @@ static float layer3WidthAt90 = 0;
   }
   
   //Fade book scrollview
-  //self.bookScrollView.hidden = (alpha == 0) ? YES : NO;
   self.bookScrollView.alpha = alpha;
   for (UIView *subview in self.bookScrollView.subviews)
     if (subview.tag == self.currentBookIndex)
@@ -2037,7 +2045,6 @@ static float layer3WidthAt90 = 0;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
     frame.origin.y = leftFrameOriginal.origin.y - (leftFrameOriginal.origin.y * frameScale) - EDGE_PADDING*frameScale;
-    //frame.origin.y = midPositionY - frame.size.height/2;
     self.leftView.frame = frame;
     self.rightView.frame = frame;
     
@@ -2069,8 +2076,19 @@ static float layer3WidthAt90 = 0;
       continue;
     }
 
-    //Active page already cover the screen, no need to show these pages any more
+    //If current left & right page already cover this page
+    NSLog(@"%.2f", scale);
+    if (self.oneSideZoom && scale > 1) {
+      BOOL isCovered = CGRectGetMinX(self.leftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.rightView.frame);
+      if (isCovered) {
+        page.hidden = YES;
+        continue;
+      }
+    }
+    
+    //Fallback hardcoded condition for above
     if (self.oneSideZoom && scale > 1.15) {
+
       if (i > self.controlIndex) {
         if (self.zoomOnLeft) {
           page.hidden = YES;
@@ -2132,7 +2150,7 @@ static float layer3WidthAt90 = 0;
     positionScale = 0.5f + (newControlAngle / (-THRESHOLD_HALF_ANGLE))/2;
   else {
     positionScale = 1.0f - fabs(newControlAngle-(-THRESHOLD_HALF_ANGLE)) / fabs(-MAXIMUM_ANGLE-(-THRESHOLD_HALF_ANGLE));
-    positionScale = 0.12f + positionScale * 0.88f;
+    positionScale = 0.05f + positionScale * 0.95f;
   }
   if (positionScale < 0)
     positionScale = 0;
@@ -2241,7 +2259,6 @@ static float layer3WidthAt90 = 0;
 // Custom delegate from PDF scrollview
 //
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
-  //NSLog(@"zoomScale %.2f", theScrollView.zoomScale);
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
   {
     if (theScrollView.zoomScale >= 1.0)
@@ -2250,7 +2267,13 @@ static float layer3WidthAt90 = 0;
     float scale = theScrollView.zoomScale;      //1.0 and smaller
     theScrollView.hidden = (scale < 1.0) ? YES : NO;
     self.pepperView.hidden = !theScrollView.hidden;
-    
+
+    //Memory warning kills Pepper view
+    if (theScrollView.hidden == YES) {
+      [self setupReusablePepperViews];
+      [self reusePepperViews];
+    }
+       
     self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
   }
 }
