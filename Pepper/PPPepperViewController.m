@@ -699,6 +699,11 @@ static float layer3WidthAt90 = 0;
     box.alpha = 1;
     [self.reusePepperWrapperArray addObject:box];
   }
+}
+
+- (void)reusePepperViews {
+  
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //Some funny UIImageView gets into our view
   NSMutableArray *tempArray = [[NSMutableArray alloc] init];
@@ -707,11 +712,7 @@ static float layer3WidthAt90 = 0;
       [tempArray addObject:subview];
   for (UIView *subview in tempArray)
     [subview removeFromSuperview];
-}
-
-- (void)reusePepperViews {
-  
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  [tempArray removeAllObjects];
   
   //Visible range
   int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
@@ -916,6 +917,15 @@ static float layer3WidthAt90 = 0;
   
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int bookCount = [self getNumberOfBooks];
+  
+  //Some funny UIImageView gets into our view
+  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
+  for (UIView *subview in self.bookScrollView.subviews)
+    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
+      [tempArray addObject:subview];
+  for (UIView *subview in tempArray)
+    [subview removeFromSuperview];
+  [tempArray removeAllObjects];
   
   //Visible indexes
   int range = isLandscape ? floor(NUM_REUSE_BOOK_LANDSCAPE/2.0) : floor(NUM_REUSE_BOOK_PORTRAIT/2.0);
@@ -1148,6 +1158,15 @@ static float layer3WidthAt90 = 0;
 - (void)reusePageScrollview {
   int currentIndex = (int)self.currentPageIndex;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  
+  //Some funny UIImageView gets into our view
+  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
+  for (UIView *subview in self.pageScrollView.subviews)
+    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
+      [tempArray addObject:subview];
+  for (UIView *subview in tempArray)
+    [subview removeFromSuperview];
+  [tempArray removeAllObjects];
   
   //Visible indexes
   int range = floor(NUM_REUSE_DETAIL_VIEW/2.0);
@@ -1461,11 +1480,11 @@ static float layer3WidthAt90 = 0;
       continue;
     }
 
-    if (i < self.controlIndex && !page.isLeft) {
+    if (i < self.controlIndex && i%2!=0) {
       page.hidden = YES;
       continue;
     }
-    if (i >= self.controlIndex && page.isLeft) {
+    if (i >= self.controlIndex && i%2==0) {
       page.hidden = YES;
       continue;
     }
@@ -2036,17 +2055,16 @@ static float layer3WidthAt90 = 0;
     if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])
       continue;
     
-    BOOL isFirstPage = (i==0 && !self.hideFirstPage) || (i==1 && self.hideFirstPage);
-    if (i==0 && self.hideFirstPage && !isFirstPage) {
+    if (i==0 && self.hideFirstPage) {
       page.hidden = YES;
       continue;
     }
     
-    if (i < self.controlIndex && !page.isLeft && !isFirstPage) {
+    if (i < self.controlIndex && i%2!=0) {
       page.hidden = YES;
       continue;
     }
-    if (i >= self.controlIndex && page.isLeft && !isFirstPage) {
+    if (i >= self.controlIndex && i%2==0) {
       page.hidden = YES;
       continue;
     }
