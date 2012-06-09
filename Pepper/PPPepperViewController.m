@@ -480,6 +480,13 @@ static float layer3WidthAt90 = 0;
   //Remember initial value to calculate based on delta later
   if (recognizer.state == UIGestureRecognizerStateBegan)
     self.touchDownControlIndex = self.controlIndex;
+  
+  //The dynamics
+  CGPoint translation = [recognizer translationInView:self.pepperView];
+  CGPoint velocity = [recognizer velocityInView:self.pepperView];
+  float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2);
+  if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
+  else if (normalizedVelocityX > 2.0)   normalizedVelocityX = 2.0;
 
   //Snap to half open
   if (recognizer.state == UIGestureRecognizerStateEnded) {    
@@ -493,7 +500,9 @@ static float layer3WidthAt90 = 0;
     else                              snapTo = lowerBound - 0.5;
 
     float diff = fabs(snapTo - self.controlIndex);
-    float duration = diff / 1.5f;       
+    float duration = diff / 1.5f;
+    if (ENABLE_HIGH_SPEED_SCROLLING)
+      duration /= normalizedVelocityX;
     if (diff <= 0)
       return;
     duration *= self.animationSlowmoFactor;
@@ -510,23 +519,16 @@ static float layer3WidthAt90 = 0;
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       self.controlIndex = snapTo;      
     } completion:^(BOOL finished) {
-      //[self reusePepperViews];
       _controlAngle = -THRESHOLD_HALF_ANGLE;
     }];
     return;
   }
   
+  //Speed calculation
   float boost = 9.5f;
-  CGPoint translation = [recognizer translationInView:self.pepperView];
-  
-  if (ENABLE_HIGH_SPEED_SCROLLING) {
-    CGPoint velocity = [recognizer velocityInView:self.pepperView];
-    float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2);
-    if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
-    else if (normalizedVelocityX > 2.0)   normalizedVelocityX = 2.0;
+  if (ENABLE_HIGH_SPEED_SCROLLING)
     boost *= normalizedVelocityX;
-  }
-  
+
   float dx = boost * (translation.x / self.view.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
   self.controlIndex = newControlIndex;
@@ -1622,6 +1624,11 @@ static float layer3WidthAt90 = 0;
   float deltaDiff = deltaMs / 0.0166666667;
   
   float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
+  if (self.controlIndexTimerDx >= 0 && newValue > self.controlIndexTimerTarget)
+    newValue = self.controlIndexTimerTarget;
+  else if (self.controlIndexTimerDx < 0 && newValue < self.controlIndexTimerTarget)
+    newValue = self.controlIndexTimerTarget;
+
   BOOL finish = fabs(newValue - self.controlIndexTimerTarget) <= fabs(self.controlIndexTimerDx*1.5);
   
   if (!finish) {
