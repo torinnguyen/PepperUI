@@ -4674,11 +4674,11 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">switchScaleOnRotation</string>
+						<string key="label">switchScaleOnDeviceRotation</string>
 						<reference key="source" ref="841351856"/>
 						<reference key="destination" ref="783098989"/>
 					</object>
-					<int key="connectionID">27</int>
+					<int key="connectionID">28</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchEventConnection" key="connection">
@@ -4700,12 +4700,12 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchEventConnection" key="connection">
-						<string key="label">onSwitchScaleOnRotation:</string>
+						<string key="label">onSwitchScaleOnDeviceRotation:</string>
 						<reference key="source" ref="783098989"/>
 						<reference key="destination" ref="841351856"/>
 						<int key="IBEventType">13</int>
 					</object>
-					<int key="connectionID">26</int>
+					<int key="connectionID">29</int>
 				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -4807,7 +4807,7 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">27</int>
+			<int key="maxID">29</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -4818,7 +4818,7 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 						<string key="menuView">UIView</string>
 						<string key="speedSegmented">UISegmentedControl</string>
 						<string key="switchRandomPage">UISwitch</string>
-						<string key="switchScaleOnRotation">UISwitch</string>
+						<string key="switchScaleOnDeviceRotation">UISwitch</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
 						<object class="IBToOneOutletInfo" key="menuView">
@@ -4833,8 +4833,8 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 							<string key="name">switchRandomPage</string>
 							<string key="candidateClassName">UISwitch</string>
 						</object>
-						<object class="IBToOneOutletInfo" key="switchScaleOnRotation">
-							<string key="name">switchScaleOnRotation</string>
+						<object class="IBToOneOutletInfo" key="switchScaleOnDeviceRotation">
+							<string key="name">switchScaleOnDeviceRotation</string>
 							<string key="candidateClassName">UISwitch</string>
 						</object>
 					</dictionary>

@@ -17,7 +17,7 @@
 @property (nonatomic, strong) IBOutlet UIView * menuView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
-@property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnRotation;
+@property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
 @property (nonatomic, strong) NSMutableArray *bookDataArray;
 @end
@@ -26,7 +26,7 @@
 @synthesize menuView;
 @synthesize speedSegmented;
 @synthesize switchRandomPage;
-@synthesize switchScaleOnRotation;
+@synthesize switchScaleOnDeviceRotation;
 @synthesize pepperViewController;
 @synthesize bookDataArray;
 
@@ -45,7 +45,7 @@
   //Optional
   [self onSpeedChange:self.speedSegmented];
   [self onSwitchRandomPage:self.switchRandomPage];
-  [self onSwitchScaleOnRotation:self.switchScaleOnRotation];
+  [self onSwitchScaleOnDeviceRotation:self.switchScaleOnDeviceRotation];
   
   //Bring our top level menu to highest z-index
   [self.view bringSubviewToFront:self.menuView];
@@ -127,9 +127,9 @@
                     otherButtonTitles:nil] show];
 }
 
-- (IBAction)onSwitchScaleOnRotation:(id)sender
+- (IBAction)onSwitchScaleOnDeviceRotation:(id)sender
 {
-  self.pepperViewController.scaleOnRotation = self.switchScaleOnRotation.on;
+  self.pepperViewController.scaleOnDeviceRotation = self.switchScaleOnDeviceRotation.on;
 }
 
 

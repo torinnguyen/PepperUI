@@ -39,52 +39,54 @@
  PPScrollListViewControllerDataSource,
  PPScrollListViewControllerDelegate,
  UIGestureRecognizerDelegate,
- PPPageViewWrapperDelegate,
- UIScrollViewDelegate
+ UIScrollViewDelegate,
+ PPPageViewWrapperDelegate
 >
 
 @property (nonatomic, assign) BOOL isBookView;
 @property (nonatomic, assign) BOOL isDetailView;
-
-//Pepper UI
-@property (nonatomic, strong) UIView *bookCover;
-@property (nonatomic, strong) UIView *leftView;
-@property (nonatomic, strong) UIView *rightView;
-@property (nonatomic, strong) UIView *theView1;
-@property (nonatomic, strong) UIView *theView2;
-@property (nonatomic, strong) UIView *theView3;
-@property (nonatomic, strong) UIView *theView4;
-@property (nonatomic, strong) UIPinchGestureRecognizer *pinchGestureRecognizer;
-@property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
-@property (nonatomic, assign) float controlAngle;
-@property (nonatomic, assign) float controlFlipAngle;
-@property (nonatomic, assign) float touchDownControlAngle;
-@property (nonatomic, assign) float touchDownControlIndex;
-@property (nonatomic, assign) float controlIndexTimerTarget;
-@property (nonatomic, assign) float controlIndexTimerDx;
-@property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
 @property (nonatomic, assign) BOOL zoomOnLeft;
-@property (nonatomic, strong) NSTimer *controlIndexTimer;
+
+//Almost contants
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
 @property (nonatomic, assign) float frameSpacing;
 
-//Reusable pepper page views
-@property (nonatomic, strong) UIView *pepperView;
-@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
-@property (nonatomic, strong) NSMutableArray *pageOnDemandQueue;
+//Control
+@property (nonatomic, assign) float controlAngle;
+@property (nonatomic, assign) float controlFlipAngle;
+@property (nonatomic, assign) float touchDownControlAngle;
+@property (nonatomic, assign) float touchDownControlIndex;
 
-//Reusable book scrollview
+//Timers
+@property (nonatomic, assign) float controlIndexTimerTarget;
+@property (nonatomic, assign) float controlIndexTimerDx;
+@property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
+@property (nonatomic, strong) NSTimer *controlIndexTimer;
+
+//Book scrollview
 @property (nonatomic, assign) int currentBookIndex;
+@property (nonatomic, strong) UIView *theBookCover;
 @property (nonatomic, strong) UIScrollView *bookScrollView;
 @property (nonatomic, strong) NSMutableArray *reuseBookViewArray;
 
-//Reusable page/pdf scrollview
+//Pepper views
+@property (nonatomic, strong) UIView *pepperView;
+@property (nonatomic, strong) UIView *theLeftView;
+@property (nonatomic, strong) UIView *theRightView;
+@property (nonatomic, strong) UIView *theView1;
+@property (nonatomic, strong) UIView *theView2;
+@property (nonatomic, strong) UIView *theView3;
+@property (nonatomic, strong) UIView *theView4;
+@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
+@property (nonatomic, strong) NSMutableArray *pageOnDemandQueue;
+
+//Page scrollview
 @property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 
-//PDF on-demand fetching queue
+//Fullscreen page on-demand fetching queue
 /*
 @property (nonatomic, strong) NSMutableArray *fullsizeOnDemandQueue;
 @property (nonatomic, strong) Page *backgroundDownloadPage;
@@ -94,13 +96,15 @@
 
 
 @implementation PPPepperViewController
-@synthesize zoomBookInFocus;
-@synthesize rotateBookInFocus;
+
+//public properties
+@synthesize animationSlowmoFactor;
+@synthesize scaleDownBookNotInFocus;
+@synthesize rotateBookNotInFocus;
 @synthesize hideFirstPage;
 @synthesize oneSideZoom;
-@synthesize animationSlowmoFactor;
 @synthesize pageSpacing;
-@synthesize scaleOnRotation;
+@synthesize scaleOnDeviceRotation;
 
 @synthesize isBookView;
 @synthesize isDetailView;
@@ -108,10 +112,8 @@
 @synthesize delegate;
 @synthesize dataSource;
 
-@synthesize bookCover, leftView, rightView;
+@synthesize theBookCover, theLeftView, theRightView;
 @synthesize theView1, theView2, theView3, theView4;
-@synthesize pinchGestureRecognizer;
-@synthesize panGestureRecognizer;
 @synthesize controlAngle = _controlAngle;
 @synthesize controlFlipAngle = _controlFlipAngle;
 @synthesize touchDownControlAngle;
@@ -155,10 +157,10 @@ static float layer3WidthAt90 = 0;
   self.hideFirstPage = NO;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;
-  self.zoomBookInFocus = YES;
-  self.rotateBookInFocus = NO;
+  self.scaleDownBookNotInFocus = YES;
+  self.rotateBookNotInFocus = NO;
   self.pageSpacing = 35.0f;
-  self.scaleOnRotation = YES;
+  self.scaleOnDeviceRotation = YES;
 
   //Initial values
   [self updateFrameSizesForOrientation];
@@ -181,16 +183,16 @@ static float layer3WidthAt90 = 0;
   //Initialize views
   self.view.autoresizesSubviews = YES;
     
-  self.pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
-  self.pinchGestureRecognizer.delegate = self;
-  [self.view addGestureRecognizer:self.pinchGestureRecognizer];
+  UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
+  pinchGestureRecognizer.delegate = self;
+  [self.view addGestureRecognizer:pinchGestureRecognizer];
   
-  self.panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onPanning:)];
-  self.panGestureRecognizer.delegate = self;
-  [self.view addGestureRecognizer:self.panGestureRecognizer];
+  UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onPanning:)];
+  panGestureRecognizer.delegate = self;
+  [self.view addGestureRecognizer:panGestureRecognizer];
   
-  //Reusable views for book
-  [self setupReuseableBookViews];
+  //Reusable views for books
+  [self setupReuseablePoolBookViews];
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -426,10 +428,10 @@ static float layer3WidthAt90 = 0;
   if (self.isBookView || self.isDetailView)
     return NO;
   
-  if ([gestureRecognizer isEqual:self.pinchGestureRecognizer])
+  if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
     return YES;
   
-  if ([gestureRecognizer isEqual:self.panGestureRecognizer]) {
+  if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
     if ([self isFullscreen] || self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
       return NO;
     return YES;
@@ -519,9 +521,9 @@ static float layer3WidthAt90 = 0;
   
   if (ENABLE_HIGH_SPEED_SCROLLING) {
     CGPoint velocity = [recognizer velocityInView:self.pepperView];
-    float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2.5);
+    float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2);
     if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
-    else if (normalizedVelocityX > 1.7)   normalizedVelocityX = 1.7;
+    else if (normalizedVelocityX > 2.0)   normalizedVelocityX = 2.0;
     boost *= normalizedVelocityX;
   }
   
@@ -558,14 +560,14 @@ static float layer3WidthAt90 = 0;
 {
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   float factor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
-  if (!self.scaleOnRotation)
+  if (!self.scaleOnDeviceRotation)
     factor = 1.0f;
   self.frameHeight = FRAME_HEIGHT_LANDSCAPE * factor;
   self.frameWidth = FRAME_WIDTH_LANDSCAPE * factor;
   self.frameSpacing = FRAME_WIDTH_LANDSCAPE / 2.4f * factor;
   
   //Frame size changes on rotation, these needs to be recalculated
-  if (self.scaleOnRotation) {
+  if (self.scaleOnDeviceRotation) {
     layer23WidthAtMid = 0;
     layer2WidthAt90 = 0;
     layer3WidthAt90 = 0;
@@ -800,12 +802,6 @@ static float layer3WidthAt90 = 0;
   pageView.isLeft = (index%2==0) ? YES : NO;
   [self.pepperView addSubview:pageView];
   
-  //Hide first page
-  if (self.hideFirstPage && index == 0) {
-    pageView.hidden = YES;
-    return;
-  }  
-  
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:)])
     pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds];
   else
@@ -886,7 +882,7 @@ static float layer3WidthAt90 = 0;
 
 #pragma mark - UI Helper functions (Book)
 
-- (void)setupReuseableBookViews
+- (void)setupReuseablePoolBookViews
 {  
   //No need to re-setup
   if (self.reuseBookViewArray != nil || self.reuseBookViewArray.count > 0)
@@ -1112,7 +1108,7 @@ static float layer3WidthAt90 = 0;
 
 #pragma mark - UI Helper functions (Page)
 
-- (void)setupReuseablePageViews
+- (void)setupReuseablePoolPageViews
 {  
   //No need to re-setup
   if (self.reusePageViewArray != nil || self.reusePageViewArray.count > 0)
@@ -1128,7 +1124,7 @@ static float layer3WidthAt90 = 0;
 - (void)setupPageScrollview
 {  
   //Re-setup due to memory warning
-  [self setupReuseablePageViews];
+  [self setupReuseablePoolPageViews];
 
   //Populate page scrollview  
   [self reusePageScrollview];
@@ -1422,6 +1418,8 @@ static float layer3WidthAt90 = 0;
   float position = position = CGRectGetMidX(self.view.bounds) + 2*positionScale*layer23WidthAtMid;
   self.theView2.frame = CGRectMake(position-layer23WidthAtMid, frameY, self.frameWidth, self.frameHeight);
   self.theView3.frame = CGRectMake(position+layer23WidthAtMid, frameY, self.frameWidth, self.frameHeight);
+  self.theView1.hidden = NO;
+  self.theView4.hidden = NO;
   
   //Center
   if (fabs(angle) <= 90.0 && fabs(angle2) >= 90.0) {        
@@ -1456,7 +1454,7 @@ static float layer3WidthAt90 = 0;
     if ([page isEqual:self.theView1] || [page isEqual:self.theView2] || [page isEqual:self.theView3] || [page isEqual:self.theView4])
       continue;
     
-    if (i==0 && self.hideFirstPage) {
+    if (self.hideFirstPage && i==0) {
       page.hidden = YES;
       continue;
     }
@@ -1681,7 +1679,7 @@ static float layer3WidthAt90 = 0;
   
   //Re-setup book scrollview if we are coming out from fullscreen
   if (!previousIsBookView) {
-    [self setupReuseableBookViews];
+    [self setupReuseablePoolBookViews];
     [self reuseBookScrollView];
   }
   
@@ -1717,7 +1715,7 @@ static float layer3WidthAt90 = 0;
   [self hidePageScrollview];
     
   //Re-setup book scrollview if needed
-  [self setupReuseableBookViews];
+  [self setupReuseablePoolBookViews];
   [self reuseBookScrollView];
   
   //Replace 1st page by book cover
@@ -1829,10 +1827,10 @@ static float layer3WidthAt90 = 0;
 
 - (void)addBookCoverToFirstPage:(BOOL)animated
 {
-  if (self.bookCover != nil)
+  if (self.theBookCover != nil)
     return;
-  self.bookCover = [self getCurrentBookCover];
-  if (self.bookCover == nil)
+  self.theBookCover = [self getCurrentBookCover];
+  if (self.theBookCover == nil)
     return;
   
   //Find the first visible page view
@@ -1841,12 +1839,12 @@ static float layer3WidthAt90 = 0;
   if (firstPageView == nil)
     return;
 
-  [firstPageView addSubview:self.bookCover];
-  self.bookCover.frame = firstPageView.bounds;
-  self.bookCover.layer.transform = CATransform3DIdentity;
+  [firstPageView addSubview:self.theBookCover];
+  self.theBookCover.frame = firstPageView.bounds;
+  self.theBookCover.layer.transform = CATransform3DIdentity;
   
   if (!animated) {
-    self.bookCover.hidden = YES;
+    self.theBookCover.hidden = YES;
     return;
   }
     
@@ -1866,53 +1864,53 @@ static float layer3WidthAt90 = 0;
 {
   //Need to redo this due to pepper page reuse
   [self addBookCoverToFirstPage:NO];
-  if (self.bookCover == nil)
+  if (self.theBookCover == nil)
     return;
   
-  self.bookCover.hidden = NO;
-  self.bookCover.alpha = 1;
-  self.bookCover.layer.transform = CATransform3DIdentity;
-  for (UIView *subview in self.bookCover.subviews)
+  self.theBookCover.hidden = NO;
+  self.theBookCover.alpha = 1;
+  self.theBookCover.layer.transform = CATransform3DIdentity;
+  for (UIView *subview in self.theBookCover.subviews)
     subview.layer.transform = CATransform3DIdentity;
 }
 
 - (void)hideBookCoverFromFirstPage
 {
-  if (self.bookCover == nil)
+  if (self.theBookCover == nil)
     return;
-  self.bookCover.hidden = YES;
+  self.theBookCover.hidden = YES;
 }
 
 - (void)removeBookCoverFromFirstPage
 { 
-  if (self.bookCover == nil)
+  if (self.theBookCover == nil)
     return;
   
-  self.bookCover.hidden = NO;
-  self.bookCover.alpha = 1;
-  self.bookCover.layer.transform = CATransform3DIdentity;
-  for (UIView *subview in self.bookCover.subviews)
+  self.theBookCover.hidden = NO;
+  self.theBookCover.alpha = 1;
+  self.theBookCover.layer.transform = CATransform3DIdentity;
+  for (UIView *subview in self.theBookCover.subviews)
     subview.layer.transform = CATransform3DIdentity;
   
-  [self.bookScrollView addSubview:self.bookCover];
-  self.bookCover.frame = [self getFrameForBookIndex:self.bookCover.tag];
-  self.bookCover = nil;
+  [self.bookScrollView addSubview:self.theBookCover];
+  self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
+  self.theBookCover = nil;
 }
 
 - (void)updateLeftRightPointers
 {
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   int tempIndex = 0;
-  self.leftView = nil;
-  self.rightView = nil;
+  self.theLeftView = nil;
+  self.theRightView = nil;
   
   tempIndex = (int)round(self.controlIndex - 0.5f);
   if (tempIndex >= 0 && tempIndex < pageCount)
-    self.leftView = [self getPepperPageAtIndex:tempIndex];
+    self.theLeftView = [self getPepperPageAtIndex:tempIndex];
   
   tempIndex = (int)round(self.controlIndex + 0.5f);
   if (tempIndex >= 0 && tempIndex < pageCount)
-    self.rightView = [self getPepperPageAtIndex:tempIndex];
+    self.theRightView = [self getPepperPageAtIndex:tempIndex];
 }
 
 //
@@ -1980,7 +1978,7 @@ static float layer3WidthAt90 = 0;
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
     [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
   
-  CALayer *layerLeft = self.leftView.layer;
+  CALayer *layerLeft = self.theLeftView.layer;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
@@ -1988,9 +1986,9 @@ static float layer3WidthAt90 = 0;
     transform = CATransform3DScale(transform, scale,scale,scale);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
-  self.leftView.hidden = [self.leftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
+  self.theLeftView.hidden = [self.theLeftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
   
-  CALayer *layerRight = self.rightView.layer;
+  CALayer *layerRight = self.theRightView.layer;
   transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
@@ -1998,7 +1996,7 @@ static float layer3WidthAt90 = 0;
     transform = CATransform3DScale(transform, scale,scale,scale);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
-  self.rightView.hidden = NO;
+  self.theRightView.hidden = NO;
   
   //Default to left page
   self.currentPageIndex = self.controlIndex - 0.5;
@@ -2015,8 +2013,8 @@ static float layer3WidthAt90 = 0;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
     frame.origin.y = leftFrameOriginal.origin.y - (leftFrameOriginal.origin.y * frameScale) - EDGE_PADDING*frameScale;
-    self.leftView.frame = frame;
-    self.rightView.frame = frame;
+    self.theLeftView.frame = frame;
+    self.theRightView.frame = frame;
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
@@ -2028,7 +2026,7 @@ static float layer3WidthAt90 = 0;
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
-    if ([page isEqual:self.leftView] || [page isEqual:self.rightView])
+    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])
       continue;
     
     BOOL isFirstPage = (i==0 && !self.hideFirstPage) || (i==1 && self.hideFirstPage);
@@ -2048,7 +2046,7 @@ static float layer3WidthAt90 = 0;
 
     //If current left & right page already cover this page
     if (self.oneSideZoom && scale > 1) {
-      BOOL isCovered = CGRectGetMinX(self.leftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.rightView.frame);
+      BOOL isCovered = CGRectGetMinX(self.theLeftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.theRightView.frame);
       if (isCovered) {
         page.hidden = YES;
         continue;
@@ -2082,7 +2080,7 @@ static float layer3WidthAt90 = 0;
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
-    if ([page isEqual:self.leftView] || [page isEqual:self.rightView])
+    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])
       continue;
     if (page.hidden)
       continue;
@@ -2134,7 +2132,7 @@ static float layer3WidthAt90 = 0;
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
-    if ([page isEqual:self.leftView] || [page isEqual:self.rightView])      //always centered
+    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])      //always centered
       continue;
     if (page.hidden)
       continue;
@@ -2176,9 +2174,9 @@ static float layer3WidthAt90 = 0;
     
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = M34;
-    if (self.zoomBookInFocus)
+    if (self.scaleDownBookNotInFocus)
       transform = CATransform3DScale(transform, scale, scale, 1.0);
-    if (self.rotateBookInFocus)
+    if (self.rotateBookNotInFocus)
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
     subview.layer.transform = transform;
   }

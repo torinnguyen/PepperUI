@@ -48,17 +48,21 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha;
 @end
 
+
+
+
+
 @interface PPPepperViewController : UIViewController
 
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
-@property (nonatomic, assign) BOOL zoomBookInFocus;
-@property (nonatomic, assign) BOOL rotateBookInFocus;
+@property (nonatomic, assign) BOOL scaleDownBookNotInFocus;
+@property (nonatomic, assign) BOOL rotateBookNotInFocus;
 @property (nonatomic, assign) BOOL hideFirstPage;
 @property (nonatomic, assign) BOOL oneSideZoom;
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pageSpacing;
-@property (nonatomic, assign) BOOL scaleOnRotation;
+@property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 
 @property (nonatomic, assign) float controlIndex;
 @property (nonatomic, assign, readonly) BOOL isBookView;
@@ -66,8 +70,5 @@
 
 - (void)reload;
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
-- (void)showFullscreen:(BOOL)animated;
-- (void)showHalfscreen:(BOOL)animated;
-- (void)closeCurrentList:(BOOL)animated;
 
 @end
