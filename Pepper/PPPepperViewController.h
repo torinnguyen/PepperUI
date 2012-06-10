@@ -8,6 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
+//For demo purpose
+#define DEMO_NUM_BOOKS               16
+#define DEMO_NUM_PAGES               64
+
 @class PPPepperViewController;
 
 @protocol PPScrollListViewControllerDataSource <NSObject>

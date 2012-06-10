@@ -1149,7 +1149,8 @@ static float layer3WidthAt90 = 0;
   [self reusePepperViews];
   self.pepperView.hidden = NO;
   
-  //Close all pages to get correct initial angle
+  //Quick & dirty trick to get correct initial angle
+  self.controlIndex = self.controlIndex;
   [self flattenAllPepperViews:0];
   
   //Clone the book cover and add to backside of first page
@@ -1812,7 +1813,7 @@ static float layer3WidthAt90 = 0;
   
   //Not perfect but good enough for fast animation
   float animationDuration = self.animationSlowmoFactor*diff;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+1.0) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self destroyAllPeperPage];
     [self removeBookCoverFromFirstPage];
   });
@@ -2385,8 +2386,8 @@ static float layer3WidthAt90 = 0;
 
 
 
-#pragma mark - Downloading (Book)
 /*
+#pragma mark - Downloading (Book)
  
 - (void)fetchBookThumbnailsMultithread {
   int startIndex = self.hideFirstPage ? 1 : 0;
@@ -2588,11 +2589,11 @@ static float layer3WidthAt90 = 0;
 
 - (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfBooks:(int)dummy;
 {
-  return 16;
+  return DEMO_NUM_BOOKS;
 }
 - (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfPagesForBookIndex:(int)bookIndex
 {
-  return 64;  //to demo memory efficiency
+  return DEMO_NUM_PAGES;
 }
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame
 {

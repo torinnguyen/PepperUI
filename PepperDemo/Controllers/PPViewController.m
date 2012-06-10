@@ -144,17 +144,17 @@
   int randomPageID = arc4random() % 123;
   
   self.bookDataArray = [[NSMutableArray alloc] init];
-  for (int i=0; i<10; i++) {
+  for (int i=0; i<DEMO_NUM_BOOKS; i++) {
     Book *myBook = [[Book alloc] init];
-    myBook.bookID = randomBookID;                   //exact value for bookID doesn't matter, as long as each is unique for identification and tagging
+    myBook.bookID = randomBookID;
     myBook.pages = [[NSMutableArray alloc] init];
     //myBook.coverURL = @"book_cover";
     randomBookID += arc4random() % 123;
     
-    int randomNumPages = arc4random() % 30 + 10;
+    int randomNumPages = DEMO_NUM_PAGES;
     for (int i=0; i<randomNumPages; i++) {
       Page *myPage = [[Page alloc] init];
-      myPage.pageID = randomPageID;                 //exact value for pageID doesn't matter, as long as each is unique for identification and tagging
+      myPage.pageID = randomPageID;
       //myPage.halfsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
       myPage.fullsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
       randomPageID += arc4random() % 123;
