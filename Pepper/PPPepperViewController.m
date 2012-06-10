@@ -64,6 +64,11 @@
 @property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
 @property (nonatomic, strong) NSTimer *controlIndexTimer;
 
+@property (nonatomic, assign) float controlAngleTimerTarget;
+@property (nonatomic, assign) float controlAngleTimerDx;
+@property (nonatomic, strong) NSDate *controlAngleTimerLastTime;
+@property (nonatomic, strong) NSTimer *controlAngleTimer;
+
 //Book scrollview
 @property (nonatomic, assign) int currentBookIndex;
 @property (nonatomic, strong) UIView *theBookCover;
@@ -123,6 +128,11 @@
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
 @synthesize frameWidth, frameHeight, frameSpacing;
+
+@synthesize controlAngleTimerTarget;
+@synthesize controlAngleTimerDx;
+@synthesize controlAngleTimerLastTime;
+@synthesize controlAngleTimer;
 
 @synthesize pepperView;
 @synthesize reusePepperWrapperArray;
@@ -251,10 +261,7 @@ static float layer3WidthAt90 = 0;
   
   //Dealloc Book scrollview
   if (!self.isBookView) {
-    while (self.bookScrollView.subviews.count > 0)
-      [[self.bookScrollView.subviews objectAtIndex:0] removeFromSuperview];
-    [self.reuseBookViewArray removeAllObjects];
-    self.reuseBookViewArray = nil;
+    [self destroyBookScrollView];
   }
   
   //Dealloc Pepper views
@@ -267,10 +274,7 @@ static float layer3WidthAt90 = 0;
   
   //Dealloc Page scrollview
   if (!self.isDetailView) {
-    while (self.pageScrollView.subviews.count > 0)
-      [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
-    [self.reusePageViewArray removeAllObjects];
-    self.reusePageViewArray = nil;
+    [self destroyPageScrollView];
   }
 }
 
@@ -377,20 +381,24 @@ static float layer3WidthAt90 = 0;
   int numBooks = [self getNumberOfBooks];
   if (numBooks <= 0)
     return;
-  for (int i=0; i<numBooks; i++)
-    [self addBookToScrollView:i];
-  
+
+  self.bookScrollView.hidden = YES;
+  self.isBookView = YES;
+  self.isDetailView = NO;
+
   //Initialize books scrollview
   [self updateBookScrollViewContentSize];
-  [self reuseBookScrollView];
+
+  //Add all pages in
+  [self setupReuseablePoolBookViews];
+  for (int i=0; i<numBooks; i++)
+    [self addBookToScrollView:i];
+  self.currentBookIndex = 0;
   [self scrollViewDidScroll:self.bookScrollView];
   
   //Start downloading thumbnails for 1st page
   //[self fetchBookThumbnailsMultithread];
-  
-  self.isBookView = YES;
-  self.isDetailView = NO;
-  
+   
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
   self.pageScrollView.hidden = YES;
@@ -409,15 +417,16 @@ static float layer3WidthAt90 = 0;
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)])
       [self.delegate ppPepperViewController:self didTapOnBookIndex:tag];
     
-    //Let the delegate decide to show Login popup or not
+    //Let the delegate decide to show or not
     //[self openBookWithIndex:tag];
     return;
   }
   
   //Open one page in fullscreen
   self.currentPageIndex = thePage.isLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
-  self.zoomOnLeft = thePage.isLeft;  
-  [self showFullscreen:YES];
+  self.zoomOnLeft = thePage.isLeft;
+  [self destroyBookScrollView];
+  [self showFullscreenUsingTimer];
 }
 
 
@@ -669,6 +678,29 @@ static float layer3WidthAt90 = 0;
   return CGRectMake(x, y, self.frameWidth, self.frameHeight);
 }
 
+//
+// Return the half-open scale for this pepper view
+//
+- (float)getPepperScaleForPageIndex:(int)index {
+
+  float maxScale = 1.0f;
+  float minScale = maxScale - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
+  
+  float indexDiff = fabsf(self.controlIndex - index) - SCALE_INDEX_DIFF;
+  float scale = maxScale - indexDiff * SCALE_ATTENUATION;
+  if (scale > maxScale)   scale = maxScale;
+  if (scale < minScale)   scale = minScale;
+  
+  //Scale down when closing book
+  if (self.controlAngle < -THRESHOLD_HALF_ANGLE) {
+    float factor = (self.controlAngle-(-THRESHOLD_HALF_ANGLE)) / ((-MAXIMUM_ANGLE)-(-THRESHOLD_HALF_ANGLE));
+    float newScale = scale + (MAX_BOOK_SCALE-scale) * factor;
+    scale = newScale;
+  }
+  
+  return scale;
+}
+
 - (void)hidePepperView
 {
   self.pepperView.hidden = YES;
@@ -885,6 +917,14 @@ static float layer3WidthAt90 = 0;
 
 #pragma mark - UI Helper functions (Book)
 
+- (void)destroyBookScrollView
+{
+  while (self.bookScrollView.subviews.count > 0)
+    [[self.bookScrollView.subviews objectAtIndex:0] removeFromSuperview];
+  [self.reuseBookViewArray removeAllObjects];
+  self.reuseBookViewArray = nil;
+}
+
 - (void)setupReuseablePoolBookViews
 {  
   //No need to re-setup
@@ -936,6 +976,7 @@ static float layer3WidthAt90 = 0;
   int endIndex = currentIndex + range;
   if (endIndex > bookCount-1)
     endIndex = bookCount-1;
+  NSLog(@"%d, %d", startIndex, endIndex);
   
   //Reuse out of bound views
   for (int i=0; i<bookCount; i++)
@@ -943,6 +984,7 @@ static float layer3WidthAt90 = 0;
       [self removeBookFromScrollView:i];
   
   //Add new views
+  //Skip current book is being controlled by self.theBookCover
   for (int i=startIndex; i<=endIndex; i++)
     if (i != self.currentBookIndex)
       [self addBookToScrollView:i];
@@ -981,6 +1023,7 @@ static float layer3WidthAt90 = 0;
 // Return the current index of book being selected
 //
 - (int)getCurrentBookIndex {
+  
   int offsetX = fabs(self.bookScrollView.contentOffset.x);
   int index = round(offsetX / (self.frameWidth+self.frameSpacing));
   return index;
@@ -1018,9 +1061,7 @@ static float layer3WidthAt90 = 0;
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews)
     if (subview.tag == index)
       return;
-  
-  CGRect bookFrame = [self getFrameForBookIndex:index];
-  
+    
   PPPageViewContentWrapper *coverPage = [self.reuseBookViewArray objectAtIndex:0];
   [self.reuseBookViewArray removeObjectAtIndex:0];
   if (coverPage == nil)
@@ -1029,19 +1070,19 @@ static float layer3WidthAt90 = 0;
   coverPage.tag = index;
   coverPage.isLeft = NO;
   coverPage.isBook = YES;
-  
-  coverPage.frame = bookFrame;
-  coverPage.alpha = 1;
-  coverPage.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
   coverPage.delegate = self;
   
+  coverPage.alpha = 1;
+  coverPage.frame = [self getFrameForBookIndex:index];
+  coverPage.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
+    
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:)])
     coverPage.contentView = [self.dataSource ppPepperViewController:self viewForBookIndex:index withFrame:coverPage.bounds];
   else
     coverPage.contentView = nil;
-  
+
   [self.bookScrollView addSubview:coverPage];
-  
+    
   /*
   coverPage.layer.shadowColor = [UIColor blackColor].CGColor;
   coverPage.layer.shadowOpacity = 0.4f;
@@ -1093,11 +1134,9 @@ static float layer3WidthAt90 = 0;
   _controlAngle = 0;                            //initial angle for animation
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
         
-  //Add page views to Pepper UI
+  //Setup Pepper UI
   [self setupReusablePepperViews];
   [self reusePepperViews];
-
-  //Show pepper view
   self.pepperView.hidden = NO;
   
   //Close all pages to get correct initial angle
@@ -1119,6 +1158,14 @@ static float layer3WidthAt90 = 0;
 
 
 #pragma mark - UI Helper functions (Page)
+
+- (void)destroyPageScrollView
+{
+  while (self.pageScrollView.subviews.count > 0)
+    [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
+  [self.reusePageViewArray removeAllObjects];
+  self.reusePageViewArray = nil;
+}
 
 - (void)setupReuseablePoolPageViews
 {  
@@ -1350,31 +1397,14 @@ static float layer3WidthAt90 = 0;
   float angle2 = angle + angleDiff;
   float m34 = M34;
   float positionScale = fabs((angle-min) / fabs(max-min)) - 0.5;
-  float scale1 = 1.0;
-  float scale4 = 1.0;
-  float indexDiff1 = fabsf(self.controlIndex - self.theView1.tag) - SCALE_INDEX_DIFF;
-  float indexDiff4 = fabsf(self.controlIndex - self.theView4.tag) - SCALE_INDEX_DIFF;
-  float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
+  float scale1 = [self getPepperScaleForPageIndex:self.theView1.tag];
+  float scale4 = [self getPepperScaleForPageIndex:self.theView4.tag];
   
   //Center
   if (fabs(angle) <= 90.0 && fabs(angle2) >= 90.0) {        
     scale1 = 1.0;
     scale4 = 1.0;
   }
-  //Flip to left
-  else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
-    scale1 = 1.0 - indexDiff4 * SCALE_ATTENUATION;   //variable
-    scale4 = 1.0;                                          //fixed
-  }
-  //Flip to right
-  else {
-    scale1 = 1.0;                                          //fixed
-    scale4 = 1.0 - indexDiff1 * SCALE_ATTENUATION;   //variable
-  }
-  if (scale1 > 1)         scale1 = 1;
-  if (scale1 < minScale)  scale1 = minScale;
-  if (scale4 > 1)         scale4 = 1;
-  if (scale4 < minScale)  scale4 = minScale;
     
   //Static one time calculations
   if (layer23WidthAtMid == 0) {
@@ -1503,10 +1533,7 @@ static float layer3WidthAt90 = 0;
     if (page.hidden)
       continue;
         
-    float indexDiff = fabsf(self.controlIndex - i) - SCALE_INDEX_DIFF;
-    float scale = 1.0 - indexDiff * SCALE_ATTENUATION;
-    if (scale > 1)          scale = 1;
-    if (scale < minScale)   scale = minScale;
+    float scale = [self getPepperScaleForPageIndex:i];
     
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
@@ -1666,18 +1693,32 @@ static float layer3WidthAt90 = 0;
 
 #pragma mark - Pinch control implementation
 
+- (void)showFullscreenUsingTimer
+{
+  self.isBookView = NO;
+  self.isDetailView = YES;
+  
+  //Populate detailed page scrollview
+  [self setupPageScrollview];
+    
+  float diff = fabs(self.controlAngle - 0) / 90.0;
+  if (!self.oneSideZoom)    diff /= 1.3;
+  else                      diff *= 1.3;
+  
+  [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
+}
+
 - (void)showFullscreen:(BOOL)animated
 {
   self.isBookView = NO;
   self.isDetailView = YES;
 
-  //Populate PDF scrollview
+  //Populate detailed page scrollview
   [self setupPageScrollview];
   
   if (!animated) {
     self.controlAngle = 0;
     self.pageScrollView.hidden = NO;
-    [self hidePepperView];
     return;
   }
   
@@ -1688,7 +1729,6 @@ static float layer3WidthAt90 = 0;
   [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.controlAngle = 0;
   } completion:^(BOOL finished) {
-    [self hidePepperView];
     self.pageScrollView.hidden = NO;
     [[self.pageScrollView superview] bringSubviewToFront:self.pageScrollView];
   }];
@@ -1737,15 +1777,15 @@ static float layer3WidthAt90 = 0;
   if (diff < 0.4)
     diff = 0.4;
   
-  //Hide fullscreen view
-  [self hidePageScrollview];
+  //Dealloc fullscreen view
+  [self destroyPageScrollView];
+  
+  //Replace 1st page by book cover, need to redo this due to pepper page reuse
+  [self addBookCoverToFirstPage:NO];
     
   //Re-setup book scrollview if needed
   [self setupReuseablePoolBookViews];
   [self reuseBookScrollView];
-  
-  //Replace 1st page by book cover
-  [self showBookCoverInFirstPage];
 
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
@@ -1753,18 +1793,20 @@ static float layer3WidthAt90 = 0;
     if (subview.tag != self.currentBookIndex)
       subview.alpha = 1;
   
-  if (animated) {
-    float animationDuration = self.animationSlowmoFactor*diff;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-      [self removeBookCoverFromFirstPage];
-      [self destroyAllPeperPage];
-    });
-  }
-  else {
-    [self removeBookCoverFromFirstPage];
+  if (!animated) {
     [self destroyAllPeperPage];
+    [self removeBookCoverFromFirstPage];
+    return;
   }
   
+  //Not perfect but good enough for fast animation
+  float animationDuration = self.animationSlowmoFactor*diff;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    [self destroyAllPeperPage];
+    [self removeBookCoverFromFirstPage];
+  });
+  
+  //This is where magic happens (animation)
   [self flattenAllPepperViews:diff];
 }
 
@@ -1772,7 +1814,7 @@ static float layer3WidthAt90 = 0;
 {
   float m34 = M34;
   float flatAngle = 0;
-  float scale = 1.0;
+  float scale = MAX_BOOK_SCALE;
   
   //Find the first visible page view (already replaced by book cover)
   int firstPageIndex = [self getFirstVisiblePepperPageIndex];
@@ -1793,20 +1835,12 @@ static float layer3WidthAt90 = 0;
     float alpha = 1;
     if (i == firstPageIndex)  alpha = 1;
     else                      alpha = 0;
-    
+        
     //Transformation
     CALayer *layer = page.layer;
     layer.anchorPoint = CGPointMake(0, 0.5);
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = m34;
-    
-    //Make sure the first page is visible & at the correct initial transformation
-    if (i == firstPageIndex)
-    {
-      page.hidden = NO;
-      [[page superview] bringSubviewToFront:page];
-    }
-
     transform = CATransform3DRotate(transform, flatAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
     transform = CATransform3DScale(transform, scale,scale,scale);
     
@@ -1822,7 +1856,6 @@ static float layer3WidthAt90 = 0;
       page.frame = pageFrame;
       page.alpha = alpha;
     } completion:^(BOOL finished) {
-      //page.hidden = (alpha == 0) ? YES : NO;
       page.alpha = 1;
     }];
     
@@ -1866,15 +1899,16 @@ static float layer3WidthAt90 = 0;
     return;
 
   [firstPageView addSubview:self.theBookCover];
+  [firstPageView bringSubviewToFront:firstPageView];
+  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1);
   self.theBookCover.frame = firstPageView.bounds;
-  self.theBookCover.layer.transform = CATransform3DIdentity;
-  
-  if (!animated) {
-    self.theBookCover.hidden = YES;
+  self.theBookCover.hidden = NO;
+  self.theBookCover.alpha = 1;
+
+  if (!animated)
     return;
-  }
     
-  //Remove layer later (not precise but good enough)
+  //Remove layer later (not perfect but good enough for fast animation)
   float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION/2;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self hideBookCoverFromFirstPage];
@@ -1884,20 +1918,6 @@ static float layer3WidthAt90 = 0;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self removeBookCoverFromFirstPage];
   });
-}
-
-- (void)showBookCoverInFirstPage
-{
-  //Need to redo this due to pepper page reuse
-  [self addBookCoverToFirstPage:NO];
-  if (self.theBookCover == nil)
-    return;
-  
-  self.theBookCover.hidden = NO;
-  self.theBookCover.alpha = 1;
-  self.theBookCover.layer.transform = CATransform3DIdentity;
-  for (UIView *subview in self.theBookCover.subviews)
-    subview.layer.transform = CATransform3DIdentity;
 }
 
 - (void)hideBookCoverFromFirstPage
@@ -1912,14 +1932,17 @@ static float layer3WidthAt90 = 0;
   if (self.theBookCover == nil)
     return;
   
+  [self.theBookCover removeFromSuperview];
+  [self.bookScrollView addSubview:self.theBookCover];
+  
+  //Add it back to book scrollview
   self.theBookCover.hidden = NO;
   self.theBookCover.alpha = 1;
-  self.theBookCover.layer.transform = CATransform3DIdentity;
-  for (UIView *subview in self.theBookCover.subviews)
-    subview.layer.transform = CATransform3DIdentity;
-  
-  [self.bookScrollView addSubview:self.theBookCover];
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
+  self.theBookCover.layer.anchorPoint = CGPointMake(0, 0.5);
+  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
+  
+  //De-reference
   self.theBookCover = nil;
 }
 
@@ -1960,21 +1983,31 @@ static float layer3WidthAt90 = 0;
 //         -88: fully closed (leave a bit of perspective)
 - (void)setControlAngle:(float)newControlAngle
 { 
-  float max = -THRESHOLD_HALF_ANGLE;
-  
   //Limits
   if (newControlAngle > 0)                  newControlAngle = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
   
-  float scale = 1;
-  float minScale = 1.0 - ((NUM_VISIBLE_PAGE_ONE_SIDE-1)*2+0.5 - SCALE_INDEX_DIFF) * SCALE_ATTENUATION;
-  if (newControlAngle > max)    scale = 1.0 + (1.0 - (newControlAngle/max));    //max zoom 2x
-  else                          scale = 1;
+  //Show/hide various views
+  if (self.controlAngle >= 0) {
+    [self setupReuseablePoolPageViews];
+    [self reusePageScrollview];
+    self.pageScrollView.hidden = NO;
+  }
+  else if (self.controlAngle < -MAXIMUM_ANGLE) {
+    [self setupReusablePepperViews];
+    [self reusePepperViews];
+    self.pepperView.hidden = NO;
+  }
+  self.pageScrollView.hidden = (newControlAngle < 0);
   
-  float frameScale = 1;
-  if (newControlAngle > max)    frameScale = 1.0 - (newControlAngle/max);       //0 to 1
-  else                          frameScale = 0;
+  float scale = 1;
+  BOOL isClosing = (newControlAngle < -THRESHOLD_HALF_ANGLE);
+  scale = [self getPepperScaleForPageIndex:self.controlIndex];
+  
+  float frameScale = 0;
+  if (newControlAngle > -THRESHOLD_HALF_ANGLE)
+    frameScale = 1.0 - (newControlAngle/(-THRESHOLD_HALF_ANGLE));       //0 to 1
   
   float angle = newControlAngle;
   float angle2 = -180.0 - angle;
@@ -2008,7 +2041,7 @@ static float layer3WidthAt90 = 0;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.oneSideZoom)
+  if (!self.oneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale,scale);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
@@ -2018,7 +2051,7 @@ static float layer3WidthAt90 = 0;
   transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.oneSideZoom)
+  if (!self.oneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale,scale);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
@@ -2070,7 +2103,7 @@ static float layer3WidthAt90 = 0;
     }
 
     //If current left & right page already cover this page
-    if (self.oneSideZoom && scale > 1) {
+    if (self.oneSideZoom && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
       BOOL isCovered = CGRectGetMinX(self.theLeftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.theRightView.frame);
       if (isCovered) {
         page.hidden = YES;
@@ -2110,14 +2143,19 @@ static float layer3WidthAt90 = 0;
     if (page.hidden)
       continue;
     
-    float indexDiff = fabsf(self.controlIndex - i) - SCALE_INDEX_DIFF;
-    float scale = 1.0 - indexDiff * SCALE_ATTENUATION;
-    if (scale > 1)          scale = 1;
-    if (scale < minScale)   scale = minScale;
-    
-    //middle 4 pages
-    if (self.controlIndex-2.6 > i && i < self.controlIndex+2.6)
-      scale = 1;
+    float scale = [self getPepperScaleForPageIndex:i];
+    /*
+    if (self.controlAngle < -THRESHOLD_HALF_ANGLE) {
+      float factor = (self.controlAngle-(-THRESHOLD_HALF_ANGLE)) / ((-MAXIMUM_ANGLE)-(-THRESHOLD_HALF_ANGLE));
+      float newScale = scale + (1.0-scale) * factor;
+      scale = newScale;
+    }
+    else {
+      //scale for middle 4 pages is 1.0 in normal case
+      if (self.controlIndex-2.6 < i && i < self.controlIndex+2.6)
+        scale = 1;
+    }
+     */
 
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
@@ -2169,6 +2207,48 @@ static float layer3WidthAt90 = 0;
   }
 }
 
+- (void)animateControlAngleTo:(float)angle duration:(float)duration
+{
+  if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
+    return;
+  
+  //0.0166666667 = 1/60
+  self.controlAngleTimerLastTime = [[NSDate alloc] init];
+  self.controlAngleTimerTarget = angle;
+  self.controlAngleTimerDx = (self.controlAngleTimerTarget - self.controlAngle) / (duration / 0.0166666667);
+  self.controlAngleTimer = [NSTimer scheduledTimerWithTimeInterval: 0.0166666667
+                                                            target: self
+                                                          selector: @selector(onControlAngleTimer:)
+                                                          userInfo: nil
+                                                           repeats: YES];
+}
+
+- (void)onControlAngleTimer:(NSTimer *)timer
+{
+  NSDate *nowDate = [[NSDate alloc] init];
+  float deltaMs = fabsf([self.controlAngleTimerLastTime timeIntervalSinceNow]);
+  self.controlAngleTimerLastTime = nowDate;
+  float deltaDiff = deltaMs / 0.0166666667;
+  
+  float newValue = self.controlAngle + self.controlAngleTimerDx * deltaDiff;
+  if (self.controlAngleTimerDx >= 0 && newValue > self.controlAngleTimerTarget)
+    newValue = self.controlAngleTimerTarget;
+  else if (self.controlAngleTimerDx < 0 && newValue < self.controlAngleTimerTarget)
+    newValue = self.controlAngleTimerTarget;
+  
+  BOOL finish = fabs(newValue - self.controlAngleTimerTarget) <= fabs(self.controlAngleTimerDx*1.5);
+  
+  if (!finish) {
+    self.controlAngle = newValue;
+    return;
+  }
+  
+  [self.controlAngleTimer invalidate];
+  self.controlAngleTimer = nil;
+  
+  self.controlAngle = self.controlAngleTimerTarget;
+}
+
 
 #pragma mark - UIScrollViewDelegate
 
@@ -2195,24 +2275,34 @@ static float layer3WidthAt90 = 0;
     if (subviewMidX < edgeWidth)
       angle *= -1;
     
-    float scale = scaleForAngle * (1.0-MIN_BOOK_SCALE) + MIN_BOOK_SCALE;
+    float scale = scaleForAngle * (MAX_BOOK_SCALE-MIN_BOOK_SCALE) + MIN_BOOK_SCALE;
+    if (!self.scaleDownBookNotInFocus)
+      scale = MAX_BOOK_SCALE;
+    CGPoint previousAnchor = subview.layer.anchorPoint;
     
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = M34;
-    if (self.scaleDownBookNotInFocus)
-      transform = CATransform3DScale(transform, scale, scale, 1.0);
+    transform = CATransform3DScale(transform, scale, scale, 1.0);
     if (self.rotateBookNotInFocus)
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
+    subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
+    
+    if (subview.tag == 4) {
+      NSLog(@"scale: %.2f", scale);
+    }
   }
 }
 
-- (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate {
+- (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate
+{
   if ([theScrollView isEqual:self.bookScrollView]) {
     if (!decelerate)
       [self snapBookScrollView];
+    return;
   }
-  else if ([theScrollView isEqual:self.pageScrollView]) {
+  
+  if ([theScrollView isEqual:self.pageScrollView]) {
     if (!decelerate) {
       self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
       if (self.hideFirstPage)
@@ -2226,30 +2316,35 @@ static float layer3WidthAt90 = 0;
   }
 }
 
-- (void)scrollViewWillBeginDecelerating:(UIScrollView *)theScrollView {
-  if ([theScrollView isEqual:self.bookScrollView]) {
+//For book scrollview only
+- (void)scrollViewWillBeginDecelerating:(UIScrollView *)theScrollView
+{
+  if ([theScrollView isEqual:self.bookScrollView])
     [self snapBookScrollView];
-  }
 }
 
-- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)theScrollView {
-  if ([theScrollView isEqual:self.bookScrollView]) {
+//For book scrollview only
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)theScrollView
+{
+  if ([theScrollView isEqual:self.bookScrollView])
     [self reuseBookScrollView];
-  }
 }
 
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)theScrollView {
-  if ([theScrollView isEqual:self.pageScrollView]) {
-    self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
-    if (self.hideFirstPage)
-      self.currentPageIndex += 1;
-    [self reusePageScrollview];
-    
-    self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-    self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
-    self.controlAngle = 0;
-    [self.view bringSubviewToFront:self.pageScrollView];
-  }
+//For page scrollview only
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)theScrollView
+{
+  if (![theScrollView isEqual:self.pageScrollView]) 
+    return;
+  
+  self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+  if (self.hideFirstPage)
+    self.currentPageIndex += 1;
+  [self reusePageScrollview];
+  
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  self.controlAngle = 0;
+  [self.view bringSubviewToFront:self.pageScrollView];
 }
 
 //
