@@ -14,18 +14,24 @@
 
 @interface PPViewController () <PPScrollListViewControllerDataSource, PPScrollListViewControllerDelegate>
 @property (nonatomic, strong) IBOutlet UIView * menuView;
+@property (nonatomic, strong) IBOutlet UIView * speedView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
+@property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
+
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
 @property (nonatomic, strong) NSMutableArray *bookDataArray;
 @end
 
 @implementation PPViewController
 @synthesize menuView;
+@synthesize speedView;
 @synthesize speedSegmented;
 @synthesize switchRandomPage;
 @synthesize switchScaleOnDeviceRotation;
+@synthesize lblSpeed;
+
 @synthesize pepperViewController;
 @synthesize bookDataArray;
 
@@ -48,6 +54,7 @@
   
   //Bring our top level menu to highest z-index
   [self.view bringSubviewToFront:self.menuView];
+  [self.view bringSubviewToFront:self.speedView];
   
   //Initialize data
   [self initializeBookData];
@@ -206,6 +213,8 @@
 {
   //Show our menu together with the books
   self.menuView.alpha = alpha;
+  self.speedView.alpha = 1.0 - alpha;
+  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
   self.menuView.userInteractionEnabled = (alpha != 0);
 }
 
