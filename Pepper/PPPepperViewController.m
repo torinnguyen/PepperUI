@@ -33,6 +33,7 @@
 #define SCALE_ATTENUATION            0.03
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
+#define M34                          (-1.0 / 1000.0)  //0:flat, more negative: more perspective
 
 @interface PPPepperViewController()
 <
@@ -167,10 +168,10 @@ static float layer3WidthAt90 = 0;
   self.hideFirstPage = NO;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;
-  self.scaleDownBookNotInFocus = YES;
-  self.rotateBookNotInFocus = NO;
-  self.pageSpacing = 35.0f;
-  self.scaleOnDeviceRotation = YES;
+  self.scaleDownBookNotInFocus = ENABLE_BOOK_SCALE;
+  self.rotateBookNotInFocus = ENABLE_BOOK_ROTATE;
+  self.pageSpacing = PAGE_SPACING;
+  self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
 
   //Initial values
   [self updateFrameSizesForOrientation];
@@ -656,7 +657,8 @@ static float layer3WidthAt90 = 0;
   //edge limit. maybe not needed because we already have cell reuse & scale limit
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   if (isLandscape) {
-    if (diffFromMidX > midX-self.frameWidth)
+    //if (diffFromMidX > midX-self.frameWidth)
+    if (indexDiff > NUM_VISIBLE_PAGE_ONE_SIDE)
       diffFromMidX = midX-self.frameWidth;
   }
   
@@ -1053,6 +1055,17 @@ static float layer3WidthAt90 = 0;
   if (index < 0 || index >= bookCount)
     return;
   
+  //Some funny UIImageView gets into our view
+  /*
+  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
+  for (UIView *subview in self.bookScrollView.subviews)
+    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
+      [tempArray addObject:subview];
+  for (UIView *subview in tempArray)
+    [subview removeFromSuperview];
+  [tempArray removeAllObjects];
+   */
+  
   //Check if we already have this Book in scrollview
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews)
     if (subview.tag == index)
@@ -1068,6 +1081,7 @@ static float layer3WidthAt90 = 0;
   coverPage.isBook = YES;
   coverPage.delegate = self;
   
+  coverPage.hidden = NO;
   coverPage.alpha = 1;
   coverPage.frame = [self getFrameForBookIndex:index];
   coverPage.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
@@ -1436,7 +1450,7 @@ static float layer3WidthAt90 = 0;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  transform = CATransform3DScale(transform, scale1,scale1,scale1);
+  transform = CATransform3DScale(transform, scale1,scale1, 1.0);
   layer1.anchorPoint = CGPointMake(0, 0.5);
   layer1.transform = transform;
   
@@ -1458,7 +1472,7 @@ static float layer3WidthAt90 = 0;
   transform = CATransform3DIdentity;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  transform = CATransform3DScale(transform, scale4,scale4,scale4);
+  transform = CATransform3DScale(transform, scale4,scale4, 1.0);
   layer4.anchorPoint = CGPointMake(0, 0.5);
   layer4.transform = transform;
   
@@ -1536,7 +1550,7 @@ static float layer3WidthAt90 = 0;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale,scale);
+      transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
       layerLeft.transform = transform;
     }
@@ -1545,7 +1559,7 @@ static float layer3WidthAt90 = 0;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale,scale);
+      transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
       layerRight.transform = transform;
     }
@@ -1776,13 +1790,14 @@ static float layer3WidthAt90 = 0;
   //Dealloc fullscreen view
   [self destroyPageScrollView];
   
-  //Replace 1st page by book cover, need to redo this due to pepper page reuse
-  [self addBookCoverToFirstPage:NO];
-    
   //Re-setup book scrollview if needed
   [self setupReuseablePoolBookViews];
   [self reuseBookScrollView];
+  [self addBookToScrollView:self.currentBookIndex];
 
+  //Replace 1st page by book cover, need to redo this due to pepper page reuse
+  [self addBookCoverToFirstPage:NO];
+  
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
   for (UIView *subview in self.bookScrollView.subviews)
@@ -1797,7 +1812,7 @@ static float layer3WidthAt90 = 0;
   
   //Not perfect but good enough for fast animation
   float animationDuration = self.animationSlowmoFactor*diff;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+1.0) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self destroyAllPeperPage];
     [self removeBookCoverFromFirstPage];
   });
@@ -1828,9 +1843,9 @@ static float layer3WidthAt90 = 0;
     CGRect pageFrame = CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
     
     //Alpha
-    float alpha = 1;
-    if (i == firstPageIndex)  alpha = 1;
-    else                      alpha = 0;
+    float alpha = 0;
+    if (i == firstPageIndex)
+      alpha = 1;
         
     //Transformation
     CALayer *layer = page.layer;
@@ -1838,7 +1853,7 @@ static float layer3WidthAt90 = 0;
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = m34;
     transform = CATransform3DRotate(transform, flatAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-    transform = CATransform3DScale(transform, scale,scale,scale);
+    transform = CATransform3DScale(transform, scale,scale, 1.0);
     
     if (animationDuration <= 0) {
       page.frame = pageFrame;
@@ -1895,7 +1910,7 @@ static float layer3WidthAt90 = 0;
     return;
 
   [firstPageView addSubview:self.theBookCover];
-  [firstPageView bringSubviewToFront:firstPageView];
+  [firstPageView.superview bringSubviewToFront:firstPageView];
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1);
   self.theBookCover.frame = firstPageView.bounds;
   self.theBookCover.hidden = NO;
@@ -1929,13 +1944,14 @@ static float layer3WidthAt90 = 0;
     return;
   
   [self.theBookCover removeFromSuperview];
-  [self.bookScrollView addSubview:self.theBookCover];
-  
+
   //Add it back to book scrollview
+  [self.bookScrollView addSubview:self.theBookCover];
   self.theBookCover.hidden = NO;
-  self.theBookCover.alpha = 1;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
-  self.theBookCover.layer.anchorPoint = CGPointMake(0, 0.5);
+
+  //This doesn't seem to do anything
+  //self.theBookCover.layer.anchorPoint = CGPointMake(0, 0.5);
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
   
   //De-reference
@@ -2038,7 +2054,7 @@ static float layer3WidthAt90 = 0;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   if (!self.oneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale,scale,scale);
+    transform = CATransform3DScale(transform, scale,scale, 1.0);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
   self.theLeftView.hidden = [self.theLeftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
@@ -2048,7 +2064,7 @@ static float layer3WidthAt90 = 0;
   transform.m34 = m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   if (!self.oneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale,scale,scale);
+    transform = CATransform3DScale(transform, scale,scale, 1.0);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
   self.theRightView.hidden = NO;
@@ -2158,7 +2174,7 @@ static float layer3WidthAt90 = 0;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale,scale);
+      transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
       layerLeft.transform = transform;
     }
@@ -2167,7 +2183,7 @@ static float layer3WidthAt90 = 0;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = m34;
       transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale,scale);
+      transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
       layerRight.transform = transform;
     }
