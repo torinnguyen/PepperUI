@@ -111,6 +111,7 @@
 @synthesize oneSideZoom;
 @synthesize pageSpacing;
 @synthesize scaleOnDeviceRotation;
+@synthesize autoOpenBook;
 
 @synthesize isBookView;
 @synthesize isDetailView;
@@ -165,7 +166,8 @@ static float layer3WidthAt90 = 0;
   [super viewDidLoad];
     
   //Configurable properties
-  self.hideFirstPage = NO;
+  self.autoOpenBook = AUTO_OPEN_BOOK;
+  self.hideFirstPage = HIDE_FIRST_PAGE;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;
   self.scaleDownBookNotInFocus = ENABLE_BOOK_SCALE;
@@ -415,8 +417,10 @@ static float layer3WidthAt90 = 0;
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)])
       [self.delegate ppPepperViewController:self didTapOnBookIndex:tag];
     
-    //Let the delegate decide to show or not
-    //[self openBookWithIndex:tag];
+    //Optional: Delegate can decide to show or not
+    if (AUTO_OPEN_BOOK)
+      [self openBookWithIndex:tag pageIndex:0];
+    
     return;
   }
   
@@ -462,6 +466,10 @@ static float layer3WidthAt90 = 0;
         self.zoomOnLeft = YES;
     }
   }
+  
+  //Don't scale the first page
+  if (self.theLeftView.tag == 0 && self.zoomOnLeft)
+    return;
 
   //Snap control angle to 3 thresholds
   if (recognizer.state == UIGestureRecognizerStateEnded) {
@@ -828,7 +836,9 @@ static float layer3WidthAt90 = 0;
     return;
   
   pageView.tag = index;
-  pageView.isBook = NO; 
+  pageView.isBook = NO;
+  pageView.bgBookImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
+  
   pageView.frame = pageFrame;
   pageView.alpha = 1;
   pageView.hidden = YES;        //control functions will unhide later
@@ -898,7 +908,7 @@ static float layer3WidthAt90 = 0;
       firstPageIndex = subview.tag;
   
   if (firstPageIndex >= [self getNumberOfPagesForBookIndex:self.currentBookIndex])
-    firstPageIndex = 0;
+    firstPageIndex = self.hideFirstPage ? 1 : 0;
   
   return firstPageIndex;
 }
@@ -1055,17 +1065,6 @@ static float layer3WidthAt90 = 0;
   if (index < 0 || index >= bookCount)
     return;
   
-  //Some funny UIImageView gets into our view
-  /*
-  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
-  for (UIView *subview in self.bookScrollView.subviews)
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
-      [tempArray addObject:subview];
-  for (UIView *subview in tempArray)
-    [subview removeFromSuperview];
-  [tempArray removeAllObjects];
-   */
-  
   //Check if we already have this Book in scrollview
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews)
     if (subview.tag == index)
@@ -1079,6 +1078,7 @@ static float layer3WidthAt90 = 0;
   coverPage.tag = index;
   coverPage.isLeft = NO;
   coverPage.isBook = YES;
+  coverPage.bgBookImage = !self.hideFirstPage;
   coverPage.delegate = self;
   
   coverPage.hidden = NO;
@@ -1311,7 +1311,7 @@ static float layer3WidthAt90 = 0;
   if (pageDetailView == nil)
     return;
   
-  pageDetailView.tag = index;
+  pageDetailView.tag = index; 
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
   pageDetailView.hidden = NO;
@@ -1513,14 +1513,13 @@ static float layer3WidthAt90 = 0;
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
-    if ([page isEqual:self.theView1] || [page isEqual:self.theView2] || [page isEqual:self.theView3] || [page isEqual:self.theView4])
-      continue;
-    
     if (self.hideFirstPage && i==0) {
       page.hidden = YES;
       continue;
     }
-
+    if ([page isEqual:self.theView1] || [page isEqual:self.theView2] || [page isEqual:self.theView3] || [page isEqual:self.theView4])
+      continue;
+    
     if (i < self.controlIndex && i%2!=0) {
       page.hidden = YES;
       continue;
@@ -2005,7 +2004,7 @@ static float layer3WidthAt90 = 0;
   if (self.controlAngle >= 0) {
     [self setupReuseablePoolPageViews];
     [self reusePageScrollview];
-    self.pageScrollView.hidden = NO;
+    self.pepperView.hidden = YES;
   }
   else if (self.controlAngle < -MAXIMUM_ANGLE) {
     [self setupReusablePepperViews];
@@ -2312,16 +2311,21 @@ static float layer3WidthAt90 = 0;
   }
   
   if ([theScrollView isEqual:self.pageScrollView]) {
-    if (!decelerate) {
-      self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
-      if (self.hideFirstPage)
-        self.currentPageIndex += 1;
-      
-      self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-      self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
-      self.controlAngle = 0;
-      [self.view bringSubviewToFront:self.pageScrollView];
-    }
+    
+    self.pageScrollView.userInteractionEnabled = !decelerate;
+    
+    if (!decelerate)
+      return;
+    
+    self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+    if (self.hideFirstPage)
+      self.currentPageIndex += 1;
+    
+    self.pepperView.hidden = YES;
+    self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+    self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+    self.controlAngle = 0;
+    [self.view bringSubviewToFront:self.pageScrollView];
   }
 }
 
@@ -2350,6 +2354,8 @@ static float layer3WidthAt90 = 0;
     self.currentPageIndex += 1;
   [self reusePageScrollview];
   
+  self.pepperView.hidden = YES;
+  self.pageScrollView.userInteractionEnabled = YES;
   self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
   self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
   self.controlAngle = 0;
@@ -2599,10 +2605,11 @@ static float layer3WidthAt90 = 0;
 {
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];
+  
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
-  label.textColor = [UIColor whiteColor];
-  label.font = [UIFont systemFontOfSize:11];
+  label.textColor = [UIColor grayColor];
+  label.font = [UIFont systemFontOfSize:12];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content for\nthis book cover\n\n\n\n\n\n\nBook index: %d", bookIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
@@ -2612,34 +2619,35 @@ static float layer3WidthAt90 = 0;
 }
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
 {
-  //if (pageIndex == 0)
-  //  return nil;
-
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];
+  
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
+  label.textColor = [UIColor grayColor];
   label.font = [UIFont systemFontOfSize:12];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this page\n\n\n\n\n\n\nPage index: %d", pageIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
   label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
   [view addSubview:label];
+  
   return view;
 }
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
-{
-  frame.size.height *= 1.0;   //allow scrolling & zooming
-  frame.size.width *= 1.0;    //allow scrolling & zooming
+{ 
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];
+  
   UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
   label.backgroundColor = [UIColor clearColor];
   label.font = [UIFont systemFontOfSize:12];
+  label.textColor = [UIColor blackColor];
   label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\n\n\n\nDetailed page index: %d", pageIndex];
   label.numberOfLines = 0;
   label.textAlignment = UITextAlignmentCenter;
   label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+  
   [view addSubview:label];
   return view;
 }

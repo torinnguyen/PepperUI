@@ -25,6 +25,7 @@
 @synthesize tapGestureRecognizer;
 @synthesize contentView = _contentView;
 @synthesize isLeft = _isLeft;
+@synthesize bgBookImage = _bgBookImage;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -44,7 +45,7 @@
     [self addGestureRecognizer:self.tapGestureRecognizer];
 
     self.background = [[UIImageView alloc] init];
-    self.background.image = [UIImage imageNamed:@"page_bg"];
+    self.background.image = nil;
     self.background.frame = self.bounds;
     self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.background.backgroundColor = [UIColor clearColor];
@@ -76,10 +77,23 @@
   self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
 }
 
-- (void)setIsBook:(BOOL)isBook {
+- (void)setIsBook:(BOOL)isBook
+{ 
   _isBook = isBook;
-  if (self.isBook || self.tag <= 0)     self.background.image = [UIImage imageNamed:@"book_bg"];
-  else                                  self.background.image = [UIImage imageNamed:@"page_bg"];
+}
+
+- (void)setBgBookImage:(BOOL)bgBookImage
+{
+  //Initialize once
+  static UIImage *book_bg = nil;
+  if (book_bg==nil)
+    book_bg = [UIImage imageNamed:BOOK_BG_IMAGE];
+  static UIImage *page_bg = nil;
+  if (page_bg==nil)
+    page_bg = [UIImage imageNamed:PAGE_BG_IMAGE];
+  
+  if (bgBookImage)    self.background.image = book_bg;
+  else                self.background.image = page_bg;
 }
 
 - (void)setContentView:(UIView *)theContentView

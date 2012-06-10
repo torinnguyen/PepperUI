@@ -42,9 +42,10 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag;
 
 /*
- * This is called just before the book opens
+ * This is called just before & after the book opens
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)tag andDuration:(float)duration;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)tag andDuration:(float)duration;
 
 /*
  * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
@@ -60,10 +61,12 @@
 
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
+
 @property (nonatomic, assign) BOOL scaleDownBookNotInFocus;
 @property (nonatomic, assign) BOOL rotateBookNotInFocus;
 @property (nonatomic, assign) BOOL hideFirstPage;
 @property (nonatomic, assign) BOOL oneSideZoom;
+@property (nonatomic, assign) BOOL autoOpenBook;
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pageSpacing;
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
