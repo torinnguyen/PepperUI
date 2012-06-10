@@ -184,7 +184,7 @@ static float layer3WidthAt90 = 0;
   self.delegate = self;
   self.dataSource = self;
   
-  //Initialize data
+  //Download queue data
   /*
   self.pageOnDemandQueue = [[NSMutableArray alloc] init];
   self.fullsizeOnDemandQueue = [[NSMutableArray alloc] init];
@@ -200,14 +200,6 @@ static float layer3WidthAt90 = 0;
   UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onPanning:)];
   panGestureRecognizer.delegate = self;
   [self.view addGestureRecognizer:panGestureRecognizer];
-  
-  //Reusable views for books
-  [self setupReuseablePoolBookViews];
-}
-
-- (void)viewWillAppear:(BOOL)animated
-{
-  [super viewWillAppear:animated];
   
   if (self.bookScrollView == nil) {
     self.bookScrollView = [[UIScrollView alloc] init];
@@ -248,6 +240,11 @@ static float layer3WidthAt90 = 0;
     self.pepperView.hidden = YES;
     [self.view addSubview:self.pepperView];
   }
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+  [super viewWillAppear:animated];
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -976,7 +973,6 @@ static float layer3WidthAt90 = 0;
   int endIndex = currentIndex + range;
   if (endIndex > bookCount-1)
     endIndex = bookCount-1;
-  NSLog(@"%d, %d", startIndex, endIndex);
   
   //Reuse out of bound views
   for (int i=0; i<bookCount; i++)
@@ -2287,10 +2283,6 @@ static float layer3WidthAt90 = 0;
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
     subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
-    
-    if (subview.tag == 4) {
-      NSLog(@"scale: %.2f", scale);
-    }
   }
 }
 
