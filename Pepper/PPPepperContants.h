@@ -10,6 +10,7 @@
 
 //Behavior
 #define AUTO_OPEN_BOOK               YES              //book will open on tap. disable this to implement your subscribtion system if needed
+#define AUTO_OPEN_PAGE               YES              //page will open fullscreen on tap. disable this to implement your subscribtion system if needed
 #define HIDE_FIRST_PAGE              NO               //hide the first page
 #define FIRST_PAGE_BOOK_COVER        YES              //background of the first page uses book cover image
 #define ENABLE_HIGH_SPEED_SCROLLING  YES              //in 3D mode only

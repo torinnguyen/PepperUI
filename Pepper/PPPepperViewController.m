@@ -424,11 +424,15 @@ static float layer3WidthAt90 = 0;
     return;
   }
   
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnPageIndex:)])
+    [self.delegate ppPepperViewController:self didTapOnPageIndex:tag];
+  
+  //Optional: Delegate can decide to show or not
+  if (!AUTO_OPEN_PAGE)
+    return;
+  
   //Open one page in fullscreen
-  self.currentPageIndex = thePage.isLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
-  self.zoomOnLeft = thePage.isLeft;
-  [self destroyBookScrollView];
-  [self showFullscreenUsingTimer];
+  [self openPageIndex:tag];
 }
 
 
@@ -1348,6 +1352,23 @@ static float layer3WidthAt90 = 0;
     index -= 1;
   CGRect pageFrame = [self getFrameForPageIndex:index];
   self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
+}
+
+- (void)openPageIndex:(int)pageIndex {
+  if (self.isBookView) {
+    NSLog(@"You can't call this function in book mode");
+    return;
+  }
+  
+  if (self.isDetailView) {
+    [self scrollPageScrollViewToIndex:pageIndex];
+    return;
+  }
+  
+  self.currentPageIndex = pageIndex%2==0 ? pageIndex : pageIndex - 1;
+  self.zoomOnLeft = pageIndex%2==0;
+  [self destroyBookScrollView];
+  [self showFullscreenUsingTimer];
 }
 
 

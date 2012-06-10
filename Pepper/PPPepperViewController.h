@@ -37,17 +37,24 @@
 
 /*
  * This is called when a book is tapped on
- * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled
+ * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
  * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex;
+
+/*
+ * This is called when a page is tapped on
+ * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
+ * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex;
 
 /*
  * This is called just before & after the book opens & closes
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)tag andDuration:(float)duration;
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)tag atPageIndex:(int)pageIndex;
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didCloseBookIndex:(int)tag;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)bookIndex andDuration:(float)duration;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)bookIndex atPageIndex:(int)pageIndex;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didCloseBookIndex:(int)bookIndex;
 
 /*
  * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
@@ -77,7 +84,11 @@
 @property (nonatomic, assign, readonly) BOOL isBookView;
 @property (nonatomic, assign, readonly) BOOL isDetailView;
 
+
 - (void)reload;
+
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
+
+- (void)openPageIndex:(int)pageIndex;
 
 @end
