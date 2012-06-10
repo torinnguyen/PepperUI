@@ -21,6 +21,8 @@
 #define EDGE_PADDING                 5                //Don't change this after graphic is fixed
 #define BOOK_BG_IMAGE                @"book_bg"
 #define PAGE_BG_IMAGE                @"page_bg"
+#define PAGE_BG_BORDERLESS_IMAGE     @"page_bg_borderless"
+#define USE_BORDERLESS_GRAPHIC       NO               //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 
 //Look & feel
 #define FRAME_WIDTH_LANDSCAPE        (768*0.4)        //please see documentation for correct aspect ratio

@@ -29,6 +29,8 @@
 		4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F7157A8F5F00C27FFB /* PPViewController.m */; };
 		4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */; };
 		42AB47BD157B77B50001AE94 /* book_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AB47BC157B77B50001AE94 /* book_bg.png */; };
+		42DB02D11585008000B23A0C /* page_bg_borderless.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02CF1585008000B23A0C /* page_bg_borderless.png */; };
+		42DB02D21585008000B23A0C /* page_bg_borderless@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +70,8 @@
 		4276D0F9157A8FB300C27FFB /* MyPageBaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyPageBaseView.h; sourceTree = "<group>"; };
 		4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyPageBaseView.m; sourceTree = "<group>"; };
 		42AB47BC157B77B50001AE94 /* book_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_bg.png; sourceTree = "<group>"; };
+		42DB02CF1585008000B23A0C /* page_bg_borderless.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_bg_borderless.png; sourceTree = "<group>"; };
+		42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "page_bg_borderless@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +152,8 @@
 				42AB47BC157B77B50001AE94 /* book_bg.png */,
 				42366DAA157FDB0C00BC7061 /* page_bg@2x.png */,
 				42523BDE157934BF000323EE /* page_bg.png */,
+				42DB02CF1585008000B23A0C /* page_bg_borderless.png */,
+				42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */,
 				421C04A5157949C700A5698B /* PPPageViewDetailWrapper.h */,
 				421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */,
 				42523BE2157934BF000323EE /* PPPageViewContentWrapper.h */,
@@ -258,6 +264,8 @@
 				423941E4157D494C0053E0FA /* Icon-72.png in Resources */,
 				423941E7157D494F0053E0FA /* Icon-144.png in Resources */,
 				42366DAB157FDB0C00BC7061 /* page_bg@2x.png in Resources */,
+				42DB02D11585008000B23A0C /* page_bg_borderless.png in Resources */,
+				42DB02D21585008000B23A0C /* page_bg_borderless@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

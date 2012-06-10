@@ -87,10 +87,10 @@
   //Initialize once
   static UIImage *book_bg = nil;
   if (book_bg==nil)
-    book_bg = [UIImage imageNamed:BOOK_BG_IMAGE];
+    book_bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
   static UIImage *page_bg = nil;
   if (page_bg==nil)
-    page_bg = [UIImage imageNamed:PAGE_BG_IMAGE];
+    page_bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
   
   if (bgBookImage)    self.background.image = book_bg;
   else                self.background.image = page_bg;

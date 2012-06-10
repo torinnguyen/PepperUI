@@ -1359,10 +1359,11 @@ static float layer3WidthAt90 = 0;
 - (void)setControlIndex:(float)newIndex 
 {
   //Temporary, should be an elastic scale
-  float offset = 0.3;
+  float offset = 0.48;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  if (newIndex < MIN_CONTROL_INDEX-offset)   newIndex = MIN_CONTROL_INDEX-offset;
-  if (newIndex >= pageCount-1.5+offset)      newIndex = pageCount-1.5+offset;
+  //if (newIndex < MIN_CONTROL_INDEX-offset)   newIndex = MIN_CONTROL_INDEX-offset;
+  if (newIndex < MIN_CONTROL_INDEX)           newIndex = MIN_CONTROL_INDEX;
+  if (newIndex >= pageCount-1.5+offset)       newIndex = pageCount-1.5+offset;
   _controlIndex = newIndex;
   
   float theSpecialIndex = [self getCurrentSpecialIndex];

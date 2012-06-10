@@ -32,8 +32,12 @@
     self.delegate = self;
     self.minimumZoomScale = MINIMUM_ZOOM_SCALE;
     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;
-        
-    self.background = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"page_bg"]];  //native size
+    
+    static UIImage *bg = nil;
+    if (bg == nil)
+      bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+    
+    self.background = [[UIImageView alloc] initWithImage:bg];     //must use native size only!
     self.background.backgroundColor = [UIColor clearColor];
     self.background.contentMode = UIViewContentModeScaleToFill;
     
