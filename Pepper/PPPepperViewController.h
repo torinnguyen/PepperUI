@@ -76,13 +76,13 @@
 @property (nonatomic, assign) BOOL enableBookScale;
 @property (nonatomic, assign) BOOL enableBookRotate;
 @property (nonatomic, assign) BOOL oneSideZoom;             //experimental, don't touch this
+@property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pageSpacing;
-@property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 
-@property (nonatomic, assign) float controlIndex;
-@property (nonatomic, assign, readonly) BOOL isBookView;
-@property (nonatomic, assign, readonly) BOOL isDetailView;
+@property (nonatomic, readonly) float controlIndex;
+@property (nonatomic, readonly) BOOL isBookView;
+@property (nonatomic, readonly) BOOL isDetailView;
 
 
 - (void)reload;

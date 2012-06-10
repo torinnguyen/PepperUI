@@ -44,20 +44,20 @@
  PPPageViewWrapperDelegate
 >
 
-@property (nonatomic, assign) BOOL isBookView;
-@property (nonatomic, assign) BOOL isDetailView;
-@property (nonatomic, assign) BOOL zoomOnLeft;
-
 //Almost contants
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
 @property (nonatomic, assign) float frameSpacing;
 
 //Control
+@property (nonatomic, assign) float controlIndex;
 @property (nonatomic, assign) float controlAngle;
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
 @property (nonatomic, assign) float touchDownControlIndex;
+@property (nonatomic, assign) BOOL zoomOnLeft;
+@property (nonatomic, assign) BOOL isBookView;
+@property (nonatomic, assign) BOOL isDetailView;
 
 //Timers
 @property (nonatomic, assign) float controlIndexTimerTarget;
@@ -88,7 +88,7 @@
 @property (nonatomic, strong) NSMutableArray *pageOnDemandQueue;
 
 //Page scrollview
-@property (nonatomic, assign) float currentPageIndex;
+@property (nonatomic, assign) float currentLeftPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 
@@ -144,7 +144,7 @@
 @synthesize bookScrollView;
 @synthesize reuseBookViewArray;
 
-@synthesize currentPageIndex;
+@synthesize currentLeftPageIndex;
 @synthesize reusePageViewArray;
 @synthesize pageScrollView;
 
@@ -724,7 +724,7 @@ static float layer3WidthAt90 = 0;
    */
 }
 
-- (void)setupReusablePepperViews
+- (void)setupReusablePoolPepperViews
 {
   //No need to re-setup
   if (self.reusePepperWrapperArray != nil || self.reusePepperWrapperArray.count > 0)
@@ -1149,7 +1149,7 @@ static float layer3WidthAt90 = 0;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
         
   //Setup Pepper UI
-  [self setupReusablePepperViews];
+  [self setupReusablePoolPepperViews];
   [self reusePepperViews];
   self.pepperView.hidden = NO;
   
@@ -1204,13 +1204,13 @@ static float layer3WidthAt90 = 0;
   [self reusePageScrollview];
   
   //Start loading index
-  int startIndex = self.currentPageIndex - 1;
+  int startIndex = self.currentLeftPageIndex - 1;
   if (startIndex < 0)     startIndex = 0;
   if (self.hideFirstPage && startIndex < 1)
     startIndex = 1;
     
   [self updatePageScrollViewContentSize];
-  [self scrollPageScrollViewToIndex:self.currentPageIndex];
+  [self scrollPageScrollViewToIndex:self.currentLeftPageIndex];
   [self.view bringSubviewToFront:self.pageScrollView];
   
   //Start downloading PDFs
@@ -1218,7 +1218,7 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)reusePageScrollview {
-  int currentIndex = (int)self.currentPageIndex;
+  int currentIndex = (int)self.currentLeftPageIndex;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //Some funny UIImageView gets into our view
@@ -1365,7 +1365,7 @@ static float layer3WidthAt90 = 0;
     return;
   }
   
-  self.currentPageIndex = pageIndex%2==0 ? pageIndex : pageIndex - 1;
+  self.currentLeftPageIndex = pageIndex%2==0 ? pageIndex : pageIndex - 1;
   self.zoomOnLeft = pageIndex%2==0;
   [self destroyBookScrollView];
   [self showFullscreenUsingTimer];
@@ -2033,7 +2033,7 @@ static float layer3WidthAt90 = 0;
     self.pepperView.hidden = YES;
   }
   else if (self.controlAngle < -MAXIMUM_ANGLE) {
-    [self setupReusablePepperViews];
+    [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
   }
@@ -2096,7 +2096,7 @@ static float layer3WidthAt90 = 0;
   self.theRightView.hidden = NO;
   
   //Default to left page
-  self.currentPageIndex = self.controlIndex - 0.5;
+  self.currentLeftPageIndex = self.controlIndex - 0.5;
   
   //Zoom in on 1 side
   if (self.oneSideZoom) {
@@ -2113,7 +2113,7 @@ static float layer3WidthAt90 = 0;
     self.theLeftView.frame = frame;
     self.theRightView.frame = frame;
     
-    self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
+    self.currentLeftPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
     
   //Hide unneccessary pages
@@ -2352,13 +2352,13 @@ static float layer3WidthAt90 = 0;
     if (!decelerate)
       return;
     
-    self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+    self.currentLeftPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
     if (self.hideFirstPage)
-      self.currentPageIndex += 1;
+      self.currentLeftPageIndex += 1;
     
     self.pepperView.hidden = YES;
-    self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-    self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+    self.zoomOnLeft = ((int)self.currentLeftPageIndex % 2 == 0) ? YES : NO;
+    self.controlIndex = ((int)self.currentLeftPageIndex % 2 == 0) ? self.currentLeftPageIndex+0.5 : self.currentLeftPageIndex-0.5;
     self.controlAngle = 0;
     [self.view bringSubviewToFront:self.pageScrollView];
   }
@@ -2384,15 +2384,15 @@ static float layer3WidthAt90 = 0;
   if (![theScrollView isEqual:self.pageScrollView]) 
     return;
   
-  self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+  self.currentLeftPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
   if (self.hideFirstPage)
-    self.currentPageIndex += 1;
+    self.currentLeftPageIndex += 1;
   [self reusePageScrollview];
   
   self.pepperView.hidden = YES;
   self.pageScrollView.userInteractionEnabled = YES;
-  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  self.zoomOnLeft = ((int)self.currentLeftPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentLeftPageIndex % 2 == 0) ? self.currentLeftPageIndex+0.5 : self.currentLeftPageIndex-0.5;
   self.controlAngle = 0;
   [self.view bringSubviewToFront:self.pageScrollView];
 }
@@ -2412,7 +2412,7 @@ static float layer3WidthAt90 = 0;
 
     //Memory warning kills Pepper view
     if (theScrollView.hidden == YES) {
-      [self setupReusablePepperViews];
+      [self setupReusablePoolPepperViews];
       [self reusePepperViews];
     }
        
