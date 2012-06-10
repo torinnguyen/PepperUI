@@ -37,15 +37,17 @@
 
 /*
  * This is called when a book is tapped on
- * The book will not open automatically by the library, you need to call [scrollList openCurrentBook];
+ * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled
+ * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag;
 
 /*
- * This is called just before & after the book opens
+ * This is called just before & after the book opens & closes
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)tag andDuration:(float)duration;
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)tag andDuration:(float)duration;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)tag atPageIndex:(int)pageIndex;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didCloseBookIndex:(int)tag;
 
 /*
  * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
@@ -62,11 +64,11 @@
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
 
-@property (nonatomic, assign) BOOL scaleDownBookNotInFocus;
-@property (nonatomic, assign) BOOL rotateBookNotInFocus;
-@property (nonatomic, assign) BOOL hideFirstPage;
-@property (nonatomic, assign) BOOL oneSideZoom;
 @property (nonatomic, assign) BOOL autoOpenBook;
+@property (nonatomic, assign) BOOL hideFirstPage;
+@property (nonatomic, assign) BOOL enableBookScale;
+@property (nonatomic, assign) BOOL enableBookRotate;
+@property (nonatomic, assign) BOOL oneSideZoom;             //experimental, don't touch this
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pageSpacing;
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;

@@ -14,7 +14,7 @@
 #import "PPPageViewDetailWrapper.h"
 
 //Don't mess with these
-#define OPEN_BOOK_DURATION           0.36
+#define OPEN_BOOK_DURATION           0.5
 #define THRESHOLD_FULL_ANGLE         8
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
@@ -105,8 +105,8 @@
 
 //public properties
 @synthesize animationSlowmoFactor;
-@synthesize scaleDownBookNotInFocus;
-@synthesize rotateBookNotInFocus;
+@synthesize enableBookScale;
+@synthesize enableBookRotate;
 @synthesize hideFirstPage;
 @synthesize oneSideZoom;
 @synthesize pageSpacing;
@@ -170,8 +170,8 @@ static float layer3WidthAt90 = 0;
   self.hideFirstPage = HIDE_FIRST_PAGE;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;
-  self.scaleDownBookNotInFocus = ENABLE_BOOK_SCALE;
-  self.rotateBookNotInFocus = ENABLE_BOOK_ROTATE;
+  self.enableBookScale = ENABLE_BOOK_SCALE;
+  self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.pageSpacing = PAGE_SPACING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
 
@@ -1156,7 +1156,7 @@ static float layer3WidthAt90 = 0;
   //Clone the book cover and add to backside of first page
   [self addBookCoverToFirstPage:YES];
   
-  //Notify the delegate to fade out top level menu, if any
+  //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenBookIndex:andDuration:)])
     [self.delegate ppPepperViewController:self willOpenBookIndex:bookIndex andDuration:self.animationSlowmoFactor*OPEN_BOOK_DURATION];
 
@@ -1816,6 +1816,10 @@ static float layer3WidthAt90 = 0;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self destroyAllPeperPage];
     [self removeBookCoverFromFirstPage];
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
+      [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
   });
   
   //This is where magic happens (animation)
@@ -2260,6 +2264,15 @@ static float layer3WidthAt90 = 0;
   self.controlAngleTimer = nil;
   
   self.controlAngle = self.controlAngleTimerTarget;
+  
+  //Open fullscreen
+  if (self.controlAngle < 0)
+    return;
+  
+  //Notify the delegate
+  int pageIndex = (int)(self.controlIndex - 0.5);
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
+    [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:pageIndex];
 }
 
 
@@ -2289,14 +2302,14 @@ static float layer3WidthAt90 = 0;
       angle *= -1;
     
     float scale = scaleForAngle * (MAX_BOOK_SCALE-MIN_BOOK_SCALE) + MIN_BOOK_SCALE;
-    if (!self.scaleDownBookNotInFocus)
+    if (!self.enableBookScale)
       scale = MAX_BOOK_SCALE;
     CGPoint previousAnchor = subview.layer.anchorPoint;
     
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = M34;
     transform = CATransform3DScale(transform, scale, scale, 1.0);
-    if (self.rotateBookNotInFocus)
+    if (self.enableBookRotate)
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
     subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
