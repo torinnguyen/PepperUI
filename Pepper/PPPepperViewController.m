@@ -88,7 +88,7 @@
 @property (nonatomic, strong) NSMutableArray *pageOnDemandQueue;
 
 //Page scrollview
-@property (nonatomic, assign) float currentLeftPageIndex;
+@property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 
@@ -144,7 +144,7 @@
 @synthesize bookScrollView;
 @synthesize reuseBookViewArray;
 
-@synthesize currentLeftPageIndex;
+@synthesize currentPageIndex;
 @synthesize reusePageViewArray;
 @synthesize pageScrollView;
 
@@ -430,7 +430,7 @@ static float layer3WidthAt90 = 0;
   //Optional: Delegate can decide to show or not
   if (!AUTO_OPEN_PAGE)
     return;
-  
+    
   //Open one page in fullscreen
   [self openPageIndex:tag];
 }
@@ -447,7 +447,7 @@ static float layer3WidthAt90 = 0;
     return YES;
   
   if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-    if ([self isFullscreen] || self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
+    if ([self isFullscreen] || self.controlIndexTimer != nil || [self.controlIndexTimer isValid] || [self.controlAngleTimer isValid])
       return NO;
     return YES;
   }
@@ -1204,13 +1204,13 @@ static float layer3WidthAt90 = 0;
   [self reusePageScrollview];
   
   //Start loading index
-  int startIndex = self.currentLeftPageIndex - 1;
+  int startIndex = self.currentPageIndex - 1;
   if (startIndex < 0)     startIndex = 0;
   if (self.hideFirstPage && startIndex < 1)
     startIndex = 1;
     
   [self updatePageScrollViewContentSize];
-  [self scrollPageScrollViewToIndex:self.currentLeftPageIndex];
+  [self scrollPageScrollViewToIndex:self.currentPageIndex];
   [self.view bringSubviewToFront:self.pageScrollView];
   
   //Start downloading PDFs
@@ -1218,7 +1218,7 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)reusePageScrollview {
-  int currentIndex = (int)self.currentLeftPageIndex;
+  int currentIndex = (int)self.currentPageIndex;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //Some funny UIImageView gets into our view
@@ -1365,7 +1365,7 @@ static float layer3WidthAt90 = 0;
     return;
   }
   
-  self.currentLeftPageIndex = pageIndex%2==0 ? pageIndex : pageIndex - 1;
+  self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
   [self destroyBookScrollView];
   [self showFullscreenUsingTimer];
@@ -1766,6 +1766,28 @@ static float layer3WidthAt90 = 0;
   }];
 }
 
+- (void)showHalfOpenUsingTimer
+{
+  BOOL previousIsBookView = self.isBookView;
+  self.isBookView = NO;
+  self.isDetailView = NO;
+  
+  //Hide other view
+  [self hidePageScrollview];
+  
+  //Re-setup book scrollview if we are coming out from fullscreen
+  if (!previousIsBookView) {
+    [self setupReuseablePoolBookViews];
+    [self reuseBookScrollView];
+  }
+
+  float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
+  if (!self.oneSideZoom)    diff /= 1.3;
+  else                      diff *= 1.3;
+  
+  [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*diff];
+}
+
 - (void)showHalfOpen:(BOOL)animated
 {
   BOOL previousIsBookView = self.isBookView;
@@ -2009,7 +2031,8 @@ static float layer3WidthAt90 = 0;
     [self showFullscreen:YES];
   
   else if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE)
-    [self showHalfOpen:YES];
+    [self showHalfOpenUsingTimer];
+//    [self showHalfOpen:YES];
   
   else
     [self closeCurrentList:YES];
@@ -2096,7 +2119,7 @@ static float layer3WidthAt90 = 0;
   self.theRightView.hidden = NO;
   
   //Default to left page
-  self.currentLeftPageIndex = self.controlIndex - 0.5;
+  self.currentPageIndex = self.controlIndex - 0.5;
   
   //Zoom in on 1 side
   if (self.oneSideZoom) {
@@ -2113,7 +2136,7 @@ static float layer3WidthAt90 = 0;
     self.theLeftView.frame = frame;
     self.theRightView.frame = frame;
     
-    self.currentLeftPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
+    self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
     
   //Hide unneccessary pages
@@ -2352,13 +2375,13 @@ static float layer3WidthAt90 = 0;
     if (!decelerate)
       return;
     
-    self.currentLeftPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+    self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
     if (self.hideFirstPage)
-      self.currentLeftPageIndex += 1;
+      self.currentPageIndex += 1;
     
     self.pepperView.hidden = YES;
-    self.zoomOnLeft = ((int)self.currentLeftPageIndex % 2 == 0) ? YES : NO;
-    self.controlIndex = ((int)self.currentLeftPageIndex % 2 == 0) ? self.currentLeftPageIndex+0.5 : self.currentLeftPageIndex-0.5;
+    self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+    self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
     self.controlAngle = 0;
     [self.view bringSubviewToFront:self.pageScrollView];
   }
@@ -2384,15 +2407,15 @@ static float layer3WidthAt90 = 0;
   if (![theScrollView isEqual:self.pageScrollView]) 
     return;
   
-  self.currentLeftPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
+  self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
   if (self.hideFirstPage)
-    self.currentLeftPageIndex += 1;
+    self.currentPageIndex += 1;
   [self reusePageScrollview];
   
   self.pepperView.hidden = YES;
   self.pageScrollView.userInteractionEnabled = YES;
-  self.zoomOnLeft = ((int)self.currentLeftPageIndex % 2 == 0) ? YES : NO;
-  self.controlIndex = ((int)self.currentLeftPageIndex % 2 == 0) ? self.currentLeftPageIndex+0.5 : self.currentLeftPageIndex-0.5;
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
   self.controlAngle = 0;
   [self.view bringSubviewToFront:self.pageScrollView];
 }
