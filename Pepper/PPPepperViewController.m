@@ -15,7 +15,7 @@
 
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
-#define THRESHOLD_FULL_ANGLE         8
+#define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
 #define LEFT_RIGHT_ANGLE_DIFF        9.9          //should be perfect 10, but we cheated
@@ -517,7 +517,7 @@ static float layer3WidthAt90 = 0;
     else                              snapTo = lowerBound - 0.5;
 
     float diff = fabs(snapTo - self.controlIndex);
-    float duration = diff / 1.5f;
+    float duration = diff / 2.0f;
     if (ENABLE_HIGH_SPEED_SCROLLING)
       duration /= normalizedVelocityX;
     if (diff <= 0)
@@ -2026,11 +2026,10 @@ static float layer3WidthAt90 = 0;
 - (void)snapControlAngle
 {
   if (self.controlAngle > -THRESHOLD_FULL_ANGLE)
-    [self showFullscreen:YES];
+    [self showFullscreenUsingTimer];
   
   else if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE)
     [self showHalfOpenUsingTimer];
-//    [self showHalfOpen:YES];
   
   else
     [self closeCurrentList:YES];
@@ -2046,6 +2045,8 @@ static float layer3WidthAt90 = 0;
   if (newControlAngle > 0)                  newControlAngle = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
+  
+  NSLog(@"%.2f", self.controlAngle);
   
   //Show/hide various views
   if (self.controlAngle >= 0) {
