@@ -37,9 +37,11 @@
     if (bg == nil)
       bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
     
-    self.background = [[UIImageView alloc] initWithImage:bg];     //must use native size only!
+    self.background = [[UIImageView alloc] initWithImage:bg];     //we use size & aspect ratio from native image size
     self.background.backgroundColor = [UIColor clearColor];
     self.background.contentMode = UIViewContentModeScaleToFill;
+    self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.alpha = 0.5;
     
     CGRect bgframe = self.background.bounds;
     float scale = frame.size.width / bgframe.size.width;
@@ -49,15 +51,15 @@
     bgframe.size.height = scale * bgframe.size.height;
     self.background.frame = bgframe;
     
-    CGRect contentFrame;
-    contentFrame.origin.x = 0;
-    contentFrame.origin.y = 0;
-    contentFrame.size.width = frame.size.width;
-    contentFrame.size.height = bgframe.size.height - 2*EDGE_PADDING*scale;
+    CGRect contentWrapperFrame;
+    contentWrapperFrame.origin.x = 0;
+    contentWrapperFrame.origin.y = 0;
+    contentWrapperFrame.size.width = frame.size.width;
+    contentWrapperFrame.size.height = bgframe.size.height - 2*EDGE_PADDING*scale;
 
-    self.contentViewWrapper = [[UIView alloc] initWithFrame:contentFrame];
+    self.contentViewWrapper = [[UIView alloc] initWithFrame:contentWrapperFrame];
     self.contentViewWrapper.backgroundColor = [UIColor clearColor];
-    self.contentViewWrapper.autoresizesSubviews = NO;
+    self.contentViewWrapper.autoresizesSubviews = YES;
     [self.contentViewWrapper addSubview:self.background];
     [self addSubview:self.contentViewWrapper];
     
@@ -88,6 +90,26 @@
   theContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     
   [self.contentViewWrapper addSubview:theContentView];
+}
+
+- (void)layoutForWidth:(int)newWidth duration:(float)duration
+{
+  float aspectRatio = self.contentViewWrapper.bounds.size.height / self.contentViewWrapper.bounds.size.width;
+  float newHeight = newWidth * aspectRatio;
+  
+  CGRect contentWrapperFrame;
+  contentWrapperFrame.origin.x = 0;
+  contentWrapperFrame.origin.y = 0;
+  contentWrapperFrame.size.width = newWidth;
+  contentWrapperFrame.size.height = newHeight;
+  
+  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    self.contentViewWrapper.frame = contentWrapperFrame;
+    self.contentOffset = CGPointZero;
+    self.zoomScale = 1.0f;
+  } completion:^(BOOL finished) {
+    
+  }];
 }
 
 #pragma mark - Memory management

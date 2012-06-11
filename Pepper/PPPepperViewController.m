@@ -311,11 +311,8 @@ static float layer3WidthAt90 = 0;
     CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
     //Layout subviews of each fullscreen page
-    /*
-     for (UIView *subview in self.pageScrollView.subviews)
-     if ([subview isKindOfClass:[PPPageViewDetailWrapper class]])
-     [subview layoutView:duration];
-     */
+    if ([subview isKindOfClass:[PPPageViewDetailWrapper class]])
+      [(PPPageViewDetailWrapper*)subview layoutForWidth:frame.size.width duration:duration];
     
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       subview.frame = frame;
@@ -323,6 +320,7 @@ static float layer3WidthAt90 = 0;
       
     }];
   }
+  [self scrollToPage:self.currentPageIndex duration:duration];
   
   //Relayout 3D views with animation
   for (UIView *subview in self.pepperView.subviews) {
@@ -346,7 +344,7 @@ static float layer3WidthAt90 = 0;
   [self scrollViewDidScroll:self.bookScrollView];
   self.controlFlipAngle = self.controlFlipAngle;
   if (self.isBookView || self.isDetailView)
-    [self hidePepperView];
+    self.pepperView.hidden = YES;
   
   //Increase number of reusable views for landscape
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
@@ -644,8 +642,8 @@ static float layer3WidthAt90 = 0;
   return index;
 }
 
-- (float)getFrameXForPageIndex:(int)pageIndex gapScale:(float)gapScale {
-  return [self getFrameXForPageIndex:pageIndex gapScale:gapScale orientation:[UIApplication sharedApplication].statusBarOrientation];
+- (float)getPepperFrameXForPageIndex:(int)pageIndex gapScale:(float)gapScale {
+  return [self getPepperFrameXForPageIndex:pageIndex gapScale:gapScale orientation:[UIApplication sharedApplication].statusBarOrientation];
 }
 
 //
@@ -653,7 +651,7 @@ static float layer3WidthAt90 = 0;
 // Note: layer3WidthAt90 static variable must already be calculated before using this function
 //       this will NOT be valid for the middle 4 pages
 //
-- (float)getFrameXForPageIndex:(int)pageIndex gapScale:(float)gapScale orientation:(UIInterfaceOrientation)interfaceOrientation {
+- (float)getPepperFrameXForPageIndex:(int)pageIndex gapScale:(float)gapScale orientation:(UIInterfaceOrientation)interfaceOrientation {
   
   //Handle middle 4 pages
   float midX = [self getMidXForOrientation:interfaceOrientation];
@@ -685,7 +683,7 @@ static float layer3WidthAt90 = 0;
 //
 - (CGRect)getPepperFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
   float y = [self getFrameYForOrientation:interfaceOrientation];
-  float x = [self getFrameXForPageIndex:index gapScale:1.0 orientation:interfaceOrientation];
+  float x = [self getPepperFrameXForPageIndex:index gapScale:1.0 orientation:interfaceOrientation];
   return CGRectMake(x, y, self.frameWidth, self.frameHeight);
 }
 
@@ -712,16 +710,17 @@ static float layer3WidthAt90 = 0;
   return scale;
 }
 
-- (void)hidePepperView
-{
+//
+// Hide & reuse all page in Pepper UI
+//
+- (void)destroyPeperView { 
+  
+  while (self.pepperView.subviews.count > 0)
+    [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
+  [self.reusePepperWrapperArray removeAllObjects];
+  self.reusePepperWrapperArray = nil;
+  
   self.pepperView.hidden = YES;
-  /*
-  for (UIView *subview in self.pepperView.subviews) {
-    if (![subview isKindOfClass:[PPPageViewWrapper class]])
-      continue;
-    subview.hidden = YES;
-  }
-   */
 }
 
 - (void)setupReusablePoolPepperViews
@@ -882,19 +881,6 @@ static float layer3WidthAt90 = 0;
     return page;
   }
   return nil;
-}
-
-//
-// Hide & reuse all page in Pepper UI
-//
-- (void)destroyAllPeperPage { 
-
-  while (self.pepperView.subviews.count > 0)
-    [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
-  [self.reusePepperWrapperArray removeAllObjects];
-  self.reusePepperWrapperArray = nil;
-  
-  self.pepperView.hidden = YES;
 }
 
 //
@@ -1354,6 +1340,18 @@ static float layer3WidthAt90 = 0;
   self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
 }
 
+- (void)scrollToPage:(int)pageIndex duration:(float)duration {
+  if (self.hideFirstPage)
+    pageIndex -= 1;
+  CGRect pageFrame = [self getFrameForPageIndex:pageIndex];
+  
+  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
+  } completion:^(BOOL finished) {
+    
+  }];
+}
+
 - (void)openPageIndex:(int)pageIndex {
   if (self.isBookView) {
     NSLog(@"You can't call this function in book mode");
@@ -1587,7 +1585,7 @@ static float layer3WidthAt90 = 0;
     }
 
     //Smooth transition of position
-    float frameX = [self getFrameXForPageIndex:i gapScale:1.0];
+    float frameX = [self getPepperFrameXForPageIndex:i gapScale:1.0];
     page.frame = CGRectMake(frameX, frameY, self.frameWidth, self.frameHeight);
   }
 }
@@ -1849,7 +1847,7 @@ static float layer3WidthAt90 = 0;
       subview.alpha = 1;
   
   if (!animated) {
-    [self destroyAllPeperPage];
+    [self destroyPeperView];
     [self removeBookCoverFromFirstPage];
     return;
   }
@@ -1857,7 +1855,7 @@ static float layer3WidthAt90 = 0;
   //Not perfect but good enough for fast animation
   float animationDuration = self.animationSlowmoFactor*diff;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    [self destroyAllPeperPage];
+    [self destroyPeperView];
     [self removeBookCoverFromFirstPage];
     
     //Notify the delegate
@@ -2263,7 +2261,7 @@ static float layer3WidthAt90 = 0;
         
     //Smooth transition of position
     float frameY = [self getFrameY];
-    float frameX = [self getFrameXForPageIndex:i gapScale:(float)positionScale];
+    float frameX = [self getPepperFrameXForPageIndex:i gapScale:(float)positionScale];
     page.frame = CGRectMake(frameX, frameY, self.frameWidth, self.frameHeight);
   }
 }
