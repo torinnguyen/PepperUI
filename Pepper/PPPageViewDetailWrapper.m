@@ -103,6 +103,13 @@
   contentWrapperFrame.size.width = newWidth;
   contentWrapperFrame.size.height = newHeight;
   
+  if (duration <= 0) {
+    self.contentViewWrapper.frame = contentWrapperFrame;
+    self.contentOffset = CGPointZero;
+    self.zoomScale = 1.0f;
+    return;
+  }
+  
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.contentViewWrapper.frame = contentWrapperFrame;
     self.contentOffset = CGPointZero;

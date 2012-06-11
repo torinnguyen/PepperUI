@@ -1183,11 +1183,20 @@ static float layer3WidthAt90 = 0;
 
 - (void)setupPageScrollview
 {  
-  //Re-setup due to memory warning
+  //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
 
   //Populate page scrollview  
   [self reusePageScrollview];
+  
+  //Reset pages UI
+  for (UIView *subview in self.pageScrollView.subviews) {
+    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
+      continue;
+    subview.hidden = NO;
+    int theWidth = [self getFrameForPageIndex:subview.tag].size.width;
+    [(PPPageViewDetailWrapper*)subview layoutForWidth:theWidth duration:0];
+  }
   
   //Start loading index
   int startIndex = self.currentPageIndex - 1;
@@ -1221,7 +1230,7 @@ static float layer3WidthAt90 = 0;
   int startIndex = currentIndex - range;
   if (startIndex < 0)
     startIndex = 0;
-  int endIndex = currentIndex + range;
+  int endIndex = startIndex + NUM_REUSE_DETAIL_VIEW;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
@@ -1271,11 +1280,11 @@ static float layer3WidthAt90 = 0;
     return;
   
   for (UIView *subview in self.pageScrollView.subviews) {
-    //if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
-    //  continue;
+    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
+      continue;
     if (subview.tag != index)
       continue;
-    //[subview unloadContent];
+    [(PPPageViewDetailWrapper*)subview unloadContent];
     [self.reusePageViewArray addObject:subview];
     [subview removeFromSuperview];
     break;
@@ -1305,7 +1314,7 @@ static float layer3WidthAt90 = 0;
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
   pageDetailView.hidden = NO;
-  pageDetailView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  [pageDetailView layoutForWidth:pageFrame.size.width duration:0];
   pageDetailView.customDelegate = self;
   [self.pageScrollView addSubview:pageDetailView];
    
@@ -2045,9 +2054,7 @@ static float layer3WidthAt90 = 0;
   if (newControlAngle > 0)                  newControlAngle = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   _controlAngle = newControlAngle;
-  
-  NSLog(@"%.2f", self.controlAngle);
-  
+    
   //Show/hide various views
   if (self.controlAngle >= 0) {
     [self setupReuseablePoolPageViews];
