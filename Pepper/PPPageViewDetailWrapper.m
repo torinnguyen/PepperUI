@@ -83,9 +83,7 @@
   if (self.tag%2 == 0)  self.background.layer.transform = CATransform3DMakeRotation(M_PI, 0, 1, 0);
   else                  self.background.layer.transform = CATransform3DMakeRotation(0, 0, 1, 0);
 
-  self.zoomScale = 1.0f;
-  self.contentOffset = CGPointZero;
-  
+  [self reset];  
   theContentView.frame = self.contentViewWrapper.bounds;
   theContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     
@@ -109,9 +107,9 @@
     return;
   }
   
+  [self reset];
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.contentViewWrapper.frame = contentWrapperFrame;
-    [self reset];
   } completion:^(BOOL finished) {
     
   }];
@@ -127,8 +125,22 @@
 
 - (void)reset
 {
+  //Prevent unwanted delegate call;
+  id prevDelegate = self.delegate;
+  self.delegate = nil;
+
   self.contentOffset = CGPointZero;
   self.zoomScale = 1.0f;
+  
+  //Kill 'em all
+  self.transform = CGAffineTransformIdentity;
+  self.layer.transform = CATransform3DIdentity;
+  self.contentViewWrapper.transform = CGAffineTransformIdentity;
+  self.contentViewWrapper.layer.transform = CATransform3DIdentity;
+  self.contentView.transform = CGAffineTransformIdentity;
+  self.contentView.layer.transform = CATransform3DIdentity;
+  
+  self.delegate = prevDelegate;
 }
 
 

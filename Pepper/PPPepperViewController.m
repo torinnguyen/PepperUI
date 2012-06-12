@@ -1185,7 +1185,7 @@ static float layer3WidthAt90 = 0;
 {  
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
-
+  
   //Populate page scrollview  
   [self reusePageScrollview];
   
@@ -1194,22 +1194,23 @@ static float layer3WidthAt90 = 0;
     if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
       continue;
     subview.hidden = NO;
-    int theWidth = [self getFrameForPageIndex:subview.tag].size.width;
-    [(PPPageViewDetailWrapper*)subview layoutForWidth:theWidth duration:0];
+    [(PPPageViewDetailWrapper*)subview reset];
   }
+        
+  [self updatePageScrollViewContentSize]; 
+  [self scrollPageScrollViewToIndex:self.currentPageIndex];
+  [self.view bringSubviewToFront:self.pageScrollView];
   
   //Start loading index
+  /*
   int startIndex = self.currentPageIndex - 1;
   if (startIndex < 0)     startIndex = 0;
   if (self.hideFirstPage && startIndex < 1)
     startIndex = 1;
-    
-  [self updatePageScrollViewContentSize];
-  [self scrollPageScrollViewToIndex:self.currentPageIndex];
-  [self.view bringSubviewToFront:self.pageScrollView];
   
   //Start downloading PDFs
-  //[self fetchFullsizeInBackground:startIndex];
+  [self fetchFullsizeInBackground:startIndex];
+  */
 }
 
 - (void)reusePageScrollview {
@@ -1314,7 +1315,6 @@ static float layer3WidthAt90 = 0;
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
   pageDetailView.hidden = NO;
-  [pageDetailView layoutForWidth:pageFrame.size.width duration:0];
   pageDetailView.customDelegate = self;
   [self.pageScrollView addSubview:pageDetailView];
    
@@ -1322,6 +1322,8 @@ static float layer3WidthAt90 = 0;
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds];
   else
     pageDetailView.contentView = nil;
+
+  [pageDetailView layoutForWidth:pageFrame.size.width duration:0];
   
   /*
   UIImage *image = [self getCachedThumbnailForPageID:index];
@@ -1747,14 +1749,11 @@ static float layer3WidthAt90 = 0;
   self.isDetailView = YES;
   float diff = fabs(self.controlAngle - 0) / 45.0;
 
-#warning this reset controlAngle to 0
   //Populate detailed page scrollview
   [self setupPageScrollview];
 
   if (!self.oneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
-  if (diff < 0.3)
-    diff = 0.3;
     
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
 }
@@ -2291,8 +2290,7 @@ static float layer3WidthAt90 = 0;
   if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
     return;
   
-  NSLog(@"3. %.2f", self.controlAngle);
-  if (duration <= 0 || fabsf(self.controlAngleTimerTarget - self.controlAngle) <= 0) {
+  if (duration <= 0 || fabsf(self.controlAngle-angle) <= 0) {
     [self onControlAngleTimerFinish];
     return;
   }
@@ -2338,11 +2336,11 @@ static float layer3WidthAt90 = 0;
   
   self.controlAngle = self.controlAngleTimerTarget;
   
-  //Open fullscreen
+  //Not open fullscreen
   if (self.controlAngle < 0)
     return;
   
-  //Notify the delegate
+  //Notify the delegate about didOpenBookIndex
   int pageIndex = (int)(self.controlIndex - 0.5);
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
     [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:pageIndex];
