@@ -38,7 +38,7 @@
 /*
  * This is called when the book list is being scrolled
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithBookIndex:(int)bookIndex;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithBookIndex:(float)bookIndex;
 
 /*
  * This is called after the fullscreen list has finish snapping to a page
@@ -74,17 +74,17 @@
 /*
  * This is called when the 3D view is being flipped
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList flippingWithIndex:(float)index;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index;
 
 /*
  * This is called after the flipping finish snapping to a page
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFinishFlippingWithIndex:(float)index;
 
 /*
  * This is called when the fullscreen list is being scrolled
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithPageIndex:(int)pageIndex;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithPageIndex:(float)pageIndex;
 
 /*
  * This is called after the fullscreen list has finish snapping to a page

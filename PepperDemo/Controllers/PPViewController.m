@@ -139,7 +139,6 @@
 }
 
 
-
 #pragma mark - Data
 
 - (void)initializeBookData
@@ -170,52 +169,6 @@
     
     [self.bookDataArray addObject:myBook];
   }
-}
-
-
-#pragma mark - PPScrollListViewControllerDelegate
-
-/*
- * This is called when a book is tapped on
- * The book will not open automatically by the library, you need to call [scrollList openCurrentBook];
- */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex
-{
-  //You can implement your own logic here to prompt user to login before viewinh this content if needed
-  //You can implement your own logic here to get remembered last opened page for this book
-  
-  //Open random page for demo purpose
-  Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
-  int pageCount = theBook.pages.count - 1;
-  int randomPage = rand() % pageCount;
-  int pageIndex = self.switchRandomPage.on ? randomPage : 0;
-  if (self.switchRandomPage.on)
-    NSLog(@"Open current book at random page: %d", randomPage);
-  [scrollList openCurrentBookAtPageIndex:pageIndex];
-}
-
-/*
- * This is called just before the book opens
- */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)tag andDuration:(float)duration
-{
-  //Hide our menu together with the books
-  self.menuView.userInteractionEnabled = NO;
-  [UIView animateWithDuration:duration animations:^{
-    self.menuView.alpha = 0;
-  }];
-}
-
-/*
- * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
- */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha
-{
-  //Show our menu together with the books
-  self.menuView.alpha = alpha;
-  self.speedView.alpha = 1.0 - alpha;
-  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
-  self.menuView.userInteractionEnabled = (alpha != 0);
 }
 
 
@@ -258,6 +211,142 @@
   MyPageViewDetail *view = [[MyPageViewDetail alloc] initWithFrame:frame];
   [view configureWithPageModel:thePage];
   return view;
+}
+
+
+
+
+#pragma mark -
+#pragma mark - PPScrollListViewControllerDelegate
+
+/*
+ * This is called when the book list is being scrolled
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithBookIndex:(float)bookIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didScrollWithBookIndex:%.2f", bookIndex]);
+}
+
+/*
+ * This is called after the fullscreen list has finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToBookIndex:(int)bookIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didSnapToBookIndex:%d", bookIndex]);
+  //You can implement your own logic here to prompt user to login before viewinh this content if needed
+  //You can implement your own logic here to get remembered last opened page for this book
+  
+  //Open random page for demo purpose
+  Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
+  int pageCount = theBook.pages.count - 1;
+  int randomPage = rand() % pageCount;
+  int pageIndex = self.switchRandomPage.on ? randomPage : 0;
+  if (self.switchRandomPage.on)
+    NSLog(@"Open current book at random page: %d", randomPage);
+  [scrollList openCurrentBookAtPageIndex:pageIndex];
+}
+
+/*
+ * This is called when a book is tapped on
+ * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
+ * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnBookIndex:%d", bookIndex]);
+}
+
+/*
+ * This is called just before & after the book opens & closes
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenBookIndex:(int)bookIndex andDuration:(float)duration
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"willOpenBookIndex:%d duration:%.2f", bookIndex, duration]);
+  
+  //Hide our menu together with the books
+  self.menuView.userInteractionEnabled = NO;
+  [UIView animateWithDuration:duration animations:^{
+    self.menuView.alpha = 0;
+  }];
+}
+
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)bookIndex atPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didOpenBookIndex:%d atPageIndex:%d", bookIndex, pageIndex]);
+}
+
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didCloseBookIndex:(int)bookIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didCloseBookIndex:%d", bookIndex]); 
+}
+
+/*
+ * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"closingBookWithAlpha:%.2f", alpha]);
+  
+  //Show our menu together with the books
+  self.menuView.alpha = alpha;
+  self.speedView.alpha = 1.0 - alpha;
+  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
+  self.menuView.userInteractionEnabled = (alpha != 0);
+}
+
+/*
+ * This is called when a page is tapped on
+ * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
+ * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnPageIndex:%d", pageIndex]);
+}
+
+/*
+ * This is called when the 3D view is being flipped
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didFlippedWithIndex:%.2f", index]);
+}
+
+/*
+ * This is called after the flipping finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFinishFlippingWithIndex:(float)index
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didFinishFlippingWithIndex:%.2f", index]);
+}
+
+/*
+ * This is called when the fullscreen list is being scrolled
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithPageIndex:(float)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didScrollWithPageIndex:%.2f", pageIndex]);
+}
+
+/*
+ * This is called after the fullscreen list has finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didSnapToPageIndex:%d", pageIndex]);
+}
+
+/*
+ * This is called during & after a fullscreen page is zoom
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didZoomWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didZoomWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
+}
+
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didEndZoomingWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didEndZoomingWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
 }
 
 @end

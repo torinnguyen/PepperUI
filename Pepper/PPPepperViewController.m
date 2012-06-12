@@ -1397,8 +1397,9 @@ static float layer3WidthAt90 = 0;
   _controlIndex = newIndex;
 
   //Notify the delegate
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:flippingWithIndex:)])
-    [self.delegate ppPepperViewController:self flippingWithIndex:self.controlIndex];
+  if ([self isPepperView])
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didFlippedWithIndex:)])
+      [self.delegate ppPepperViewController:self didFlippedWithIndex:self.controlIndex];
   
   float theSpecialIndex = [self getCurrentSpecialIndex];
   float normalizedGroupControlIndex = 1.0 - (theSpecialIndex-newIndex) / 2.0 - 0.5;
@@ -1745,8 +1746,8 @@ static float layer3WidthAt90 = 0;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   
   //Notify the delegate
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didFlippedWithIndex:)])
-    [self.delegate ppPepperViewController:self didFlippedWithIndex:self.controlIndex];
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didFinishFlippingWithIndex:)])
+    [self.delegate ppPepperViewController:self didFinishFlippingWithIndex:self.controlIndex];
 }
 
 #pragma mark - Pinch control implementation
@@ -2119,9 +2120,10 @@ static float layer3WidthAt90 = 0;
     if (subview.tag == self.currentBookIndex)
       subview.alpha = 0;
   
-  //Fade top level menu, if any
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
-    [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
+  //Notify the delegate
+  if (self.controlAngle <= -THRESHOLD_HALF_ANGLE)
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
+      [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
   
   CALayer *layerLeft = self.theLeftView.layer;
   CATransform3D transform = CATransform3DIdentity;
@@ -2349,9 +2351,8 @@ static float layer3WidthAt90 = 0;
     return;
   
   //Notify the delegate about didOpenBookIndex
-  int pageIndex = (int)(self.controlIndex - 0.5);
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
-    [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:pageIndex];
+    [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:self.currentPageIndex];
 }
 
 
