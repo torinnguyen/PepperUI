@@ -1395,6 +1395,10 @@ static float layer3WidthAt90 = 0;
   if (newIndex < MIN_CONTROL_INDEX)           newIndex = MIN_CONTROL_INDEX;
   if (newIndex >= pageCount-1.5+offset)       newIndex = pageCount-1.5+offset;
   _controlIndex = newIndex;
+
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:flippingWithIndex:)])
+    [self.delegate ppPepperViewController:self flippingWithIndex:self.controlIndex];
   
   float theSpecialIndex = [self getCurrentSpecialIndex];
   float normalizedGroupControlIndex = 1.0 - (theSpecialIndex-newIndex) / 2.0 - 0.5;
@@ -1739,6 +1743,10 @@ static float layer3WidthAt90 = 0;
   [self reusePepperViews];
   self.controlIndex = self.controlIndexTimerTarget;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didFlippedWithIndex:)])
+    [self.delegate ppPepperViewController:self didFlippedWithIndex:self.controlIndex];
 }
 
 #pragma mark - Pinch control implementation
@@ -2350,9 +2358,19 @@ static float layer3WidthAt90 = 0;
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)theScrollView {
-  if (![theScrollView isEqual:self.bookScrollView])
+
+  //Fullscreen page scrolling
+  if ([theScrollView isEqual:self.pageScrollView]) {
+    int offsetX = fabs(self.pageScrollView.contentOffset.x);
+    float pageIndex = offsetX / self.pageScrollView.bounds.size.width;
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
+      [self.delegate ppPepperViewController:self didScrollWithPageIndex:pageIndex];
     return;
-  if (!self.isBookView)
+  }
+  
+  if (![theScrollView isEqual:self.bookScrollView])
     return;
   
   //Scale & rotate the book views
@@ -2385,6 +2403,13 @@ static float layer3WidthAt90 = 0;
     subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
   }
+  
+  int offsetX = fabs(self.bookScrollView.contentOffset.x);
+  float bookIndex = offsetX / (self.frameWidth+self.frameSpacing);
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithBookIndex:)])
+    [self.delegate ppPepperViewController:self didScrollWithBookIndex:bookIndex];
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate
@@ -2400,17 +2425,7 @@ static float layer3WidthAt90 = 0;
     self.pageScrollView.userInteractionEnabled = !decelerate;
     
     if (!decelerate)
-      return;
-    
-    self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
-    if (self.hideFirstPage)
-      self.currentPageIndex += 1;
-    
-    self.pepperView.hidden = YES;
-    self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-    self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
-    self.controlAngle = 0;
-    [self.view bringSubviewToFront:self.pageScrollView];
+      [self didSnapPageScrollview];
   }
 }
 
@@ -2426,35 +2441,31 @@ static float layer3WidthAt90 = 0;
 {
   if ([theScrollView isEqual:self.bookScrollView])
     [self reuseBookScrollView];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToBookIndex:)])
+    [self.delegate ppPepperViewController:self didSnapToBookIndex:self.currentBookIndex];
 }
 
 //For page scrollview only
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)theScrollView
 {
-  if (![theScrollView isEqual:self.pageScrollView]) 
-    return;
-  
-  self.currentPageIndex = floor((theScrollView.contentOffset.x - CGRectGetWidth(theScrollView.bounds) / 2) / CGRectGetWidth(theScrollView.bounds)) + 1;
-  if (self.hideFirstPage)
-    self.currentPageIndex += 1;
-  [self reusePageScrollview];
-  
-  self.pepperView.hidden = YES;
-  self.pageScrollView.userInteractionEnabled = YES;
-  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
-  self.controlAngle = 0;
-  [self.view bringSubviewToFront:self.pageScrollView];
+  if ([theScrollView isEqual:self.pageScrollView]) 
+    [self didSnapPageScrollview];
 }
 
 //
-// Custom delegate from PDF scrollview
+// Custom delegate from page scrollview
 //
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
-  {
-    if (theScrollView.zoomScale > 1.0)
+  {    
+    if (theScrollView.zoomScale > 1.0) {
+      //Notify the delegate
+      if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
+        [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
       return;
+    }
     
     float scale = theScrollView.zoomScale;      //1.0 and smaller
     theScrollView.hidden = (scale < 1.0) ? YES : NO;
@@ -2467,12 +2478,38 @@ static float layer3WidthAt90 = 0;
     }
        
     self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
+      [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
   }
 }
 
 - (void)scrollViewDidEndZooming:(UIScrollView *)theScrollView withView:(UIView *)view atScale:(float)scale {
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
     [self snapControlAngle];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didEndZoomingWithPageIndex:zoomScale:)])
+    [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
+}
+
+- (void)didSnapPageScrollview {
+  
+  self.currentPageIndex = floor((self.pageScrollView.contentOffset.x - CGRectGetWidth(self.pageScrollView.bounds) / 2) / CGRectGetWidth(self.pageScrollView.bounds)) + 1;
+  if (self.hideFirstPage)
+    self.currentPageIndex += 1;
+  
+  self.pepperView.hidden = YES;
+  self.pageScrollView.userInteractionEnabled = YES;
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  self.controlAngle = 0;
+  [self.view bringSubviewToFront:self.pageScrollView];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
+    [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
 }
 
 

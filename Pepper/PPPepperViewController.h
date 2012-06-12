@@ -36,18 +36,21 @@
 @optional
 
 /*
+ * This is called when the book list is being scrolled
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithBookIndex:(int)bookIndex;
+
+/*
+ * This is called after the fullscreen list has finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToBookIndex:(int)bookIndex;
+
+/*
  * This is called when a book is tapped on
  * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
  * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex;
-
-/*
- * This is called when a page is tapped on
- * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
- * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
- */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex;
 
 /*
  * This is called just before & after the book opens & closes
@@ -60,6 +63,40 @@
  * When the book is being closed, the library will calculate the necessary alpha value to reveal the initial menu bar
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha;
+
+/*
+ * This is called when a page is tapped on
+ * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
+ * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex;
+
+/*
+ * This is called when the 3D view is being flipped
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList flippingWithIndex:(float)index;
+
+/*
+ * This is called after the flipping finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index;
+
+/*
+ * This is called when the fullscreen list is being scrolled
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithPageIndex:(int)pageIndex;
+
+/*
+ * This is called after the fullscreen list has finish snapping to a page
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToPageIndex:(int)pageIndex;
+
+/*
+ * This is called during & after a fullscreen page is zoom
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didZoomWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale;
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didEndZoomingWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale;
+
 @end
 
 
