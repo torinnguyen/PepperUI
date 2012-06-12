@@ -105,15 +105,13 @@
   
   if (duration <= 0) {
     self.contentViewWrapper.frame = contentWrapperFrame;
-    self.contentOffset = CGPointZero;
-    self.zoomScale = 1.0f;
+    [self reset];
     return;
   }
   
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.contentViewWrapper.frame = contentWrapperFrame;
-    self.contentOffset = CGPointZero;
-    self.zoomScale = 1.0f;
+    [self reset];
   } completion:^(BOOL finished) {
     
   }];
@@ -125,6 +123,12 @@
 {
   [self.contentView removeFromSuperview];
   self.contentView = nil;
+}
+
+- (void)reset
+{
+  self.contentOffset = CGPointZero;
+  self.zoomScale = 1.0f;
 }
 
 

@@ -19,6 +19,7 @@
 @property (nonatomic, strong) UIView *contentView;
 
 - (void)unloadContent;
+- (void)reset;
 - (void)layoutForWidth:(int)width duration:(float)duration;
 
 @end

@@ -1690,6 +1690,11 @@ static float layer3WidthAt90 = 0;
   if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
     return;
   
+  if (duration <= 0) {
+    [self onControlIndexTimerFinish];
+    return;
+  }
+  
   //0.016667 = 1/60
   self.controlIndexTimerLastTime = [[NSDate alloc] init];
   self.controlIndexTimerTarget = index;
@@ -1721,7 +1726,11 @@ static float layer3WidthAt90 = 0;
     return;
   }
   
-  newValue = self.controlIndexTimerTarget;
+  [self onControlIndexTimerFinish];
+}
+
+- (void)onControlIndexTimerFinish
+{
   [self.controlIndexTimer invalidate];
   self.controlIndexTimer = nil;
   
@@ -1736,14 +1745,17 @@ static float layer3WidthAt90 = 0;
 {
   self.isBookView = NO;
   self.isDetailView = YES;
-  
+  float diff = fabs(self.controlAngle - 0) / 45.0;
+
+#warning this reset controlAngle to 0
   //Populate detailed page scrollview
   [self setupPageScrollview];
-    
-  float diff = fabs(self.controlAngle - 0) / 90.0;
+
   if (!self.oneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
-  
+  if (diff < 0.3)
+    diff = 0.3;
+    
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
 }
 
@@ -1802,7 +1814,7 @@ static float layer3WidthAt90 = 0;
   self.isDetailView = NO;
   
   //Hide other view
-  [self hidePageScrollview];
+  [self destroyPageScrollView];
   
   //Re-setup book scrollview if we are coming out from fullscreen
   if (!previousIsBookView) {
@@ -1819,7 +1831,7 @@ static float layer3WidthAt90 = 0;
   
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
   if (!self.oneSideZoom)    diff /= 1.3;
-  else                      diff *= 1.3;
+  else                      diff *= 1.5;
   
   [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
@@ -2279,6 +2291,12 @@ static float layer3WidthAt90 = 0;
   if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
     return;
   
+  NSLog(@"3. %.2f", self.controlAngle);
+  if (duration <= 0 || fabsf(self.controlAngleTimerTarget - self.controlAngle) <= 0) {
+    [self onControlAngleTimerFinish];
+    return;
+  }
+  
   //0.0166666667 = 1/60
   self.controlAngleTimerLastTime = [[NSDate alloc] init];
   self.controlAngleTimerTarget = angle;
@@ -2310,6 +2328,11 @@ static float layer3WidthAt90 = 0;
     return;
   }
   
+  [self onControlAngleTimerFinish];
+}
+  
+- (void)onControlAngleTimerFinish
+{
   [self.controlAngleTimer invalidate];
   self.controlAngleTimer = nil;
   
@@ -2432,7 +2455,7 @@ static float layer3WidthAt90 = 0;
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
   {
-    if (theScrollView.zoomScale >= 1.0)
+    if (theScrollView.zoomScale > 1.0)
       return;
     
     float scale = theScrollView.zoomScale;      //1.0 and smaller
