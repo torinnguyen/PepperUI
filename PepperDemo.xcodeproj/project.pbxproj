@@ -29,6 +29,7 @@
 		4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F7157A8F5F00C27FFB /* PPViewController.m */; };
 		4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */; };
 		42AB47BD157B77B50001AE94 /* book_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AB47BC157B77B50001AE94 /* book_bg.png */; };
+		42B1252815891BF8004AF341 /* MyImageCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 42B1252715891BF8004AF341 /* MyImageCache.m */; };
 		42DB02D11585008000B23A0C /* page_bg_borderless.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02CF1585008000B23A0C /* page_bg_borderless.png */; };
 		42DB02D21585008000B23A0C /* page_bg_borderless@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */; };
 /* End PBXBuildFile section */
@@ -70,6 +71,8 @@
 		4276D0F9157A8FB300C27FFB /* MyPageBaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyPageBaseView.h; sourceTree = "<group>"; };
 		4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyPageBaseView.m; sourceTree = "<group>"; };
 		42AB47BC157B77B50001AE94 /* book_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_bg.png; sourceTree = "<group>"; };
+		42B1252615891BF8004AF341 /* MyImageCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyImageCache.h; sourceTree = "<group>"; };
+		42B1252715891BF8004AF341 /* MyImageCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyImageCache.m; sourceTree = "<group>"; };
 		42DB02CF1585008000B23A0C /* page_bg_borderless.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_bg_borderless.png; sourceTree = "<group>"; };
 		42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "page_bg_borderless@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -192,6 +195,8 @@
 				4276D0F0157A8F1600C27FFB /* MyBookOrPageView.m */,
 				4276D0F1157A8F1600C27FFB /* MyPageViewDetail.h */,
 				4276D0F2157A8F1600C27FFB /* MyPageViewDetail.m */,
+				42B1252615891BF8004AF341 /* MyImageCache.h */,
+				42B1252715891BF8004AF341 /* MyImageCache.m */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -287,6 +292,7 @@
 				4276D0F4157A8F1600C27FFB /* MyPageViewDetail.m in Sources */,
 				4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */,
 				4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */,
+				42B1252815891BF8004AF341 /* MyImageCache.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

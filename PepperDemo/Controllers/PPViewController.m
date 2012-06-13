@@ -39,15 +39,14 @@
 {
   [super viewDidLoad];
 
-  //Insert Pepper UI below our top level menu
+  //Basic setup
   self.pepperViewController = [[PPPepperViewController alloc] init];  
   self.pepperViewController.view.frame = self.view.bounds;
-  self.pepperViewController.view.clipsToBounds = YES;
-  self.pepperViewController.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
   [self.view addSubview:self.pepperViewController.view];
 
+  //Supply it with your own data/model
   self.pepperViewController.delegate = self;
-  //self.pepperViewController.dataSource = self;
+  self.pepperViewController.dataSource = self;
   
   //Optional
   [self onSpeedChange:self.speedSegmented];
@@ -162,7 +161,7 @@
     for (int i=0; i<randomNumPages; i++) {
       Page *myPage = [[Page alloc] init];
       myPage.pageID = randomPageID;
-      //myPage.halfsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
+      myPage.halfsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
       myPage.fullsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
       randomPageID += arc4random() % 123;
       

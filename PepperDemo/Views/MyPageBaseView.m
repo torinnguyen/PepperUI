@@ -5,8 +5,10 @@
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
 //
 
+#import <QuartzCore/QuartzCore.h>
 #import "PPPepperContants.h"
 #import "MyPageBaseView.h"
+#import "MyImageCache.h"
 
 @interface MyPageBaseView()
 @end
@@ -23,12 +25,15 @@
   {
     self.backgroundColor = [UIColor clearColor];
     
-    CGRect imageFrame = CGRectMake(0, EDGE_PADDING, frame.size.width, frame.size.height-2*EDGE_PADDING);
+    int margin = 10;
+    CGRect imageFrame = CGRectMake(margin, margin+EDGE_PADDING, frame.size.width-2*margin, frame.size.height-2*EDGE_PADDING-2*margin);
     self.imageView = [[UIImageView alloc] initWithFrame:imageFrame];
     self.imageView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
     self.imageView.backgroundColor = [UIColor clearColor];
     self.imageView.contentMode = UIViewContentModeScaleAspectFit;
     self.imageView.clipsToBounds = YES;
+    self.imageView.layer.cornerRadius = margin;
+    self.imageView.layer.masksToBounds = YES;
     [self addSubview:self.imageView];
     
     self.loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -58,15 +63,26 @@
     return;
   }
   
-  //Asynchronous loading using GCD
+  //Has cache
+  UIImage *image = [[MyImageCache sharedCached] imageForKey:stringUrl];
+  if (image != nil) {
+    self.imageView.image = image;
+    [self.loadingIndicator stopAnimating];
+    return;
+  }
+  
   [self.loadingIndicator startAnimating];
+  
+  //Asynchronous loading using GCD
+  __block MyPageBaseView* _self = self;
   dispatch_queue_t backgroundQueue = dispatch_queue_create("com.companyname.downloadqueue", NULL);
   dispatch_async(backgroundQueue, ^(void) {
     UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:stringUrl]]];
     
     dispatch_async(dispatch_get_main_queue(), ^(void) {
-      self.imageView.image = image;
-      [self.loadingIndicator stopAnimating];
+      _self.imageView.image = image;
+      [_self.loadingIndicator stopAnimating];
+      [[MyImageCache sharedCached] addImage:image ForKey:stringUrl];
     });
   });
 }
