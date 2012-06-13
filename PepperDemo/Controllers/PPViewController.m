@@ -233,6 +233,17 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToBookIndex:(int)bookIndex
 {
   NSLog(@"%@", [NSString stringWithFormat:@"didSnapToBookIndex:%d", bookIndex]);
+}
+
+/*
+ * This is called when a book is tapped on
+ * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
+ * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnBookIndex:%d", bookIndex]);
+  
   //You can implement your own logic here to prompt user to login before viewinh this content if needed
   //You can implement your own logic here to get remembered last opened page for this book
   
@@ -244,16 +255,6 @@
   if (self.switchRandomPage.on)
     NSLog(@"Open current book at random page: %d", randomPage);
   [scrollList openCurrentBookAtPageIndex:pageIndex];
-}
-
-/*
- * This is called when a book is tapped on
- * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
- * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
- */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex
-{
-  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnBookIndex:%d", bookIndex]);
 }
 
 /*
