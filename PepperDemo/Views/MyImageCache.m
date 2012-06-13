@@ -14,6 +14,7 @@
 
 @implementation MyImageCache
 @synthesize cacheDict;
+@synthesize cacheKeyArray;
 
 + (MyImageCache*)sharedCached
 {

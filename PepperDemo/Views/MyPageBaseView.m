@@ -34,6 +34,8 @@
     self.imageView.clipsToBounds = YES;
     self.imageView.layer.cornerRadius = margin;
     self.imageView.layer.masksToBounds = YES;
+    self.imageView.layer.shouldRasterize = YES;
+    self.imageView.layer.rasterizationScale = [UIScreen mainScreen].scale;
     [self addSubview:self.imageView];
     
     self.loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];

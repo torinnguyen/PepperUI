@@ -144,26 +144,39 @@
 
 - (void)initializeBookData
 {
-  //You can populate book data from else where, for demo purpose, it is hardcoded with random data
+  //You can supply your own data model
+  //For demo purpose, a very basic Book & Page model is supplied
+  //and they are being initialized with random data here
   
-  int randomBookID = arc4random() % 123;
-  int randomPageID = arc4random() % 123;
+  //Dummy image list. Taken from http://www.verticalwallpaper.com/
+  NSArray *imageArray = [NSArray arrayWithObjects:
+                         @"http://www.verticalwallpaper.com/images/scrantonsky.jpg",
+                         @"http://www.verticalwallpaper.com/images/srfalls.jpg",
+                         @"http://www.verticalwallpaper.com/images/wilkesbarre.jpg",
+                         @"http://www.verticalwallpaper.com/images/seagull2.jpg",
+                         @"http://www.verticalwallpaper.com/images/jerusalem.jpg",
+                         @"http://www.verticalwallpaper.com/images/autumnrust.jpg",
+                         @"http://www.verticalwallpaper.com/images/beachdof.jpg",
+                         nil];
+  int imageCount = imageArray.count;
+  
+  int randomBookID = arc4random() % 123456;
+  int randomPageID = arc4random() % 123456;
   
   self.bookDataArray = [[NSMutableArray alloc] init];
   for (int i=0; i<DEMO_NUM_BOOKS; i++) {
     Book *myBook = [[Book alloc] init];
     myBook.bookID = randomBookID;
     myBook.pages = [[NSMutableArray alloc] init];
-    //myBook.coverURL = @"book_cover";
-    randomBookID += arc4random() % 123;
+    randomBookID += arc4random() % 123456;
     
     int randomNumPages = DEMO_NUM_PAGES;
     for (int i=0; i<randomNumPages; i++) {
       Page *myPage = [[Page alloc] init];
       myPage.pageID = randomPageID;
-      myPage.halfsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
-      myPage.fullsizeURL = @"http://www.linenplace.com/boutiques/product-ideas/bamboo.jpg";
-      randomPageID += arc4random() % 123;
+      myPage.halfsizeURL = [imageArray objectAtIndex:randomPageID % imageCount];
+      myPage.fullsizeURL = myPage.halfsizeURL;
+      randomPageID += arc4random() % 123456;
       
       [myBook.pages addObject:myPage];
     }
