@@ -19,7 +19,7 @@
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
 #define LEFT_RIGHT_ANGLE_DIFF        9.9          //should be perfect 10, but we cheated
-#define MAXIMUM_ANGLE                89.5         //near 90, but cannot be 90
+#define MAXIMUM_ANGLE                89.0         //near 90, but cannot be 90
 #define MINIMUM_SCALE                0.3
 #define MINIMUM_SCALE_PAGES          6
 #define NUM_REUSE_BOOK_LANDSCAPE     7            //we can have different number of reusable book views
@@ -47,7 +47,7 @@
 //Almost contants
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
-@property (nonatomic, assign) float frameSpacing;
+@property (nonatomic, assign) float bookSpacing;
 
 //Control
 @property (nonatomic, assign) float controlIndex;
@@ -129,7 +129,7 @@
 @synthesize zoomOnLeft;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
-@synthesize frameWidth, frameHeight, frameSpacing;
+@synthesize frameWidth, frameHeight, bookSpacing;
 
 @synthesize controlAngleTimerTarget;
 @synthesize controlAngleTimerDx;
@@ -260,12 +260,14 @@ static float layer3WidthAt90 = 0;
   [super didReceiveMemoryWarning];
   
   //Dealloc Book scrollview
-  if (!self.isBookView) {
+  BOOL canDestroyBookView = !self.isBookView;
+  if (canDestroyBookView) {
     [self destroyBookScrollView];
   }
   
   //Dealloc Pepper views
-  if (![self isPepperView]) {
+  BOOL canDestroyPepperView = ![self isPepperView] && !(self.isDetailView && self.controlAngle < 0);
+  if (canDestroyPepperView) {
     while (self.pepperView.subviews.count > 0)
       [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
     [self.reusePepperWrapperArray removeAllObjects];
@@ -273,7 +275,8 @@ static float layer3WidthAt90 = 0;
   }
   
   //Dealloc Page scrollview
-  if (!self.isDetailView && !([self isPepperView] && self.controlAngle > -THRESHOLD_HALF_ANGLE)) {
+  BOOL canDestroyPageView = !self.isDetailView && !([self isPepperView] && self.controlAngle > -THRESHOLD_HALF_ANGLE);
+  if (canDestroyPageView) {
     [self destroyPageScrollView];
   }
 }
@@ -577,13 +580,16 @@ static float layer3WidthAt90 = 0;
 
 - (void)updateFrameSizesForOrientation:(UIInterfaceOrientation)orientation
 {
+  //Scale for iPhone too
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
-  float factor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
+  float deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
+  float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
+  
   if (!self.scaleOnDeviceRotation)
-    factor = 1.0f;
-  self.frameHeight = FRAME_HEIGHT_LANDSCAPE * factor;
-  self.frameWidth = FRAME_WIDTH_LANDSCAPE * factor;
-  self.frameSpacing = FRAME_WIDTH_LANDSCAPE / 2.4f * factor;
+    orientationFactor = 1.0f;
+  self.frameHeight = FRAME_HEIGHT_LANDSCAPE * orientationFactor * deviceFactor;
+  self.frameWidth = FRAME_WIDTH_LANDSCAPE * orientationFactor * deviceFactor;
+  self.bookSpacing = (FRAME_WIDTH_LANDSCAPE * MAX_BOOK_SCALE) / 2.4 * orientationFactor * deviceFactor;
   
   //Frame size changes on rotation, these needs to be recalculated
   if (self.scaleOnDeviceRotation) {
@@ -667,14 +673,15 @@ static float layer3WidthAt90 = 0;
   //edge limit. maybe not needed because we already have cell reuse & scale limit
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   if (isLandscape) {
-    //if (diffFromMidX > midX-self.frameWidth)
     if (indexDiff > NUM_VISIBLE_PAGE_ONE_SIDE)
       diffFromMidX = midX-self.frameWidth;
   }
   
   float x = 0;  
-  if (pageIndex < self.controlIndex)    x = midX - diffFromMidX * gapScale;
-  else                                  x = midX + diffFromMidX * gapScale;
+  float deltaFromMidX = diffFromMidX * gapScale;
+  
+  if (pageIndex < self.controlIndex)    x = midX - deltaFromMidX;
+  else                                  x = midX + deltaFromMidX;
   return x;
 }
 
@@ -940,14 +947,14 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)scrollToBook:(int)bookIndex animated:(BOOL)animated {
-  int x = bookIndex * (self.frameWidth + self.frameSpacing);
+  int x = bookIndex * (self.frameWidth + self.bookSpacing);
   [self.bookScrollView setContentOffset:CGPointMake(x, 0) animated:animated];
   self.currentBookIndex = bookIndex;
 }
 
 - (void)snapBookScrollView {
   int index = [self getCurrentBookIndex];
-  int x = index * (self.frameWidth + self.frameSpacing);
+  int x = index * (self.frameWidth + self.bookSpacing);
   [self.bookScrollView setContentOffset:CGPointMake(x, 0) animated:YES];
   self.currentBookIndex = index;
 }
@@ -1002,9 +1009,9 @@ static float layer3WidthAt90 = 0;
 // Return the frame for this book in scrollview
 //
 - (CGRect)getFrameForBookIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape(interfaceOrientation);
   int frameY = [self getFrameY];
-  int x = (isLandscape ? 1024 : 768)/2 - self.frameWidth/2 + index * (self.frameWidth + self.frameSpacing);
+  int midX = [self getMidXForOrientation:interfaceOrientation];
+  int x = midX - self.frameWidth/2 + index * (self.frameWidth + self.bookSpacing);
   return CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
 }
 
@@ -1013,7 +1020,7 @@ static float layer3WidthAt90 = 0;
 //
 - (CGRect)getFrameForBookIndex:(int)index {
   int frameY = [self getFrameY];
-  int x = CGRectGetWidth(self.bookScrollView.frame)/2 - self.frameWidth/2 + index * (self.frameWidth + self.frameSpacing);
+  int x = CGRectGetWidth(self.bookScrollView.frame)/2 - self.frameWidth/2 + index * (self.frameWidth + self.bookSpacing);
   return CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
 }
 
@@ -1023,7 +1030,7 @@ static float layer3WidthAt90 = 0;
 - (int)getCurrentBookIndex {
   
   int offsetX = fabs(self.bookScrollView.contentOffset.x);
-  int index = round(offsetX / (self.frameWidth+self.frameSpacing));
+  int index = round(offsetX / (self.frameWidth+self.bookSpacing));
   return index;
 }
 
@@ -1073,6 +1080,7 @@ static float layer3WidthAt90 = 0;
   
   coverPage.hidden = NO;
   coverPage.alpha = 1;
+  coverPage.transform = CGAffineTransformIdentity;
   coverPage.frame = [self getFrameForBookIndex:index];
   coverPage.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
     
@@ -1149,7 +1157,7 @@ static float layer3WidthAt90 = 0;
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenBookIndex:andDuration:)])
     [self.delegate ppPepperViewController:self willOpenBookIndex:bookIndex andDuration:self.animationSlowmoFactor*OPEN_BOOK_DURATION];
-
+  
   //This is where magic happens (animation)
   [self showHalfOpen:YES];
      
@@ -1259,9 +1267,8 @@ static float layer3WidthAt90 = 0;
 // Return the frame for this page in scrollview
 //
 - (CGRect)getFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape(interfaceOrientation);
-  int width = (isLandscape ? 1024 : 768);
-  int height = (isLandscape ? 768 : 1024);
+  int width = 2 * [self getMidXForOrientation:interfaceOrientation];
+  int height = 2 * [self getMidYForOrientation:interfaceOrientation];
   int x = (self.hideFirstPage) ? (index-1)*width : index*width;
   return CGRectMake(x, 0, width, height);
 }
@@ -1270,9 +1277,10 @@ static float layer3WidthAt90 = 0;
 // Return the frame for this page in scrollview
 //
 - (CGRect)getFrameForPageIndex:(int)index {
-  BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
+  int width = 2 * [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  int height = 2 * [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int x = index * CGRectGetWidth(self.bookScrollView.bounds);
-  return CGRectMake(x, 0, isLandscape ? 1024:768, isLandscape ? 768:1024);
+  return CGRectMake(x, 0, width, height);
 }
 
 - (void)removePageFromScrollView:(int)index {
@@ -1912,9 +1920,9 @@ static float layer3WidthAt90 = 0;
       continue;
     
     //Position
-    BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));    
     int frameY = [self getFrameY];
-    float x = isLandscape ? (1024/2-self.frameWidth/2) : (768/2-self.frameWidth/2);
+    int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+    float x = midX - self.frameWidth/2 * MAX_BOOK_SCALE;
     CGRect pageFrame = CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
     
     //Alpha
@@ -1995,12 +2003,13 @@ static float layer3WidthAt90 = 0;
     return;
     
   //Remove layer later (not perfect but good enough for fast animation)
-  float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION/2;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
+  float removeCoverDuration = (90.0-THRESHOLD_HALF_ANGLE)/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;    //this is a wrong fomula, but I have no idea why it works
+  
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self hideBookCoverFromFirstPage];
   });
   
-  animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self removeBookCoverFromFirstPage];
   });
@@ -2023,13 +2032,11 @@ static float layer3WidthAt90 = 0;
   //Add it back to book scrollview
   [self.bookScrollView addSubview:self.theBookCover];
   self.theBookCover.hidden = NO;
+  self.theBookCover.transform = CGAffineTransformIdentity;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
-
-  //This doesn't seem to do anything
-  //self.theBookCover.layer.anchorPoint = CGPointMake(0, 0.5);
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
   
-  //De-reference
+  //De-reference, dealloc
   self.theBookCover = nil;
 }
 
@@ -2123,10 +2130,10 @@ static float layer3WidthAt90 = 0;
       subview.alpha = 0;
   
   //Notify the delegate
-  if (self.controlAngle <= -THRESHOLD_HALF_ANGLE)
+  if (self.controlAngle < -THRESHOLD_HALF_ANGLE)
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
       [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
-  
+    
   CALayer *layerLeft = self.theLeftView.layer;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = m34;
@@ -2147,7 +2154,7 @@ static float layer3WidthAt90 = 0;
   layerRight.transform = transform;
   self.theRightView.hidden = NO;
   
-  //Default to left page
+  //Default bias to left page
   self.currentPageIndex = self.controlIndex - 0.5;
   
   //Zoom in on 1 side
@@ -2166,6 +2173,13 @@ static float layer3WidthAt90 = 0;
     self.theRightView.frame = frame;
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
+  }
+  
+  //Notify the delegate
+  if (self.controlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle <= 0) {
+    float scale = 1.0 + self.controlAngle / fabs(THRESHOLD_HALF_ANGLE);
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
+      [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:scale];
   }
     
   //Hide unneccessary pages
@@ -2275,7 +2289,7 @@ static float layer3WidthAt90 = 0;
     positionScale = 0.5f + (newControlAngle / (-THRESHOLD_HALF_ANGLE))/2;
   else {
     positionScale = 1.0f - fabs(newControlAngle-(-THRESHOLD_HALF_ANGLE)) / fabs(-MAXIMUM_ANGLE-(-THRESHOLD_HALF_ANGLE));
-    positionScale = 0.05f + positionScale * 0.95f;
+    positionScale = 0.07f + positionScale * 0.93f;
   }
   if (positionScale < 0)
     positionScale = 0;
@@ -2408,7 +2422,7 @@ static float layer3WidthAt90 = 0;
   }
   
   int offsetX = fabs(self.bookScrollView.contentOffset.x);
-  float bookIndex = offsetX / (self.frameWidth+self.frameSpacing);
+  float bookIndex = offsetX / (self.frameWidth+self.bookSpacing);
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithBookIndex:)])
@@ -2486,10 +2500,6 @@ static float layer3WidthAt90 = 0;
     }*/
        
     self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
-    
-    //Notify the delegate
-    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
-      [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
   }
 }
 
@@ -2498,8 +2508,9 @@ static float layer3WidthAt90 = 0;
     [self snapControlAngle];
   
   //Notify the delegate
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didEndZoomingWithPageIndex:zoomScale:)])
-    [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
+  if (scale > 1)
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didEndZoomingWithPageIndex:zoomScale:)])
+      [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
 }
 
 - (void)didSnapPageScrollview {
@@ -2718,6 +2729,8 @@ static float layer3WidthAt90 = 0;
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag
 {
+  if (AUTO_OPEN_BOOK)
+    return;
   [self openCurrentBookAtPageIndex:0];
 }
 

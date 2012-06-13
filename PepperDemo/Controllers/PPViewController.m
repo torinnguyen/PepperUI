@@ -40,10 +40,12 @@
   [super viewDidLoad];
 
   //Insert Pepper UI below our top level menu
-  self.pepperViewController = [[PPPepperViewController alloc] init];
+  self.pepperViewController = [[PPPepperViewController alloc] init];  
   self.pepperViewController.view.frame = self.view.bounds;
+  self.pepperViewController.view.clipsToBounds = YES;
   self.pepperViewController.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
   [self.view addSubview:self.pepperViewController.view];
+
   self.pepperViewController.delegate = self;
   //self.pepperViewController.dataSource = self;
   
@@ -254,6 +256,8 @@
   int pageIndex = self.switchRandomPage.on ? randomPage : 0;
   if (self.switchRandomPage.on)
     NSLog(@"Open current book at random page: %d", randomPage);
+  
+  //This is needed when AUTO_OPEN_BOOK is disabled (default)
   [scrollList openCurrentBookAtPageIndex:pageIndex];
 }
 
@@ -268,6 +272,7 @@
   self.menuView.userInteractionEnabled = NO;
   [UIView animateWithDuration:duration animations:^{
     self.menuView.alpha = 0;
+    self.speedView.alpha = 1;
   }];
 }
 
