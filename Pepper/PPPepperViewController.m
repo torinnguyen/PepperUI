@@ -195,6 +195,9 @@ static float layer3WidthAt90 = 0;
   
   //Initialize views
   self.view.autoresizesSubviews = YES;
+  self.view.clipsToBounds = YES;
+  self.view.backgroundColor = [UIColor clearColor];
+  self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
     
   UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
   pinchGestureRecognizer.delegate = self;
