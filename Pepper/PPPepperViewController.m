@@ -273,7 +273,7 @@ static float layer3WidthAt90 = 0;
   }
   
   //Dealloc Page scrollview
-  if (!self.isDetailView) {
+  if (!self.isDetailView && !([self isPepperView] && self.controlAngle > -THRESHOLD_HALF_ANGLE)) {
     [self destroyPageScrollView];
   }
 }
@@ -2073,15 +2073,17 @@ static float layer3WidthAt90 = 0;
   //Limits
   if (newControlAngle > 0)                  newControlAngle = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
+  float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
     
   //Show/hide various views
-  if (self.controlAngle >= 0) {
-    [self setupReuseablePoolPageViews];
-    [self reusePageScrollview];
+  if (previousControlAngle < 0 && self.controlAngle >= 0) {
+    //[self setupReuseablePoolPageViews];
+    //[self reusePageScrollview];
+    [self setupPageScrollview];
     self.pepperView.hidden = YES;
   }
-  else if (self.controlAngle < -MAXIMUM_ANGLE) {
+  else if (previousControlAngle >= 0 && self.controlAngle < 0) {
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
@@ -2462,6 +2464,10 @@ static float layer3WidthAt90 = 0;
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
   {    
     if (theScrollView.zoomScale > 1.0) {
+      self.controlAngle = 1.0;
+      self.pageScrollView.hidden = NO;
+      self.pepperView.hidden = NO;
+      
       //Notify the delegate
       if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
         [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
@@ -2473,10 +2479,11 @@ static float layer3WidthAt90 = 0;
     self.pepperView.hidden = !theScrollView.hidden;
 
     //Memory warning kills Pepper view
+    /*
     if (theScrollView.hidden == YES) {
       [self setupReusablePoolPepperViews];
       [self reusePepperViews];
-    }
+    }*/
        
     self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
     
