@@ -2524,6 +2524,8 @@ static float layer3WidthAt90 = 0;
   self.controlAngle = 0;
   [self.view bringSubviewToFront:self.pageScrollView];
   
+  [self reusePageScrollview];
+  
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
     [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
