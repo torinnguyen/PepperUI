@@ -189,10 +189,10 @@
     randomBookID += arc4random() % 123456;
     
     int randomNumPages = DEMO_NUM_PAGES;
-    for (int i=0; i<randomNumPages; i++) {
+    for (int j=0; j<randomNumPages; j++) {
       Page *myPage = [[Page alloc] init];
       myPage.pageID = randomPageID;
-      myPage.halfsizeURL = [imageArray objectAtIndex:randomPageID % imageCount];
+      myPage.halfsizeURL = [imageArray objectAtIndex:(i+j) % imageCount];
       myPage.fullsizeURL = myPage.halfsizeURL;
       randomPageID += arc4random() % 123456;
       
