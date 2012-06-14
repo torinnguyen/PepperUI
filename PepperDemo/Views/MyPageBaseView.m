@@ -30,7 +30,7 @@
     self.imageView = [[UIImageView alloc] initWithFrame:imageFrame];
     self.imageView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
     self.imageView.backgroundColor = [UIColor clearColor];
-    self.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.clipsToBounds = YES;
     self.imageView.layer.cornerRadius = margin;
     self.imageView.layer.masksToBounds = YES;
