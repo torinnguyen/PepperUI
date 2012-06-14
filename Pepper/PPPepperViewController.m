@@ -2081,10 +2081,8 @@ static float layer3WidthAt90 = 0;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
     
-  //Show/hide various views
+  //Memory management
   if (previousControlAngle < 0 && self.controlAngle >= 0) {
-    //[self setupReuseablePoolPageViews];
-    //[self reusePageScrollview];
     [self setupPageScrollview];
     self.pepperView.hidden = YES;
   }
