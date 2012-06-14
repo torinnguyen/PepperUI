@@ -16,12 +16,24 @@
 
 @protocol PPScrollListViewControllerDataSource <NSObject>
 
+/*
+ * Delegate to return the book cover views
+ */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame;
+
+/*
+ * Delegate to return the page views in 3D mode
+ */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame;
+
+/*
+ * Delegate to return the page views in fullscreen/detailed mode
+ */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame;
 
 /*
  * Delegate to return the number of books
+ * Please ignore the dummy parameter, reserved for future use
  */
 - (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfBooks:(int)dummy;
 
@@ -46,7 +58,7 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToBookIndex:(int)bookIndex;
 
 /*
- * This is called when a book is tapped on
+ * This is called when a book cover is tapped on
  * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
  * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
  */
@@ -72,7 +84,7 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex;
 
 /*
- * This is called when the 3D view is being flipped
+ * This is called when the 3D page view is being flipped
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index;
 
