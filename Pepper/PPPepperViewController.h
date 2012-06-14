@@ -104,6 +104,11 @@
 
 
 @interface PPPepperViewController : UIViewController
+<
+ PPScrollListViewControllerDataSource,
+ PPScrollListViewControllerDelegate
+>
+
 
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;

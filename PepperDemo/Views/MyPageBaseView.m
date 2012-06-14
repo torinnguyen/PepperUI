@@ -38,11 +38,13 @@
     self.imageView.layer.rasterizationScale = [UIScreen mainScreen].scale;
     [self addSubview:self.imageView];
     
-    self.loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    self.loadingIndicator.frame = self.imageView.bounds;
-    self.loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+    self.loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    self.loadingIndicator.center = self.imageView.center;
+    self.loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
+    | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
     self.loadingIndicator.contentMode = UIViewContentModeCenter;
     self.loadingIndicator.hidesWhenStopped = YES;
+    self.loadingIndicator.color = [UIColor orangeColor];
     [self.loadingIndicator stopAnimating];
     [self.imageView addSubview:self.loadingIndicator];
   }

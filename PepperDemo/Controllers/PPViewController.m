@@ -16,6 +16,7 @@
 @property (nonatomic, strong) IBOutlet UIView * menuView;
 @property (nonatomic, strong) IBOutlet UIView * speedView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
+@property (nonatomic, strong) IBOutlet UISegmentedControl * contentSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
 @property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
@@ -28,6 +29,7 @@
 @synthesize menuView;
 @synthesize speedView;
 @synthesize speedSegmented;
+@synthesize contentSegmented;
 @synthesize switchRandomPage;
 @synthesize switchScaleOnDeviceRotation;
 @synthesize lblSpeed;
@@ -45,8 +47,8 @@
   [self.view addSubview:self.pepperViewController.view];
 
   //Supply it with your own data/model
-  self.pepperViewController.delegate = self;
-  self.pepperViewController.dataSource = self;
+  self.pepperViewController.delegate = self;        //we are simply printing out all delegate events in this demo
+  //self.pepperViewController.dataSource = self;    //refer to onContentChange function below for this config
   
   //Optional
   [self onSpeedChange:self.speedSegmented];
@@ -71,7 +73,8 @@
 {
   [super viewDidAppear:animated];
   [self.pepperViewController viewDidAppear:animated];
-  [self.pepperViewController reload];
+  
+  [self onContentChange:self.contentSegmented];
 }
 
 - (void)viewDidUnload
@@ -121,6 +124,18 @@
     default:     break;
   }
   self.pepperViewController.animationSlowmoFactor = factor;
+}
+
+- (IBAction)onContentChange:(id)sender
+{
+  int idx = self.contentSegmented.selectedSegmentIndex;
+  if (idx == 0) {
+    self.pepperViewController.dataSource = self.pepperViewController;
+  }
+  else {
+    self.pepperViewController.dataSource = self;
+  }
+  [self.pepperViewController reload];
 }
 
 - (IBAction)onSwitchRandomPage:(id)sender

@@ -37,8 +37,6 @@
 
 @interface PPPepperViewController()
 <
- PPScrollListViewControllerDataSource,
- PPScrollListViewControllerDelegate,
  UIGestureRecognizerDelegate,
  UIScrollViewDelegate,
  PPPageViewWrapperDelegate
@@ -373,12 +371,6 @@ static float layer3WidthAt90 = 0;
 }
 
 - (void)reload {
-    
-  //Recycle views
-  for (UIView *subview in self.bookScrollView.subviews) {
-    [self.reuseBookViewArray addObject:subview];
-    [subview removeFromSuperview];
-  }
   
   //Initialize book views
   self.bookScrollView.contentOffset = CGPointMake(0,0);
@@ -391,10 +383,13 @@ static float layer3WidthAt90 = 0;
   self.isDetailView = NO;
 
   //Initialize books scrollview
-  [self updateBookScrollViewContentSize];
+  [self destroyBookScrollView];
+  [self destroyPeperView];
+  [self destroyPageScrollView];
 
-  //Add all pages in
+  //Initialize books scrollview
   [self setupReuseablePoolBookViews];
+  [self updateBookScrollViewContentSize];
   for (int i=0; i<numBooks; i++)
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
