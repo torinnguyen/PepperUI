@@ -11,6 +11,7 @@
 #import "PPPepperViewController.h"
 #import "MyBookOrPageView.h"
 #import "MyPageViewDetail.h"
+#import "MyImageCache.h"
 
 @interface PPViewController () <PPScrollListViewControllerDataSource, PPScrollListViewControllerDelegate>
 @property (nonatomic, strong) IBOutlet UIView * menuView;
@@ -135,6 +136,7 @@
   else {
     self.pepperViewController.dataSource = self;
   }
+  [[MyImageCache sharedCached] removeAll];
   [self.pepperViewController reload];
 }
 
@@ -163,15 +165,16 @@
   //For demo purpose, a very basic Book & Page model is supplied
   //and they are being initialized with random data here
   
-  //Dummy image list. Taken from http://www.verticalwallpaper.com/
+  //Dummy image list. Use with permission from Flickr user
   NSArray *imageArray = [NSArray arrayWithObjects:
-                         @"http://www.verticalwallpaper.com/images/scrantonsky.jpg",
-                         @"http://www.verticalwallpaper.com/images/srfalls.jpg",
-                         @"http://www.verticalwallpaper.com/images/wilkesbarre.jpg",
-                         @"http://www.verticalwallpaper.com/images/seagull2.jpg",
-                         @"http://www.verticalwallpaper.com/images/jerusalem.jpg",
-                         @"http://www.verticalwallpaper.com/images/autumnrust.jpg",
-                         @"http://www.verticalwallpaper.com/images/beachdof.jpg",
+                         @"http://farm5.staticflickr.com/4013/4403864606_1ef5903b40_b.jpg",
+                         @"http://farm3.staticflickr.com/2772/4409418974_df2bc0e6a8_b.jpg",
+                         @"http://farm5.staticflickr.com/4043/4411334362_652660cd36_b.jpg",
+                         @"http://farm3.staticflickr.com/2787/4410850119_0088b812b6_b.jpg",
+                         @"http://farm5.staticflickr.com/4013/4413884482_cd8b7f29fb_b.jpg",
+                         @"http://farm8.staticflickr.com/7217/7188226254_809e5b218b_b.jpg",
+                         @"http://farm5.staticflickr.com/4030/4411581280_8ef29563d8_z.jpg?zz=1",
+                         @"http://farm8.staticflickr.com/7223/7188230154_13db066420_b.jpg",
                          nil];
   int imageCount = imageArray.count;
   

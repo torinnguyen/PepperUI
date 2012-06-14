@@ -80,4 +80,10 @@
   [self.cacheDict removeObjectForKey:key];
 }
 
+- (void)removeAll
+{
+  while (self.cacheKeyArray.count > 0)
+    [self removeImageForKey:[self.cacheKeyArray objectAtIndex:0]];
+}
+
 @end
