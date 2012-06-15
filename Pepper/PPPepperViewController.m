@@ -408,6 +408,11 @@ static float layer3WidthAt90 = 0;
 
 - (void)PPPageViewWrapper:(PPPageViewContentWrapper*)thePage viewDidTap:(int)tag
 {
+  if ([self.controlAngleTimer isValid] || [self.controlIndexTimer isValid])
+    return;
+  if (!self.isBookView && self.controlAngle == 0)
+    return;
+  
   if (thePage.isBook) {
     if (self.currentBookIndex != tag) {
       [self scrollToBook:tag animated:YES];
