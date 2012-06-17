@@ -24,16 +24,6 @@
 }
 
 //
-// Populate various UI elements with a Page model  data
-//
-- (void)configureWithPageModel:(Page*)pageModel
-{
-  self.theModel = pageModel;
-  self.imageView.image = nil;
-  [self fetchImageWithUrl:pageModel.halfsizeURL];
-}
-
-//
 // Populate various UI elements with a Book model data
 //
 - (void)configureWithBookModel:(Book*)bookModel
@@ -48,6 +38,16 @@
   
   Page *firstPage = [bookModel.pages objectAtIndex:0];
   [self fetchImageWithUrl:firstPage.halfsizeURL];
+}
+
+//
+// Populate various UI elements with a Page model  data
+//
+- (void)configureWithPageModel:(Page*)pageModel
+{
+  self.theModel = pageModel;
+  self.imageView.image = nil;
+  [self fetchImageWithUrl:pageModel.halfsizeURL];
 }
 
 //

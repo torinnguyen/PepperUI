@@ -219,28 +219,46 @@
   return theBook.pages.count;
 }
 
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
-  MyBookOrPageView *view = [[MyBookOrPageView alloc] initWithFrame:frame];
+  
+  MyBookOrPageView *view = nil;
+  if (contentView == nil || ![contentView isKindOfClass:[MyBookOrPageView class]])
+    view = [[MyBookOrPageView alloc] initWithFrame:frame];
+  else
+    view = (MyBookOrPageView*)contentView;
+
   [view configureWithBookModel:theBook];
   return view;
 }
 
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
-  MyBookOrPageView *view = [[MyBookOrPageView alloc] initWithFrame:frame];
+
+  MyBookOrPageView *view = nil;
+  if (contentView == nil || ![contentView isKindOfClass:[MyBookOrPageView class]])
+    view = [[MyBookOrPageView alloc] initWithFrame:frame];
+  else
+    view = (MyBookOrPageView*)contentView;
+  
   [view configureWithPageModel:thePage];
   return view;
 }
 
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
-  MyPageViewDetail *view = [[MyPageViewDetail alloc] initWithFrame:frame];
+  
+  MyPageViewDetail *view = nil;
+  if (contentView == nil || ![contentView isKindOfClass:[MyPageViewDetail class]])
+    view = [[MyPageViewDetail alloc] initWithFrame:frame];
+  else
+    view = (MyPageViewDetail*)contentView;
+  
   [view configureWithPageModel:thePage];
   return view;
 }

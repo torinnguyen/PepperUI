@@ -859,8 +859,8 @@ static float layer3WidthAt90 = 0;
   pageView.isLeft = (index%2==0) ? YES : NO;
   [self.pepperView addSubview:pageView];
   
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:)])
-    pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds];
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
+    pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds reusableView:pageView.contentView];
   else
     pageView.contentView = nil;
 }
@@ -1087,8 +1087,8 @@ static float layer3WidthAt90 = 0;
   coverPage.frame = [self getFrameForBookIndex:index];
   coverPage.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
     
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:)])
-    coverPage.contentView = [self.dataSource ppPepperViewController:self viewForBookIndex:index withFrame:coverPage.bounds];
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
+    coverPage.contentView = [self.dataSource ppPepperViewController:self viewForBookIndex:index withFrame:coverPage.bounds reusableView:coverPage.contentView];
   else
     coverPage.contentView = nil;
 
@@ -1329,8 +1329,8 @@ static float layer3WidthAt90 = 0;
   pageDetailView.customDelegate = self;
   [self.pageScrollView addSubview:pageDetailView];
    
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:)])
-    pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds];
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
+    pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
   else
     pageDetailView.contentView = nil;
 
@@ -2747,7 +2747,7 @@ static float layer3WidthAt90 = 0;
 {
   return DEMO_NUM_PAGES;
 }
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];
@@ -2763,7 +2763,7 @@ static float layer3WidthAt90 = 0;
   [view addSubview:label];
   return view;
 }
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];
@@ -2780,7 +2780,7 @@ static float layer3WidthAt90 = 0;
   
   return view;
 }
-- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame
+- (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 { 
   UIView *view = [[UIView alloc] initWithFrame:frame];
   view.backgroundColor = [UIColor clearColor];

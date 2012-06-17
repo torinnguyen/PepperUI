@@ -39,7 +39,7 @@
     [self addSubview:self.imageView];
     
     self.loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    self.loadingIndicator.center = self.imageView.center;
+    self.loadingIndicator.center = CGPointMake(CGRectGetMidX(self.imageView.bounds), CGRectGetMidY(self.imageView.bounds));
     self.loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
     | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
     self.loadingIndicator.contentMode = UIViewContentModeCenter;
@@ -71,7 +71,9 @@
   UIImage *image = [[MyImageCache sharedCached] imageForKey:stringUrl];
   if (image != nil) {
     self.imageView.image = image;
+    self.imageView.backgroundColor = [UIColor greenColor];
     [self.loadingIndicator stopAnimating];
+    [self.imageView setNeedsDisplay];
     return;
   }
   
