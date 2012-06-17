@@ -2747,55 +2747,113 @@ static float layer3WidthAt90 = 0;
 {
   return DEMO_NUM_PAGES;
 }
+
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
-  UIView *view = [[UIView alloc] initWithFrame:frame];
-  view.backgroundColor = [UIColor clearColor];
+  //NOTE: this should be encapsulated in a proper class, see demo project for proper implementation
   
-  UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
-  label.backgroundColor = [UIColor clearColor];
-  label.textColor = [UIColor grayColor];
-  label.font = [UIFont systemFontOfSize:12];
-  label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content for\nthis book cover\n\n\n\n\n\n\nBook index: %d", bookIndex];
-  label.numberOfLines = 0;
-  label.textAlignment = UITextAlignmentCenter;
-  label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
-  [view addSubview:label];
-  return view;
+  //Check if we can reuse the view
+  UIView *myView = nil;
+  UILabel *myLabel = nil;
+  if (contentView != nil)
+    for (UIView *subview in contentView.subviews)
+      if ([subview isKindOfClass:[UILabel class]])
+        myLabel = (UILabel*)subview; 
+  
+  //No-reuse, create it
+  if (myLabel == nil) {
+    myView = [[UIView alloc] initWithFrame:frame];
+    myView.backgroundColor = [UIColor clearColor];
+
+    myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
+    myLabel.backgroundColor = [UIColor clearColor];
+    myLabel.textColor = [UIColor grayColor];
+    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.numberOfLines = 0;
+    myLabel.textAlignment = UITextAlignmentCenter;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    [myView addSubview:myLabel];
+  }
+  else {
+    myView = contentView;
+  }
+  
+  //Configure view with new data
+  myLabel.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content for\nthis book cover\n\n\n\n\n\n\nBook index: %d", bookIndex];
+  
+  return myView;
 }
+
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
-  UIView *view = [[UIView alloc] initWithFrame:frame];
-  view.backgroundColor = [UIColor clearColor];
+  //NOTE: this should be encapsulated in a proper class, see demo project for proper implementation
   
-  UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
-  label.backgroundColor = [UIColor clearColor];
-  label.textColor = [UIColor grayColor];
-  label.font = [UIFont systemFontOfSize:12];
-  label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this page\n\n\n\n\n\n\nPage index: %d", pageIndex];
-  label.numberOfLines = 0;
-  label.textAlignment = UITextAlignmentCenter;
-  label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
-  [view addSubview:label];
+  //Check if we can reuse the view
+  UIView *myView = nil;
+  UILabel *myLabel = nil;
+  if (contentView != nil)
+    for (UIView *subview in contentView.subviews)
+      if ([subview isKindOfClass:[UILabel class]])
+        myLabel = (UILabel*)subview; 
   
-  return view;
+  //No-reuse, create it
+  if (myLabel == nil) {
+    myView = [[UIView alloc] initWithFrame:frame];
+    myView.backgroundColor = [UIColor clearColor];
+    
+    myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
+    myLabel.backgroundColor = [UIColor clearColor];
+    myLabel.textColor = [UIColor grayColor];
+    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.numberOfLines = 0;
+    myLabel.textAlignment = UITextAlignmentCenter;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    [myView addSubview:myLabel];
+  }
+  else {
+    myView = contentView;
+  }
+
+  //Configure view with new data
+  myLabel.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this page\n\n\n\n\n\n\nPage index: %d", pageIndex];
+  
+  return myView;
 }
+
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
-{ 
-  UIView *view = [[UIView alloc] initWithFrame:frame];
-  view.backgroundColor = [UIColor clearColor];
+{
+  //NOTE: this should be encapsulated in a proper class, see demo project for proper implementation
   
-  UILabel *label = [[UILabel alloc] initWithFrame:view.bounds];
-  label.backgroundColor = [UIColor clearColor];
-  label.font = [UIFont systemFontOfSize:12];
-  label.textColor = [UIColor blackColor];
-  label.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\n\n\n\nDetailed page index: %d", pageIndex];
-  label.numberOfLines = 0;
-  label.textAlignment = UITextAlignmentCenter;
-  label.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+  //Check if we can reuse the view
+  UIView *myView = nil;
+  UILabel *myLabel = nil;
+  if (contentView != nil)
+    for (UIView *subview in contentView.subviews)
+      if ([subview isKindOfClass:[UILabel class]])
+        myLabel = (UILabel*)subview; 
   
-  [view addSubview:label];
-  return view;
+  //No-reuse, create it
+  if (myLabel == nil) {
+    myView = [[UIView alloc] initWithFrame:frame];
+    myView.backgroundColor = [UIColor clearColor];
+    
+    myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
+    myLabel.backgroundColor = [UIColor clearColor];
+    myLabel.textColor = [UIColor blackColor];
+    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.numberOfLines = 0;
+    myLabel.textAlignment = UITextAlignmentCenter;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    [myView addSubview:myLabel];
+  }
+  else {
+    myView = contentView;
+  }
+  
+  //Configure view with new data
+  myLabel.text = [NSString stringWithFormat:@"Implement your own\nPPScrollListViewControllerDataSource\nto supply content\nfor this fullsize page\n\n\n\n\n\n\nDetailed page index: %d", pageIndex];
+  
+  return myView;
 }
 
 
