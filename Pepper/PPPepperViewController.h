@@ -17,6 +17,17 @@
 @protocol PPScrollListViewControllerDataSource <NSObject>
 
 /*
+ * Delegate to return the number of books
+ * Please ignore the dummy parameter, reserved for future use
+ */
+- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfBooks:(int)dummy;
+
+/*
+ * Delegate to return the number of pages in the given book index
+ */
+- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfPagesForBookIndex:(int)bookIndex;
+
+/*
  * Delegate to return the book cover views
  */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView;
@@ -30,17 +41,6 @@
  * Delegate to return the page views in fullscreen/detailed mode
  */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView;
-
-/*
- * Delegate to return the number of books
- * Please ignore the dummy parameter, reserved for future use
- */
-- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfBooks:(int)dummy;
-
-/*
- * Delegate to return the number of pages in the given book index
- */
-- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfPagesForBookIndex:(int)bookIndex;
 
 @end
 
