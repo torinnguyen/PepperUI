@@ -142,8 +142,13 @@
 
 - (void)reload;
 
+// Book list
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
 
+// Pepper list
 - (void)openPageIndex:(int)pageIndex;
 
+// Page list
+- (void)scrollToPage:(int)pageIndex duration:(float)duration;
+  
 @end

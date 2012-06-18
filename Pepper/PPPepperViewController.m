@@ -248,6 +248,17 @@ static float layer3WidthAt90 = 0;
     self.pepperView.hidden = YES;
     [self.view addSubview:self.pepperView];
   }
+  
+  //Warning about incomplete iPhone implementation
+  if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad)
+  {
+    NSLog(@"WARNING: iPhone support in development & not officially supported yet. Most features are kind-of working.");
+    [[[UIAlertView alloc] initWithTitle:@"Adventourous?"
+                                message:@"iPhone support in development & not officially supported yet. Most features are kind-of working."
+                               delegate:nil
+                      cancelButtonTitle:@"OK. Got it!"
+                      otherButtonTitles: nil] show];
+  }
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -1213,7 +1224,7 @@ static float layer3WidthAt90 = 0;
   }
         
   [self updatePageScrollViewContentSize]; 
-  [self scrollPageScrollViewToIndex:self.currentPageIndex];
+  [self scrollToPage:self.currentPageIndex duration:0];
   [self.view bringSubviewToFront:self.pageScrollView];
   
   //Start loading index
@@ -1359,17 +1370,15 @@ static float layer3WidthAt90 = 0;
   self.pageScrollView.contentSize = contentSize;
 }
 
-- (void)scrollPageScrollViewToIndex:(int)index {
-  if (self.hideFirstPage)
-    index -= 1;
-  CGRect pageFrame = [self getFrameForPageIndex:index];
-  self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
-}
-
 - (void)scrollToPage:(int)pageIndex duration:(float)duration {
   if (self.hideFirstPage)
     pageIndex -= 1;
   CGRect pageFrame = [self getFrameForPageIndex:pageIndex];
+  
+  if (duration <= 0) {
+    self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
+    return;
+  }
   
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
@@ -1383,12 +1392,11 @@ static float layer3WidthAt90 = 0;
     NSLog(@"You can't call this function in book mode");
     return;
   }
-  
   if (self.isDetailView) {
-    [self scrollPageScrollViewToIndex:pageIndex];
+    NSLog(@"You can't call this function in fullscreen mode");
     return;
   }
-  
+
   self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
   [self destroyBookScrollView];
