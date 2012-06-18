@@ -159,6 +159,10 @@ static float layer3WidthAt90 = 0;
 
 #pragma mark - View life cycle
 
++ (NSString*)version {
+  return @"1.0";
+}
+
 - (void)viewDidLoad
 {
   [super viewDidLoad];

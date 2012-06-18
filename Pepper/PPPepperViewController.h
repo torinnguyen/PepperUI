@@ -138,6 +138,7 @@
 @property (nonatomic, readonly) BOOL isBookView;
 @property (nonatomic, readonly) BOOL isDetailView;
 
++ (NSString*)version;
 
 - (void)reload;
 
