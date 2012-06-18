@@ -15,6 +15,7 @@
 
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
+#define PEPPER_PAGE_SPACING          35.0f        //gap between pages in 3D mode
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
@@ -107,7 +108,7 @@
 @synthesize enableBookRotate;
 @synthesize hideFirstPage;
 @synthesize oneSideZoom;
-@synthesize pageSpacing;
+@synthesize pepperPageSpacing;
 @synthesize scaleOnDeviceRotation;
 @synthesize autoOpenBook;
 
@@ -174,7 +175,7 @@ static float layer3WidthAt90 = 0;
   self.animationSlowmoFactor = 1.0f;
   self.enableBookScale = ENABLE_BOOK_SCALE;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
-  self.pageSpacing = PAGE_SPACING;
+  self.pepperPageSpacing = PEPPER_PAGE_SPACING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
 
   //Initial values
@@ -683,7 +684,7 @@ static float layer3WidthAt90 = 0;
   if (indexDiff < 0)
     return midX;
 
-  float distance = indexDiff * self.pageSpacing;
+  float distance = indexDiff * self.pepperPageSpacing;
   float positionScale = 0.5;
   float magicNumber = layer3WidthAt90 + MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
   float diffFromMidX = magicNumber + distance;

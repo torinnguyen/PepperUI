@@ -34,6 +34,4 @@
 #define MAX_BOOK_SCALE               0.90f            //anything < 1.0 is experimental
 #define MAX_BOOK_ROTATE              20.0f            //degree. ENABLE_BOOK_ROTATE must be enabled for this to take effect
 
-#define PAGE_SPACING                 35.0f            //gap between pages in 3D mode
-
 #endif

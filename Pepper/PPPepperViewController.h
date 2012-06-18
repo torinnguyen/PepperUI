@@ -132,7 +132,7 @@
 @property (nonatomic, assign) BOOL oneSideZoom;             //experimental, don't touch this
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
-@property (nonatomic, assign) float pageSpacing;
+@property (nonatomic, assign) float pepperPageSpacing;
 
 @property (nonatomic, readonly) float controlIndex;
 @property (nonatomic, readonly) BOOL isBookView;
