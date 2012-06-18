@@ -110,7 +110,6 @@
 @synthesize oneSideZoom;
 @synthesize pepperPageSpacing;
 @synthesize scaleOnDeviceRotation;
-@synthesize autoOpenBook;
 
 @synthesize isBookView;
 @synthesize isDetailView;
@@ -169,7 +168,6 @@ static float layer3WidthAt90 = 0;
   [super viewDidLoad];
     
   //Configurable properties
-  self.autoOpenBook = AUTO_OPEN_BOOK;
   self.hideFirstPage = HIDE_FIRST_PAGE;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;

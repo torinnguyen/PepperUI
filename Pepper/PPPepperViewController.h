@@ -125,7 +125,6 @@
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
 
-@property (nonatomic, assign) BOOL autoOpenBook;
 @property (nonatomic, assign) BOOL hideFirstPage;
 @property (nonatomic, assign) BOOL enableBookScale;
 @property (nonatomic, assign) BOOL enableBookRotate;
@@ -134,7 +133,9 @@
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pepperPageSpacing;
 
+// Read-only properties
 @property (nonatomic, readonly) float controlIndex;
+@property (nonatomic, readonly) float controlAngle;
 @property (nonatomic, readonly) BOOL isBookView;
 @property (nonatomic, readonly) BOOL isDetailView;
 
