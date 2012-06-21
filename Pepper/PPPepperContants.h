@@ -28,6 +28,8 @@
 //Look & feel
 #define FRAME_WIDTH_LANDSCAPE        (768*0.4)        //please see documentation for correct aspect ratio
 #define FRAME_HEIGHT_LANDSCAPE       (1034*0.4)       //please see documentation for correct aspect ratio
+#define FRAME_SCALE_IPAD             0.4f
+#define FRAME_SCALE_IPHONE           0.47f
 #define FRAME_SCALE_PORTRAIT         0.9f             //SMALLER_FRAME_FOR_PORTRAIT must be enabled for this to take effect
 
 #define MIN_BOOK_SCALE               0.75f            //ENABLE_BOOK_SCALE must be enabled for this to take effect

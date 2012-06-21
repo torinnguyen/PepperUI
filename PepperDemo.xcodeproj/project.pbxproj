@@ -30,6 +30,7 @@
 		4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0FA157A8FB300C27FFB /* MyPageBaseView.m */; };
 		42AB47BD157B77B50001AE94 /* book_bg.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AB47BC157B77B50001AE94 /* book_bg.png */; };
 		42B1252815891BF8004AF341 /* MyImageCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 42B1252715891BF8004AF341 /* MyImageCache.m */; };
+		42B639A815936FC700B42A2D /* PPViewController~iphone.xib in Resources */ = {isa = PBXBuildFile; fileRef = 42B639A615936FC700B42A2D /* PPViewController~iphone.xib */; };
 		42DB02D11585008000B23A0C /* page_bg_borderless.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02CF1585008000B23A0C /* page_bg_borderless.png */; };
 		42DB02D21585008000B23A0C /* page_bg_borderless@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */; };
 /* End PBXBuildFile section */
@@ -73,6 +74,7 @@
 		42AB47BC157B77B50001AE94 /* book_bg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = book_bg.png; sourceTree = "<group>"; };
 		42B1252615891BF8004AF341 /* MyImageCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyImageCache.h; sourceTree = "<group>"; };
 		42B1252715891BF8004AF341 /* MyImageCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyImageCache.m; sourceTree = "<group>"; };
+		42B639A715936FC700B42A2D /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = "../../temp/PepperUIDemoFree/PepperDemo/en.lproj/PPViewController~iphone.xib"; sourceTree = "<group>"; };
 		42DB02CF1585008000B23A0C /* page_bg_borderless.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_bg_borderless.png; sourceTree = "<group>"; };
 		42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "page_bg_borderless@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -129,8 +131,8 @@
 				4276D0EE157A8F1600C27FFB /* Views */,
 				4276D0DE157A8EC500C27FFB /* Models */,
 				4276D0F5157A8F5F00C27FFB /* Controllers */,
-				4276D0E5157A8EDE00C27FFB /* Assets */,
 				42523BD515793492000323EE /* PPViewController.xib */,
+				42B639A615936FC700B42A2D /* PPViewController~iphone.xib */,
 				42523BC715793492000323EE /* Supporting Files */,
 			);
 			path = PepperDemo;
@@ -177,13 +179,6 @@
 				4276D0E2157A8EC500C27FFB /* Page.m */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		4276D0E5157A8EDE00C27FFB /* Assets */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Assets;
 			sourceTree = "<group>";
 		};
 		4276D0EE157A8F1600C27FFB /* Views */ = {
@@ -271,6 +266,7 @@
 				42366DAB157FDB0C00BC7061 /* page_bg@2x.png in Resources */,
 				42DB02D11585008000B23A0C /* page_bg_borderless.png in Resources */,
 				42DB02D21585008000B23A0C /* page_bg_borderless@2x.png in Resources */,
+				42B639A815936FC700B42A2D /* PPViewController~iphone.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +309,14 @@
 				42523BD615793492000323EE /* en */,
 			);
 			name = PPViewController.xib;
+			sourceTree = "<group>";
+		};
+		42B639A615936FC700B42A2D /* PPViewController~iphone.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				42B639A715936FC700B42A2D /* en */,
+			);
+			name = "PPViewController~iphone.xib";
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -375,7 +379,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -390,7 +394,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

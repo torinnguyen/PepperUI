@@ -34,7 +34,8 @@
 #define SCALE_ATTENUATION            0.03
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
-#define M34                          (-1.0 / 1000.0)  //0:flat, more negative: more perspective
+#define M34_IPAD                     (-1.0 / 1000.0)  //0:flat, more negative: more perspective
+#define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
 
 @interface PPPepperViewController()
 <
@@ -47,6 +48,7 @@
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
 @property (nonatomic, assign) float bookSpacing;
+@property (nonatomic, assign) float m34;
 
 //Control
 @property (nonatomic, assign) float controlIndex;
@@ -127,7 +129,7 @@
 @synthesize zoomOnLeft;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
-@synthesize frameWidth, frameHeight, bookSpacing;
+@synthesize frameWidth, frameHeight, bookSpacing, m34;
 
 @synthesize controlAngleTimerTarget;
 @synthesize controlAngleTimerDx;
@@ -156,6 +158,7 @@
 static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
 static float layer3WidthAt90 = 0;
+static float deviceFactor = 0;
 
 #pragma mark - View life cycle
 
@@ -166,7 +169,13 @@ static float layer3WidthAt90 = 0;
 - (void)viewDidLoad
 {
   [super viewDidLoad];
-    
+  
+  if (deviceFactor == 0)
+    deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
+  
+  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
+  self.m34 = isPad ? M34_IPAD : M34_IPHONE;
+  
   //Configurable properties
   self.hideFirstPage = HIDE_FIRST_PAGE;
   self.oneSideZoom = YES;
@@ -246,17 +255,6 @@ static float layer3WidthAt90 = 0;
     self.pepperView.autoresizesSubviews = NO;
     self.pepperView.hidden = YES;
     [self.view addSubview:self.pepperView];
-  }
-  
-  //Warning about incomplete iPhone implementation
-  if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad)
-  {
-    NSLog(@"WARNING: iPhone support in development & not officially supported yet. Most features are kind-of working.");
-    [[[UIAlertView alloc] initWithTitle:@"Adventourous?"
-                                message:@"iPhone support in development & not officially supported yet. Most features are kind-of working."
-                               delegate:nil
-                      cancelButtonTitle:@"OK. Got it!"
-                      otherButtonTitles: nil] show];
   }
 }
 
@@ -597,16 +595,22 @@ static float layer3WidthAt90 = 0;
 
 - (void)updateFrameSizesForOrientation:(UIInterfaceOrientation)orientation
 {
-  //Scale for iPhone too
+  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
-  float deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
   float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
+  float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
+  float height = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
   
   if (!self.scaleOnDeviceRotation)
     orientationFactor = 1.0f;
-  self.frameHeight = FRAME_HEIGHT_LANDSCAPE * orientationFactor * deviceFactor;
-  self.frameWidth = FRAME_WIDTH_LANDSCAPE * orientationFactor * deviceFactor;
-  self.bookSpacing = (FRAME_WIDTH_LANDSCAPE * MAX_BOOK_SCALE) / 2.4 * orientationFactor * deviceFactor;
+  
+  self.frameWidth = width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
+  self.frameHeight = 5 + height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);    //graphic edge padding, not sure why only 1 side
+  
+  self.frameWidth *= orientationFactor;
+  self.frameHeight *= orientationFactor;
+
+  self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 1.5 * orientationFactor * deviceFactor;
   
   //Frame size changes on rotation, these needs to be recalculated
   if (self.scaleOnDeviceRotation) {
@@ -682,17 +686,16 @@ static float layer3WidthAt90 = 0;
   if (indexDiff < 0)
     return midX;
 
-  float distance = indexDiff * self.pepperPageSpacing;
+  float distance = indexDiff * self.pepperPageSpacing * deviceFactor;
+  float maxDistance = NUM_VISIBLE_PAGE_ONE_SIDE * self.pepperPageSpacing * deviceFactor;
   float positionScale = 0.5;
-  float magicNumber = layer3WidthAt90 + MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
+  float magicNumber = layer3WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
   float diffFromMidX = magicNumber + distance;
+  float maxDiffFromMidX = magicNumber + maxDistance;
   
-  //edge limit. maybe not needed because we already have cell reuse & scale limit
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
-  if (isLandscape) {
-    if (indexDiff > NUM_VISIBLE_PAGE_ONE_SIDE)
-      diffFromMidX = midX-self.frameWidth;
-  }
+  //last page limit (making the last page 'stucks' to a fixed position)
+  if (diffFromMidX > maxDiffFromMidX)
+    diffFromMidX = maxDiffFromMidX;
   
   float x = 0;  
   float deltaFromMidX = diffFromMidX * gapScale;
@@ -1464,7 +1467,6 @@ static float layer3WidthAt90 = 0;
 
   int frameY = [self getFrameY];
   float angle2 = angle + angleDiff;
-  float m34 = M34;
   float positionScale = fabs((angle-min) / fabs(max-min)) - 0.5;
   float scale1 = [self getPepperScaleForPageIndex:self.theView1.tag];
   float scale4 = [self getPepperScaleForPageIndex:self.theView4.tag];
@@ -1479,7 +1481,7 @@ static float layer3WidthAt90 = 0;
   if (layer23WidthAtMid == 0) {
     CALayer *layer2 = self.theView2.layer;
     CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = m34;
+    transform.m34 = self.m34;
     transform = CATransform3DRotate(transform, (max/2+min/2) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
@@ -1488,7 +1490,7 @@ static float layer3WidthAt90 = 0;
   if (layer2WidthAt90 == 0) {
     CALayer *layer2 = self.theView2.layer;
     CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = m34;
+    transform.m34 = self.m34;
     transform = CATransform3DRotate(transform, (-90-angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
@@ -1497,7 +1499,7 @@ static float layer3WidthAt90 = 0;
   if (layer3WidthAt90 == 0) {
     CALayer *layer3 = self.theView3.layer;
     CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = m34;
+    transform.m34 = self.m34;
     transform = CATransform3DRotate(transform, (-90+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
     layer3.anchorPoint = CGPointMake(0, 0.5);
     layer3.transform = transform;
@@ -1507,7 +1509,7 @@ static float layer3WidthAt90 = 0;
   //Transformation for center 4 pages
   CALayer *layer1 = self.theView1.layer;
   CATransform3D transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale1,scale1, 1.0);
   layer1.anchorPoint = CGPointMake(0, 0.5);
@@ -1515,21 +1517,21 @@ static float layer3WidthAt90 = 0;
   
   CALayer *layer2 = self.theView2.layer;
   transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   layer2.anchorPoint = CGPointMake(0, 0.5);
   layer2.transform = transform;
   
   CALayer *layer3 = self.theView3.layer;
   transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   layer3.anchorPoint = CGPointMake(0, 0.5);
   layer3.transform = transform;
   
   CALayer *layer4 = self.theView4.layer;
   transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale4,scale4, 1.0);
   layer4.anchorPoint = CGPointMake(0, 0.5);
@@ -1550,7 +1552,7 @@ static float layer3WidthAt90 = 0;
   }
   //Flip to left
   else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
-    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5,
+    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5,
                                      frameY, self.frameWidth, self.frameHeight);
     self.theView4.frame = CGRectMake(CGRectGetMaxX(layer3.frame), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = YES;
@@ -1559,7 +1561,7 @@ static float layer3WidthAt90 = 0;
   //Flip to right
   else {
     self.theView1.frame = CGRectMake(CGRectGetMinX(layer2.frame), frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer3WidthAt90 + MINOR_X_ADJUSTMENT_14 - layer3WidthAt90*positionScale/2.5,
+    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer3WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5,
                                      frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
     self.theView3.hidden = YES;
@@ -1606,7 +1608,7 @@ static float layer3WidthAt90 = 0;
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = m34;
+      transform.m34 = self.m34;
       transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
@@ -1615,7 +1617,7 @@ static float layer3WidthAt90 = 0;
     else {
       CALayer *layerRight = page.layer;
       CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = m34;
+      transform.m34 = self.m34;
       transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
@@ -1920,7 +1922,6 @@ static float layer3WidthAt90 = 0;
 
 - (void)flattenAllPepperViews:(float)animationDuration
 {
-  float m34 = M34;
   float flatAngle = 0;
   float scale = MAX_BOOK_SCALE;
   
@@ -1948,7 +1949,7 @@ static float layer3WidthAt90 = 0;
     CALayer *layer = page.layer;
     layer.anchorPoint = CGPointMake(0, 0.5);
     CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = m34;
+    transform.m34 = self.m34;
     transform = CATransform3DRotate(transform, flatAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
     transform = CATransform3DScale(transform, scale,scale, 1.0);
     
@@ -2119,7 +2120,6 @@ static float layer3WidthAt90 = 0;
   
   float angle = newControlAngle;
   float angle2 = -180.0 - angle;
-  float m34 = M34;
   
   [self updateLeftRightPointers];
   [self updateFlipPointers];
@@ -2148,7 +2148,7 @@ static float layer3WidthAt90 = 0;
     
   CALayer *layerLeft = self.theLeftView.layer;
   CATransform3D transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   if (!self.oneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale, 1.0);
@@ -2158,7 +2158,7 @@ static float layer3WidthAt90 = 0;
   
   CALayer *layerRight = self.theRightView.layer;
   transform = CATransform3DIdentity;
-  transform.m34 = m34;
+  transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
   if (!self.oneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale, 1.0);
@@ -2276,7 +2276,7 @@ static float layer3WidthAt90 = 0;
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = m34;
+      transform.m34 = self.m34;
       transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
@@ -2285,7 +2285,7 @@ static float layer3WidthAt90 = 0;
     else {
       CALayer *layerRight = page.layer;
       CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = m34;
+      transform.m34 = self.m34;
       transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
@@ -2425,7 +2425,7 @@ static float layer3WidthAt90 = 0;
     CGPoint previousAnchor = subview.layer.anchorPoint;
     
     CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = M34;
+    transform.m34 = self.m34;
     transform = CATransform3DScale(transform, scale, scale, 1.0);
     if (self.enableBookRotate)
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
@@ -2779,7 +2779,7 @@ static float layer3WidthAt90 = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor grayColor];
-    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
     myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
@@ -2815,7 +2815,7 @@ static float layer3WidthAt90 = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor grayColor];
-    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
     myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
@@ -2851,7 +2851,7 @@ static float layer3WidthAt90 = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor blackColor];
-    myLabel.font = [UIFont systemFontOfSize:12];
+    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
     myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
