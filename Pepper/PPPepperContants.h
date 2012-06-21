@@ -26,8 +26,6 @@
 #define USE_BORDERLESS_GRAPHIC       NO               //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 
 //Look & feel
-#define FRAME_WIDTH_LANDSCAPE        (768*0.4)        //please see documentation for correct aspect ratio
-#define FRAME_HEIGHT_LANDSCAPE       (1034*0.4)       //please see documentation for correct aspect ratio
 #define FRAME_SCALE_IPAD             0.4f
 #define FRAME_SCALE_IPHONE           0.47f
 #define FRAME_SCALE_PORTRAIT         0.9f             //SMALLER_FRAME_FOR_PORTRAIT must be enabled for this to take effect

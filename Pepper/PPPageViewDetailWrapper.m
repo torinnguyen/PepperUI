@@ -9,7 +9,6 @@
 #import "PPPepperContants.h"
 #import "PPPageViewDetailWrapper.h"
 
-#define MINIMUM_ZOOM_SCALE  0.1f
 #define MAXIMUM_ZOOM_SCALE  2.0f
 
 @interface PPPageViewDetailWrapper() <UIScrollViewDelegate>
@@ -30,25 +29,24 @@
   if (self) {
     self.contentView = nil;
     self.delegate = self;
-    self.minimumZoomScale = MINIMUM_ZOOM_SCALE;
-    self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;
+    self.minimumZoomScale = 0.1f;                   //don't change this, needed for Pepper view operation
+    self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;     //user might change this
     
-    static UIImage *bg = nil;
-    if (bg == nil)
-      bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+    static UIImage *backgroundImage = nil;
+    if (backgroundImage == nil)
+      backgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
     
-    self.background = [[UIImageView alloc] initWithImage:bg];     //we use size & aspect ratio from native image size
+    self.background = [[UIImageView alloc] initWithImage:backgroundImage];
     self.background.backgroundColor = [UIColor clearColor];
     self.background.contentMode = UIViewContentModeScaleToFill;
     self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.alpha = 0.5;
-    
+        
     CGRect bgframe = self.background.bounds;
-    float scale = frame.size.width / bgframe.size.width;
+    float scale = frame.size.width / backgroundImage.size.width;
     bgframe.origin.x = 0;
     bgframe.origin.y -= EDGE_PADDING*scale;
     bgframe.size.width = frame.size.width;
-    bgframe.size.height = scale * bgframe.size.height;
+    bgframe.size.height = scale * backgroundImage.size.height;
     self.background.frame = bgframe;
     
     CGRect contentWrapperFrame;
@@ -100,6 +98,8 @@
   contentWrapperFrame.origin.y = 0;
   contentWrapperFrame.size.width = newWidth;
   contentWrapperFrame.size.height = newHeight;
+  
+  self.contentSize = contentWrapperFrame.size;
   
   if (duration <= 0) {
     self.contentViewWrapper.frame = contentWrapperFrame;
