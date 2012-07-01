@@ -163,7 +163,7 @@ static float deviceFactor = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.1.1";
+  return @"1.1";
 }
 
 - (id)init {
@@ -606,8 +606,13 @@ static float deviceFactor = 0;
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
+  
   float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
   float height = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
+  if (FRAME_ASPECT_RATIO > 0) {
+    width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
+    height = width * FRAME_ASPECT_RATIO;
+  }
   
   if (!self.scaleOnDeviceRotation)
     orientationFactor = 1.0f;

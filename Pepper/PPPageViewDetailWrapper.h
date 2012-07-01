@@ -22,4 +22,5 @@
 - (void)reset;
 - (void)layoutForWidth:(int)width duration:(float)duration;
 
+
 @end
