@@ -163,7 +163,7 @@ static float deviceFactor = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.1";
+  return @"1.1.1";
 }
 
 - (id)init {
