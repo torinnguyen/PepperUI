@@ -44,7 +44,8 @@
     | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
     self.loadingIndicator.contentMode = UIViewContentModeCenter;
     self.loadingIndicator.hidesWhenStopped = YES;
-    self.loadingIndicator.color = [UIColor orangeColor];
+    if ([self.loadingIndicator respondsToSelector:@selector(setColor:)])
+      self.loadingIndicator.color = [UIColor orangeColor];
     [self.loadingIndicator stopAnimating];
     [self.imageView addSubview:self.loadingIndicator];
   }
@@ -71,7 +72,6 @@
   UIImage *image = [[MyImageCache sharedCached] imageForKey:stringUrl];
   if (image != nil) {
     self.imageView.image = image;
-    self.imageView.backgroundColor = [UIColor greenColor];
     [self.loadingIndicator stopAnimating];
     [self.imageView setNeedsDisplay];
     return;
