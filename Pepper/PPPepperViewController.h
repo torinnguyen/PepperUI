@@ -144,8 +144,10 @@
 + (NSString*)version;
 
 - (void)reload;
+- (BOOL)isPepperView;
 
 // Book list
+- (int)getCurrentBookIndex;
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
 - (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index;
 

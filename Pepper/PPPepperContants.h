@@ -31,8 +31,8 @@
 #define FRAME_SCALE_IPHONE           0.47f
 #define FRAME_SCALE_PORTRAIT         0.9f             //SMALLER_FRAME_FOR_PORTRAIT must be enabled for this to take effect
 
-#define MIN_BOOK_SCALE               0.75f            //ENABLE_BOOK_SCALE must be enabled for this to take effect
-#define MAX_BOOK_SCALE               0.90f            //anything < 1.0 is experimental
+#define MIN_BOOK_SCALE               0.8f             //ENABLE_BOOK_SCALE must be enabled for this to take effect
+#define MAX_BOOK_SCALE               1.0f             //normally should be 1.0
 #define MAX_BOOK_ROTATE              20.0f            //degree. ENABLE_BOOK_ROTATE must be enabled for this to take effect
 
 #endif
