@@ -7,6 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PPPageViewContentWrapper.h"
+#import "PPPageViewDetailWrapper.h"
 
 //For demo purpose
 #define DEMO_NUM_BOOKS               64
@@ -145,11 +147,14 @@
 
 // Book list
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
+- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index;
 
 // Pepper list
 - (void)openPageIndex:(int)pageIndex;
+- (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index;
 
 // Page list
 - (void)scrollToPage:(int)pageIndex duration:(float)duration;
-  
+- (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)index;
+
 @end

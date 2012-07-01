@@ -166,6 +166,17 @@ static float deviceFactor = 0;
   return @"1.1";
 }
 
+- (id)init {
+  self = [super init];
+  if (self == nil)
+    return self;
+  
+  self.delegate = self;
+  self.dataSource = self;
+  
+  return self;
+}
+
 - (void)viewDidLoad
 {
   [super viewDidLoad];
@@ -193,10 +204,7 @@ static float deviceFactor = 0;
   _controlIndex = MIN_CONTROL_INDEX;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
-  
-  self.delegate = self;
-  self.dataSource = self;
-  
+    
   //Download queue data
   /*
   self.pageOnDemandQueue = [[NSMutableArray alloc] init];
@@ -1069,6 +1077,17 @@ static float deviceFactor = 0;
   }
 }
 
+- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index {
+  for (PPPageViewContentWrapper *book in self.bookScrollView.subviews) {
+    if (![book isKindOfClass:[PPPageViewContentWrapper class]])
+      continue;
+    if (book.tag != index)
+      continue;
+    return book;
+  }
+  return nil;
+}
+
 //
 // Convert from Book data model to view
 //
@@ -1318,6 +1337,17 @@ static float deviceFactor = 0;
     [subview removeFromSuperview];
     break;
   }
+}
+
+- (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)index {
+  for (PPPageViewDetailWrapper *page in self.pageScrollView.subviews) {
+    if (![page isKindOfClass:[PPPageViewDetailWrapper class]])
+      continue;
+    if (page.tag != index)
+      continue;
+    return page;
+  }
+  return nil;
 }
 
 - (void)addPageToScrollView:(int)index {
