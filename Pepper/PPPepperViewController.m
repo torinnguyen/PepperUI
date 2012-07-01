@@ -28,13 +28,12 @@
 #define NUM_REUSE_DETAIL_VIEW        3
 #define NUM_REUSE_3D_VIEW            12           //12 is minimum
 #define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION & also edge limit
-#define NUM_DOWNLOAD_THREAD          2
 #define MIN_CONTROL_INDEX            0.5
 #define MINOR_X_ADJUSTMENT_14        4.0
 #define SCALE_ATTENUATION            0.03
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
-#define M34_IPAD                     (-1.0 / 1000.0)  //0:flat, more negative: more perspective
+#define M34_IPAD                     (-1.0 / 1300.0)  //0:flat, more negative: more perspective
 #define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
 
 @interface PPPepperViewController()
@@ -623,7 +622,7 @@ static float deviceFactor = 0;
   self.frameWidth *= orientationFactor;
   self.frameHeight *= orientationFactor;
 
-  self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 1.5 * orientationFactor * deviceFactor;
+  self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 3.2 * orientationFactor * deviceFactor;
   
   //Frame size changes on rotation, these needs to be recalculated
   if (self.scaleOnDeviceRotation) {
@@ -2582,198 +2581,7 @@ static float deviceFactor = 0;
 
 
 
-/*
-#pragma mark - Downloading (Book)
- 
-- (void)fetchBookThumbnailsMultithread {
-  int startIndex = self.hideFirstPage ? 1 : 0;
-  for (int i=startIndex; i<NUM_DOWNLOAD_THREAD+startIndex; i++)
-    [self fetchBookThumbnails:i];
-}
 
-- (void)fetchBookThumbnails:(NSUInteger)index {
-  
-  int bookCount = [self getNumberOfBooks];
-  if (index >= bookCount)
-    return;
-  
-  int pageCount = [self getNumberOfPagesForBookIndex:index];
-  if (pageCount <= 0)
-    return;
-  
-  Page *page = [pageArray objectAtIndex:0];
-  NSString *imagePath = page.halfsizeURL;
-  
-  if (imagePath != nil) {
-    [self fetchBookThumbnails:index+NUM_DOWNLOAD_THREAD];
-    return;
-  }
-  
-  [self fetchThumbnailForPageID:page.pageID success:^(NSData *data) {
-    [self didDownloadBookThumbnailWithIndex:index];
-    [self fetchBookThumbnails:index+NUM_DOWNLOAD_THREAD];
-  } failure:^(NSError *error) {
-    NSLog(@"Error in downloading thumbnail of page %@, with error %@", page.pageID, [error localizedDescription]);
-    [self fetchBookThumbnails:index];
-  }];
-}
-
-- (void)didDownloadBookThumbnailWithIndex:(NSUInteger)index {
-  int bookCount = [self getNumberOfBooks];
-  if (index >= bookCount)
-    return;
-  for (PPPageViewWrapper *book in self.bookScrollView.subviews) {
-    if (book.tag != index)
-      continue;
-    PPPageViewContent *pageContent = book.contentView;
-    [pageContent refresh];
-    break;
-  }
-}
-
-
-#pragma mark - Downloading (Pepper)
-
-- (void)fetchPageLargeThumbnailsMultithread {
-  int startIndex = self.hideFirstPage ? 1 : 0;
-  for (int i=startIndex; i<NUM_DOWNLOAD_THREAD+startIndex; i++)
-    [self fetchPageLargeThumbnails:i];
-}
-
-- (void)fetchPageLargeThumbnails:(NSUInteger)index {
-  
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  if (index >= pageCount)
-    return;
-  
-  NSString *imagePath = page.halfsizeURL;
-  
-  if (imagePath != nil) {
-    [self fetchPageLargeThumbnails:index+NUM_DOWNLOAD_THREAD];
-    return;
-  }
-  
-  [self fetchThumbnailForPageID:index success:^(NSData *data) {
-    [self didDownloadPageLargeThumbnailWithIndex:index];
-    [self fetchPageLargeThumbnails:index+NUM_DOWNLOAD_THREAD];
-  } failure:^(NSError *error) {
-    NSLog(@"Error in downloading thumbnail of page %@, with error %@", page.pageID, [error localizedDescription]);
-    [self fetchPageLargeThumbnails:index];
-  }];
-}
-
-- (void)didDownloadPageLargeThumbnailWithIndex:(NSUInteger)index {
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  if (index >= pageCount)
-    return;
-  PPPageViewWrapper *page = [self getPepperPageAtIndex:index];
-  if (page == nil)
-    return;
-  PPPageViewContent *pageContent = page.contentView;
-  [pageContent refresh];
-}
-
-
-#pragma mark - Downloading (Page)
-
-- (void)fetchFullsizeInBackground:(NSUInteger)index {
-  
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  if (index >= pageCount) {
-    self.backgroundDownloadPage = nil;
-    return;
-  }
-  
-  UIImage *fullsize = [self getCachedFullsizeForPageID:index];
-  if (fullsize != nil || [thePageModel isEqual:self.onDemandDownloadPdf]) {
-    [self didDownloadFullsizeWithIndex:index];
-    [self fetchFullsizeInBackground:index+1];
-    return;
-  }
-  
-  NSLog(@"downloading fullsize image for index: %d", index);
-  self.backgroundDownloadPage = thePageModel;
-  [self fetchFullsizeForPageID:thePageModel.pageID success:^(NSData *data){
-    [self didDownloadFullsizeWithIndex:index];
-    [self fetchFullsizeInBackground:index+1];
-
-  } failure:^(NSError *error){
-    NSLog(@"Error in downloading fullsize image for index %d, with error %@", index, [error localizedDescription]);
-    [self fetchFullsizeInBackground:index];
-  }];
-}
-
-- (void)fetchFullsizeOnDemand:(NSUInteger)index {
-  
-  //If the on-demand page is not already downloaded, add it to the first in queue (last in array)
-  if (index > 0) {
-    Page *thePageModel = [self.pageModelArray objectAtIndex:index];
-    UIImage *fullsize = [self getCachedFullsizeForPageID:thePageModel.pageID];
-    if (fullsize == nil)
-      [self.fullsizeOnDemandQueue addObject:thePageModel];
-  }
-  
-  //Nothing else to download
-  if (self.fullsizeOnDemandQueue == nil || self.fullsizeOnDemandQueue.count <= 0) {
-    self.onDemandDownloadPdf = nil;
-    return;
-  }
-  
-  //Already downloaded or being downloaded by background thread, skip it
-  Page *thePageModel = [self.fullsizeOnDemandQueue lastObject];
-  UIImage *fullsize = [self getCachedFullsizeForPageID:thePageModel.pageID];
-  if (fullsize != nil || [thePageModel isEqual:self.backgroundDownloadPage]) {
-    [self.fullsizeOnDemandQueue removeObject:thePageModel];
-    [self fetchFullsizeOnDemand:0];
-    return;
-  }
-  
-  NSLog(@"downloading on-demand fullsize image for index: %d (ID: %d)", index, thePageModel.pageID);
-  self.onDemandDownloadPdf = thePageModel;
-  [self fetchFullsizeForPageID:thePageModel.pageID success:^(NSData *data){
-    [self didDownloadFullsizeWithIndex:index];
-    [self fetchFullsizeInBackground:index+1];
-    
-  } failure:^(NSError *error){
-    NSLog(@"Error in downloading on-demand fullsize image for pageID %@, with error %@", thePageModel.pageID, [error localizedDescription]);
-    [self fetchFullsizeInBackground:index];
-  }];
-}
-
-- (void)didDownloadFullsizeWithIndex:(NSUInteger)index {
-  
-  if (![[self.pageModelArray objectAtIndex:index] isKindOfClass:[Page class]])
-    return;
-  Page *thePageModel = [self.pageModelArray objectAtIndex:index];
-      
-  for (PPPageViewDetailWrapper *subview in self.pageScrollView.subviews) {
-    if (subview.tag != thePageModel.pageID)
-      continue;
-    UIImage *image = [self getCachedThumbnailForPageID:thePageModel.pageID];
-    UIImage *fullsize = [self getCachedFullsizeForPageID:thePageModel.pageID];
-    if (fullsize != nil)
-      [subview loadWithFrame:subview.frame thumbnail:image fullsize:fullsize];
-    break;
-  }
-}
-
-
-
-- (void)fetchThumbnailForPageID:(int)pageID
-             success:(void (^)(NSData *data))success 
-             failure:(void (^)(NSError *error))failure
-{
-  
-}
-
-- (void)fetchFullsizeForPageID:(int)pageID
-           success:(void (^)(NSData *data))success 
-           failure:(void (^)(NSError *error))failure
-{
-
-}
-
-*/
 #pragma mark - Dummy PPScrollListViewControllerDelegate
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag
