@@ -1208,7 +1208,8 @@ static float deviceFactor = 0;
   self.reusePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
-  for (int i=0; i<NUM_REUSE_DETAIL_VIEW; i++)
+  int total = self.oneSideZoom ? 2*NUM_REUSE_DETAIL_VIEW : NUM_REUSE_DETAIL_VIEW;
+  for (int i=0; i<total; i++)
     [self.reusePageViewArray addObject:[[PPPageViewDetailWrapper alloc] initWithFrame:self.pageScrollView.bounds]];
 }
 
@@ -1258,11 +1259,12 @@ static float deviceFactor = 0;
   [tempArray removeAllObjects];
   
   //Visible indexes
-  int range = floor(NUM_REUSE_DETAIL_VIEW/2.0);
+  int total = self.oneSideZoom ? 2*NUM_REUSE_DETAIL_VIEW : NUM_REUSE_DETAIL_VIEW;
+  int range = floor(total/2.0);
   int startIndex = currentIndex - range;
   if (startIndex < 0)
     startIndex = 0;
-  int endIndex = startIndex + NUM_REUSE_DETAIL_VIEW;
+  int endIndex = startIndex + total;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
@@ -1290,7 +1292,17 @@ static float deviceFactor = 0;
 // Return the frame for this page in scrollview
 //
 - (CGRect)getFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
-  int width = 2 * [self getMidXForOrientation:interfaceOrientation];
+  
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape(interfaceOrientation);
+  
+  if (self.oneSideZoom || !isLandscape) {
+    int width = 2 * [self getMidXForOrientation:interfaceOrientation];
+    int height = 2 * [self getMidYForOrientation:interfaceOrientation];
+    int x = (self.hideFirstPage) ? (index-1)*width : index*width;
+    return CGRectMake(x, 0, width, height);
+  }
+  
+  int width = [self getMidXForOrientation:interfaceOrientation];
   int height = 2 * [self getMidYForOrientation:interfaceOrientation];
   int x = (self.hideFirstPage) ? (index-1)*width : index*width;
   return CGRectMake(x, 0, width, height);
@@ -1300,10 +1312,7 @@ static float deviceFactor = 0;
 // Return the frame for this page in scrollview
 //
 - (CGRect)getFrameForPageIndex:(int)index {
-  int width = 2 * [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  int height = 2 * [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  int x = index * CGRectGetWidth(self.bookScrollView.bounds);
-  return CGRectMake(x, 0, width, height);
+  return [self getFrameForPageIndex:index forOrientation:[UIApplication sharedApplication].statusBarOrientation];
 }
 
 - (void)removePageFromScrollView:(int)index {
@@ -2187,7 +2196,6 @@ static float deviceFactor = 0;
   if (self.oneSideZoom) {
     int frameY = [self getFrameY];
     int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-    //int midPositionY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
     CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
     float aspectRatio = (float)self.frameWidth / (float)self.frameHeight;
     CGRect frame;
@@ -2404,8 +2412,21 @@ static float deviceFactor = 0;
 
   //Fullscreen page scrolling
   if ([theScrollView isEqual:self.pageScrollView]) {
+    
+    PPPageViewDetailWrapper *onePage = nil;
+    for (PPPageViewDetailWrapper *subview in self.pageScrollView.subviews) {
+      if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
+        continue;
+      onePage = subview;
+      break;
+    }
+    
+    float onePageWidth = CGRectGetWidth(self.pageScrollView.bounds);
+    if (onePage != nil)
+      onePageWidth = CGRectGetWidth(onePage.frame);
+    
     int offsetX = fabs(self.pageScrollView.contentOffset.x);
-    float pageIndex = offsetX / self.pageScrollView.bounds.size.width;
+    float pageIndex = offsetX / onePageWidth;
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
@@ -2541,7 +2562,19 @@ static float deviceFactor = 0;
 
 - (void)didSnapPageScrollview {
   
-  self.currentPageIndex = floor((self.pageScrollView.contentOffset.x - CGRectGetWidth(self.pageScrollView.bounds) / 2) / CGRectGetWidth(self.pageScrollView.bounds)) + 1;
+  PPPageViewDetailWrapper *onePage = nil;
+  for (PPPageViewDetailWrapper *subview in self.pageScrollView.subviews) {
+    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
+      continue;
+    onePage = subview;
+    break;
+  }
+  
+  float onePageWidth = CGRectGetWidth(self.pageScrollView.bounds);
+  if (onePage != nil)
+    onePageWidth = CGRectGetWidth(onePage.frame);
+  
+  self.currentPageIndex = floor((self.pageScrollView.contentOffset.x - onePageWidth / 2) / onePageWidth) + 1;
   if (self.hideFirstPage)
     self.currentPageIndex += 1;
   
