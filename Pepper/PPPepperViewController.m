@@ -85,19 +85,12 @@
 @property (nonatomic, strong) UIView *theView3;
 @property (nonatomic, strong) UIView *theView4;
 @property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
-@property (nonatomic, strong) NSMutableArray *pageOnDemandQueue;
 
 //Page scrollview
 @property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 
-//Fullscreen page on-demand fetching queue
-/*
-@property (nonatomic, strong) NSMutableArray *fullsizeOnDemandQueue;
-@property (nonatomic, strong) Page *backgroundDownloadPage;
-@property (nonatomic, strong) Page *onDemandDownloadPdf;
- */
 @end
 
 
@@ -137,7 +130,6 @@
 
 @synthesize pepperView;
 @synthesize reusePepperWrapperArray;
-@synthesize pageOnDemandQueue;
 
 @synthesize currentBookIndex;
 @synthesize bookScrollView;
@@ -146,12 +138,6 @@
 @synthesize currentPageIndex;
 @synthesize reusePageViewArray;
 @synthesize pageScrollView;
-
-/*
-@synthesize fullsizeOnDemandQueue;
-@synthesize backgroundDownloadPage;
-@synthesize onDemandDownloadPdf;
- */
 
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
@@ -203,12 +189,6 @@ static float deviceFactor = 0;
   _controlIndex = MIN_CONTROL_INDEX;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
-    
-  //Download queue data
-  /*
-  self.pageOnDemandQueue = [[NSMutableArray alloc] init];
-  self.fullsizeOnDemandQueue = [[NSMutableArray alloc] init];
-   */
   
   //Initialize views
   self.view.autoresizesSubviews = YES;
