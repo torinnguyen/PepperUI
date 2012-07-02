@@ -15,7 +15,7 @@
 #define FIRST_PAGE_BOOK_COVER        YES              //background of the first page uses book cover image
 #define ENABLE_HIGH_SPEED_SCROLLING  YES              //in 3D mode only
 #define ENABLE_BOOK_SCALE            YES              //other book not in center will be smaller
-#define ENABLE_BOOK_SHADOW           NO               //dynamic shadow below books
+#define ENABLE_BOOK_SHADOW           NO               //not optimized, too slow even on iPad 3
 #define ENABLE_BOOK_ROTATE           NO               //other book not in center will be slightly rotated (carousel effect)
 #define SMALLER_FRAME_FOR_PORTRAIT   YES              //resize everything smaller when device is in portrait mode
 
@@ -24,7 +24,7 @@
 #define BOOK_BG_IMAGE                @"book_bg"
 #define PAGE_BG_IMAGE                @"page_bg"
 #define PAGE_BG_BORDERLESS_IMAGE     @"page_bg_borderless"
-#define USE_BORDERLESS_GRAPHIC       NO               //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
+#define USE_BORDERLESS_GRAPHIC       YES              //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 
 //Look & feel
 #define FRAME_ASPECT_RATIO           0.0f             //Heigth/Width - Change to non-zero for custom aspect ratio, default is (1.3333 or 4:3). Should be >= 1.0f
@@ -32,8 +32,8 @@
 #define FRAME_SCALE_IPHONE           0.47f
 #define FRAME_SCALE_PORTRAIT         0.9f             //SMALLER_FRAME_FOR_PORTRAIT must be enabled for this to take effect
 
-#define MIN_BOOK_SCALE               0.8f             //ENABLE_BOOK_SCALE must be enabled for this to take effect
-#define MAX_BOOK_SCALE               1.0f             //normally should be 1.0
+#define MIN_BOOK_SCALE               0.75f            //ENABLE_BOOK_SCALE must be enabled for this to take effect
+#define MAX_BOOK_SCALE               0.90f            //Book cover might be smaller than the 3d pages to have more dramatic transition animation
 #define MAX_BOOK_ROTATE              20.0f            //degree. ENABLE_BOOK_ROTATE must be enabled for this to take effect
 
 #endif

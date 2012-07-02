@@ -445,7 +445,7 @@ static float deviceFactor = 0;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  if (self.isBookView || self.isDetailView)
+  if (self.isBookView || (self.isDetailView && self.oneSideZoom))
     return NO;
   
   if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
@@ -1185,9 +1185,6 @@ static float deviceFactor = 0;
   
   //This is where magic happens (animation)
   [self showHalfOpen:YES];
-     
-  //Start downloading thumbnails only
-  //[self fetchPageLargeThumbnailsMultithread];
 }
 
 
@@ -1901,10 +1898,11 @@ static float deviceFactor = 0;
   }
   
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
-  if (!self.oneSideZoom)    diff /= 1.3;
-  else                      diff *= 1.5;
+  float duration = diff;
+  if (previousIsBookView)     duration *= 2;
+  else                        duration /= 2;
   
-  [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+  [UIView animateWithDuration:self.animationSlowmoFactor*duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
@@ -2215,7 +2213,8 @@ static float deviceFactor = 0;
   CGRect frame;
   
   //Zoom in on 1 side
-  if (self.oneSideZoom)
+  BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
+  if (self.oneSideZoom || isPortrait)
   {
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
