@@ -129,8 +129,9 @@
 
 @property (nonatomic, assign) BOOL hideFirstPage;
 @property (nonatomic, assign) BOOL enableBookScale;
+@property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableBookRotate;
-@property (nonatomic, assign) BOOL oneSideZoom;             //experimental, don't touch this
+@property (nonatomic, assign) BOOL oneSideZoom;             //very experimental, don't touch this
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pepperPageSpacing;

@@ -99,6 +99,7 @@
 //public properties
 @synthesize animationSlowmoFactor;
 @synthesize enableBookScale;
+@synthesize enableBookShadow;
 @synthesize enableBookRotate;
 @synthesize hideFirstPage;
 @synthesize oneSideZoom;
@@ -177,6 +178,7 @@ static float deviceFactor = 0;
   self.oneSideZoom = YES;
   self.animationSlowmoFactor = 1.0f;
   self.enableBookScale = ENABLE_BOOK_SCALE;
+  self.enableBookShadow = ENABLE_BOOK_SHADOW;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.pepperPageSpacing = PEPPER_PAGE_SPACING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
@@ -2466,6 +2468,22 @@ static float deviceFactor = 0;
       transform = CATransform3DRotate(transform, angle, 0, 1, 0);
     subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
+    
+    if (self.enableBookScale && self.enableBookShadow) {
+      float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
+      subview.layer.shadowOffset = CGSizeMake(0, 5 + 40*shadowScale);
+      subview.layer.shadowRadius = 10 + 10 * shadowScale;
+      subview.layer.shadowOpacity = 0.4;
+    }
+    else if (self.enableBookShadow) {
+      subview.layer.shadowOffset = CGSizeMake(0, 5);
+      subview.layer.shadowRadius = 20;
+      subview.layer.shadowOpacity = 0.4;
+    }
+    else {
+      subview.layer.shadowRadius = 0;
+      subview.layer.shadowOpacity = 0;
+    }
   }
   
   int offsetX = fabs(self.bookScrollView.contentOffset.x);
