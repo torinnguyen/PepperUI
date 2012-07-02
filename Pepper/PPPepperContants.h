@@ -18,6 +18,7 @@
 #define ENABLE_BOOK_SHADOW           NO               //not optimized, too slow even on iPad 3
 #define ENABLE_BOOK_ROTATE           NO               //other book not in center will be slightly rotated (carousel effect)
 #define SMALLER_FRAME_FOR_PORTRAIT   YES              //resize everything smaller when device is in portrait mode
+#define LANDSCAPE_ZOOM_BOTH_SIDE     YES              //zoom side-by-side in landscape mode
 
 //Graphics
 #define EDGE_PADDING                 5                //Don't change this after graphic is fixed

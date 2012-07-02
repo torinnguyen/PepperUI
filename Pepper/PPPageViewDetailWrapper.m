@@ -11,6 +11,8 @@
 
 #define MAXIMUM_ZOOM_SCALE  4.0f
 
+static UIImage *detailViewBackgroundImage = nil;
+
 @interface PPPageViewDetailWrapper() <UIScrollViewDelegate>
 @property (nonatomic, retain) UIImageView *background;
 @property (nonatomic, retain) UIView *contentViewWrapper;
@@ -32,39 +34,50 @@
     self.minimumZoomScale = 0.1f;                   //don't change this, needed for Pepper view operation
     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;     //user might change this
     
-    static UIImage *backgroundImage = nil;
-    if (backgroundImage == nil)
-      backgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+    if (detailViewBackgroundImage == nil)
+      detailViewBackgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
     
-    self.background = [[UIImageView alloc] initWithImage:backgroundImage];
+    self.background = [[UIImageView alloc] initWithImage:detailViewBackgroundImage];
     self.background.backgroundColor = [UIColor clearColor];
     self.background.contentMode = UIViewContentModeScaleToFill;
     self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        
-    CGRect bgframe = self.background.bounds;
-    float scale = frame.size.width / backgroundImage.size.width;    
+    
+    //Scale difference between image graphic & given frame
+    float scale = frame.size.width / detailViewBackgroundImage.size.width;
+    
+    //Try aspect-fill the background image to the frame, custom aspect ratio too
+    CGRect bgframe;
     bgframe.origin.x = 0;
-    bgframe.size.width = frame.size.width;
-    bgframe.size.height = scale * backgroundImage.size.height;
+    bgframe.origin.y = -EDGE_PADDING*scale;
+    bgframe.size.width = scale * detailViewBackgroundImage.size.width;
+    bgframe.size.height = scale * detailViewBackgroundImage.size.height;
     if (FRAME_ASPECT_RATIO > 0)
-      bgframe.size.height = scale * backgroundImage.size.width * FRAME_ASPECT_RATIO;
+      bgframe.size.height = scale * detailViewBackgroundImage.size.width * FRAME_ASPECT_RATIO;
     self.background.frame = bgframe;
+    self.background.layer.shouldRasterize = YES;
+    self.background.layer.rasterizationScale = [UIScreen mainScreen].scale;
 
+    //Content wrapper is slightly smaller
+    //This is wrong, content wrapper should include EDGE_PADDING like book/pepper views as well
+    /*
     CGRect contentWrapperFrame;
     contentWrapperFrame.origin.x = 0;
-    contentWrapperFrame.origin.y = 0;
+    contentWrapperFrame.origin.y = EDGE_PADDING*scale;
     contentWrapperFrame.size.width = frame.size.width;
     contentWrapperFrame.size.height = bgframe.size.height - 2*EDGE_PADDING*scale;
+     */
 
-    self.contentViewWrapper = [[UIView alloc] initWithFrame:contentWrapperFrame];
+    self.contentViewWrapper = [[UIView alloc] initWithFrame:bgframe];
     self.contentViewWrapper.backgroundColor = [UIColor clearColor];
     self.contentViewWrapper.autoresizesSubviews = YES;
+    self.contentViewWrapper.layer.shouldRasterize = YES;
+    self.contentViewWrapper.layer.rasterizationScale = [UIScreen mainScreen].scale;
     [self.contentViewWrapper addSubview:self.background];
     [self addSubview:self.contentViewWrapper];
     
-    self.contentSize = self.contentViewWrapper.bounds.size;
-    self.contentViewWrapper.layer.shouldRasterize = YES;
-    self.contentViewWrapper.layer.rasterizationScale = [UIScreen mainScreen].scale;
+    float contentWidth = self.contentViewWrapper.bounds.size.width;
+    float contentHeight = self.contentViewWrapper.bounds.size.height - 2*EDGE_PADDING*scale;
+    self.contentSize = CGSizeMake(contentWidth, contentHeight);
   }
   return self;
 }
@@ -91,26 +104,36 @@
 
 - (void)layoutForWidth:(int)newWidth duration:(float)duration
 {
-  float aspectRatio = self.contentViewWrapper.bounds.size.height / self.contentViewWrapper.bounds.size.width;
-  float newHeight = newWidth * aspectRatio;
+  //Scale difference between image graphic & given frame
+  float scale = newWidth / detailViewBackgroundImage.size.width;
   
-  CGRect contentWrapperFrame;
-  contentWrapperFrame.origin.x = 0;
-  contentWrapperFrame.origin.y = 0;
-  contentWrapperFrame.size.width = newWidth;
-  contentWrapperFrame.size.height = newHeight;
-  
-  self.contentSize = contentWrapperFrame.size;
+  //Try aspect-fill the background image to the frame, custom aspect ratio too
+  CGRect bgframe;
+  bgframe.origin.x = 0;
+  bgframe.origin.y = -EDGE_PADDING*scale;
+  bgframe.size.width = scale * detailViewBackgroundImage.size.width;
+  bgframe.size.height = scale * detailViewBackgroundImage.size.height;
+  if (FRAME_ASPECT_RATIO > 0)
+    bgframe.size.height = scale * detailViewBackgroundImage.size.width * FRAME_ASPECT_RATIO;
+  self.background.layer.shouldRasterize = YES;
+  self.background.layer.rasterizationScale = [UIScreen mainScreen].scale;
+
+  //Content size
+  float contentWidth = bgframe.size.width;
+  float contentHeight = bgframe.size.height - 2*EDGE_PADDING*scale;
+  self.contentSize = CGSizeMake(contentWidth, contentHeight);
   
   if (duration <= 0) {
-    self.contentViewWrapper.frame = contentWrapperFrame;
+    self.background.frame = bgframe;
+    self.contentViewWrapper.frame = bgframe;
     [self reset];
     return;
   }
   
   [self reset];
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-    self.contentViewWrapper.frame = contentWrapperFrame;
+    self.background.frame = bgframe;
+    self.contentViewWrapper.frame = bgframe;
   } completion:^(BOOL finished) {
     
   }];

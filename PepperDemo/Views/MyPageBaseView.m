@@ -25,7 +25,7 @@
   {
     self.backgroundColor = [UIColor clearColor];
     
-    int margin = 10;
+    int margin = 16;
     CGRect imageFrame = CGRectMake(margin, margin+EDGE_PADDING, frame.size.width-2*margin, frame.size.height-2*EDGE_PADDING-2*margin);
     self.imageView = [[UIImageView alloc] initWithFrame:imageFrame];
     self.imageView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;

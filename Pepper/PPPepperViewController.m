@@ -175,7 +175,7 @@ static float deviceFactor = 0;
   
   //Configurable properties
   self.hideFirstPage = HIDE_FIRST_PAGE;
-  self.oneSideZoom = NO;
+  self.oneSideZoom = !LANDSCAPE_ZOOM_BOTH_SIDE;
   self.animationSlowmoFactor = 1.0f;
   self.enableBookScale = ENABLE_BOOK_SCALE;
   self.enableBookShadow = ENABLE_BOOK_SHADOW;
@@ -586,20 +586,26 @@ static float deviceFactor = 0;
 {
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
+  
+  //This might be removed soon
   float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
-  
-  float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
-  float height = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
-  if (FRAME_ASPECT_RATIO > 0) {
-    width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
-    height = width * FRAME_ASPECT_RATIO;
-  }
-  
   if (!self.scaleOnDeviceRotation)
     orientationFactor = 1.0f;
   
+  //Add padding
+  float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
+  float height = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
+  float scale = height / (1024+2*EDGE_PADDING);
+  height += 2*EDGE_PADDING*scale;
+  
+  if (FRAME_ASPECT_RATIO > 0) {
+    height = width * FRAME_ASPECT_RATIO;
+    scale = height / (1024+2*EDGE_PADDING);
+    height += 2*EDGE_PADDING*scale;
+  }
+  
   self.frameWidth = width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
-  self.frameHeight = 5 + height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);    //graphic edge padding, not sure why only 1 side
+  self.frameHeight = height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
   
   self.frameWidth *= orientationFactor;
   self.frameHeight *= orientationFactor;
@@ -2266,7 +2272,7 @@ static float deviceFactor = 0;
     }
 
     //If current left & right page already cover this page
-    if (self.oneSideZoom && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
+    if ((self.oneSideZoom || isPortrait) && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
       BOOL isCovered = CGRectGetMinX(self.theLeftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.theRightView.frame);
       if (isCovered) {
         page.hidden = YES;
@@ -2307,18 +2313,6 @@ static float deviceFactor = 0;
       continue;
     
     float scale = [self getPepperScaleForPageIndex:i];
-    /*
-    if (self.controlAngle < -THRESHOLD_HALF_ANGLE) {
-      float factor = (self.controlAngle-(-THRESHOLD_HALF_ANGLE)) / ((-MAXIMUM_ANGLE)-(-THRESHOLD_HALF_ANGLE));
-      float newScale = scale + (1.0-scale) * factor;
-      scale = newScale;
-    }
-    else {
-      //scale for middle 4 pages is 1.0 in normal case
-      if (self.controlIndex-2.6 < i && i < self.controlIndex+2.6)
-        scale = 1;
-    }
-     */
 
     if (i < self.controlIndex) {
       CALayer *layerLeft = page.layer;

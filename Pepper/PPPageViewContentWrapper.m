@@ -49,13 +49,20 @@
     self.background.frame = self.bounds;
     self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.background.backgroundColor = [UIColor clearColor];
+    self.background.layer.shouldRasterize = YES;
+    self.background.layer.rasterizationScale = [[UIScreen mainScreen] scale];
     [self addSubview:self.background];
         
     self.contentView = [[UIView alloc] initWithFrame:frame];
     self.contentView.frame = self.bounds;
     self.contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.contentView.backgroundColor = [UIColor clearColor];
+    self.contentView.layer.shouldRasterize = YES;
+    self.contentView.layer.rasterizationScale = [[UIScreen mainScreen] scale];
     [self addSubview:self.contentView];
+    
+    self.layer.shouldRasterize = YES;
+    self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
   }
   return self;
 }
@@ -72,9 +79,6 @@
 - (void)setIsLeft:(BOOL)isLeftView
 {
   _isLeft = isLeftView;
-  
-  self.layer.shouldRasterize = YES;
-  self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
 }
 
 - (void)setIsBook:(BOOL)isBook
