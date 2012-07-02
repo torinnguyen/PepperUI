@@ -44,13 +44,12 @@
     CGRect bgframe = self.background.bounds;
     float scale = frame.size.width / backgroundImage.size.width;    
     bgframe.origin.x = 0;
-    bgframe.origin.y -= EDGE_PADDING*scale;
     bgframe.size.width = frame.size.width;
     bgframe.size.height = scale * backgroundImage.size.height;
     if (FRAME_ASPECT_RATIO > 0)
       bgframe.size.height = scale * backgroundImage.size.width * FRAME_ASPECT_RATIO;
     self.background.frame = bgframe;
-    
+
     CGRect contentWrapperFrame;
     contentWrapperFrame.origin.x = 0;
     contentWrapperFrame.origin.y = 0;

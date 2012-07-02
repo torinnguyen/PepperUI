@@ -15,7 +15,7 @@
 #define FIRST_PAGE_BOOK_COVER        YES              //background of the first page uses book cover image
 #define ENABLE_HIGH_SPEED_SCROLLING  YES              //in 3D mode only
 #define ENABLE_BOOK_SCALE            YES              //other book not in center will be smaller
-#define ENABLE_BOOK_SHADOW           YES              //dynamic shadow below books
+#define ENABLE_BOOK_SHADOW           NO               //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE           NO               //other book not in center will be slightly rotated (carousel effect)
 #define SMALLER_FRAME_FOR_PORTRAIT   YES              //resize everything smaller when device is in portrait mode
 

@@ -175,7 +175,7 @@ static float deviceFactor = 0;
   
   //Configurable properties
   self.hideFirstPage = HIDE_FIRST_PAGE;
-  self.oneSideZoom = YES;
+  self.oneSideZoom = NO;
   self.animationSlowmoFactor = 1.0f;
   self.enableBookScale = ENABLE_BOOK_SCALE;
   self.enableBookShadow = ENABLE_BOOK_SHADOW;
@@ -1210,7 +1210,7 @@ static float deviceFactor = 0;
   self.reusePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
-  int total = self.oneSideZoom ? 2*NUM_REUSE_DETAIL_VIEW : NUM_REUSE_DETAIL_VIEW;
+  int total = self.oneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
   for (int i=0; i<total; i++)
     [self.reusePageViewArray addObject:[[PPPageViewDetailWrapper alloc] initWithFrame:self.pageScrollView.bounds]];
 }
@@ -1261,12 +1261,12 @@ static float deviceFactor = 0;
   [tempArray removeAllObjects];
   
   //Visible indexes
-  int total = self.oneSideZoom ? 2*NUM_REUSE_DETAIL_VIEW : NUM_REUSE_DETAIL_VIEW;
-  int range = floor(total/2.0);
+  int total = self.oneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
+  int range = total / 3;
   int startIndex = currentIndex - range;
   if (startIndex < 0)
     startIndex = 0;
-  int endIndex = startIndex + total;
+  int endIndex = startIndex + total - 1;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
@@ -1295,19 +1295,33 @@ static float deviceFactor = 0;
 //
 - (CGRect)getFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
   
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape(interfaceOrientation);
+  BOOL isPortrait = UIInterfaceOrientationIsPortrait(interfaceOrientation);
   
-  if (self.oneSideZoom || !isLandscape) {
+  if (self.oneSideZoom || isPortrait) {
     int width = 2 * [self getMidXForOrientation:interfaceOrientation];
     int height = 2 * [self getMidYForOrientation:interfaceOrientation];
     int x = (self.hideFirstPage) ? (index-1)*width : index*width;
     return CGRectMake(x, 0, width, height);
   }
   
+  //Zoom both side, landscape
   int width = [self getMidXForOrientation:interfaceOrientation];
-  int height = 2 * [self getMidYForOrientation:interfaceOrientation];
   int x = (self.hideFirstPage) ? (index-1)*width : index*width;
-  return CGRectMake(x, 0, width, height);
+  
+  float aspectRatio = self.frameHeight / self.frameWidth;
+  if (FRAME_ASPECT_RATIO > 0)
+    aspectRatio = FRAME_ASPECT_RATIO;
+  
+  int height = aspectRatio * width;
+  int y = [self getMidYForOrientation:interfaceOrientation] - height/2;   //vertically centered
+
+  int maxHeight = 2 * [self getMidYForOrientation:interfaceOrientation];
+  if (height > maxHeight) {
+    height = maxHeight;
+    y = 0;
+  }  
+
+  return CGRectMake(x, y, width, height);
 }
 
 //
@@ -2194,23 +2208,33 @@ static float deviceFactor = 0;
   //Default bias to left page
   self.currentPageIndex = self.controlIndex - 0.5;
   
+  int frameY = [self getFrameY];
+  int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
+  float aspectRatio = (float)self.frameWidth / (float)self.frameHeight;
+  CGRect frame;
+  
   //Zoom in on 1 side
-  if (self.oneSideZoom) {
-    int frameY = [self getFrameY];
-    int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-    CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
-    float aspectRatio = (float)self.frameWidth / (float)self.frameHeight;
-    CGRect frame;
+  if (self.oneSideZoom)
+  {
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
     frame.origin.y = leftFrameOriginal.origin.y - (leftFrameOriginal.origin.y * frameScale) - EDGE_PADDING*frameScale;
-    self.theLeftView.frame = frame;
-    self.theRightView.frame = frame;
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
-  
+  //Zoom both side
+  else
+  {
+    frame.origin.x = leftFrameOriginal.origin.x;
+    frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width/2 - leftFrameOriginal.size.width) * frameScale;
+    frame.size.height = frame.size.width / aspectRatio;
+    frame.origin.y = CGRectGetMidY(leftFrameOriginal) - frame.size.height/2;    //vertically centered
+  }
+  self.theLeftView.frame = frame;
+  self.theRightView.frame = frame;
+    
   //Notify the delegate
   if (self.controlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle <= 0) {
     float scale = 1.0 + self.controlAngle / fabs(THRESHOLD_HALF_ANGLE);
