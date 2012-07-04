@@ -10,6 +10,7 @@
 		421C04A7157949C700A5698B /* PPPageViewDetailWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */; };
 		423941E4157D494C0053E0FA /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E3157D494C0053E0FA /* Icon-72.png */; };
 		423941E7157D494F0053E0FA /* Icon-144.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E6157D494F0053E0FA /* Icon-144.png */; };
+		42414BE215A4378400D3D7C1 /* page_bg_shadow~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = 42414BE115A4378400D3D7C1 /* page_bg_shadow~ipad.png */; };
 		42523BC115793492000323EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC015793492000323EE /* UIKit.framework */; };
 		42523BC315793492000323EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC215793492000323EE /* Foundation.framework */; };
 		42523BC515793492000323EE /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC415793492000323EE /* CoreGraphics.framework */; };
@@ -45,6 +46,7 @@
 		42366DAC157FE28600BC7061 /* PPPepperContants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PPPepperContants.h; sourceTree = "<group>"; };
 		423941E3157D494C0053E0FA /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
 		423941E6157D494F0053E0FA /* Icon-144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-144.png"; sourceTree = "<group>"; };
+		42414BE115A4378400D3D7C1 /* page_bg_shadow~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "page_bg_shadow~ipad.png"; sourceTree = "<group>"; };
 		42523BBC15793492000323EE /* PepperDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PepperDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42523BC015793492000323EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		42523BC215793492000323EE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -167,6 +169,7 @@
 				42DB02D01585008000B23A0C /* page_bg_borderless@2x.png */,
 				42B639BB1593861700B42A2D /* page_bg_borderless@2x~ipad.png */,
 				42B639BC1593861700B42A2D /* page_bg_borderless~ipad.png */,
+				42414BE115A4378400D3D7C1 /* page_bg_shadow~ipad.png */,
 				42B639B7159384B700B42A2D /* page_bg.png */,
 				42B639B8159384B700B42A2D /* page_bg@2x.png */,
 				42B639B31593839D00B42A2D /* page_bg@2x~ipad.png */,
@@ -283,6 +286,7 @@
 				42B639BD1593861700B42A2D /* page_bg_borderless@2x~ipad.png in Resources */,
 				42B639BE1593861700B42A2D /* page_bg_borderless~ipad.png in Resources */,
 				42B639EE159390BB00B42A2D /* PPViewController~iphone.xib in Resources */,
+				42414BE215A4378400D3D7C1 /* page_bg_shadow~ipad.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

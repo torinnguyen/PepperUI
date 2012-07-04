@@ -13,6 +13,7 @@
 #define EDGE_ALPHA            0.1
 
 @interface PPPageViewContentWrapper()
+@property (nonatomic, retain) UIImageView *shadow;
 @property (nonatomic, retain) UIImageView *background;
 @property (nonatomic, retain) UITapGestureRecognizer *tapGestureRecognizer;
 @end
@@ -26,6 +27,10 @@
 @synthesize contentView = _contentView;
 @synthesize isLeft = _isLeft;
 @synthesize bgBookImage = _bgBookImage;
+@synthesize shadowOffset = _shadowOffset;
+@synthesize shadowRadius = _shadowRadius;
+@synthesize shadowOpacity = _shadowOpacity;
+@synthesize shadow;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -36,7 +41,8 @@
 
     self.backgroundColor = [UIColor clearColor];
     self.autoresizesSubviews = YES;
-    self.clipsToBounds = YES;
+    self.clipsToBounds = NO;
+    self.layer.masksToBounds = NO;
     
     // Create gesture recognizer
     self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onOneFingerTap)];
@@ -44,25 +50,19 @@
     [self.tapGestureRecognizer setNumberOfTouchesRequired:1];
     [self addGestureRecognizer:self.tapGestureRecognizer];
 
+    // Background image
     self.background = [[UIImageView alloc] init];
     self.background.image = nil;
     self.background.frame = self.bounds;
     self.background.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.background.backgroundColor = [UIColor clearColor];
-    self.background.layer.shouldRasterize = YES;
-    self.background.layer.rasterizationScale = [[UIScreen mainScreen] scale];
     [self addSubview:self.background];
         
     self.contentView = [[UIView alloc] initWithFrame:frame];
     self.contentView.frame = self.bounds;
     self.contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.contentView.backgroundColor = [UIColor clearColor];
-    self.contentView.layer.shouldRasterize = YES;
-    self.contentView.layer.rasterizationScale = [[UIScreen mainScreen] scale];
     [self addSubview:self.contentView];
-    
-    self.layer.shouldRasterize = YES;
-    self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
   }
   return self;
 }
@@ -79,6 +79,9 @@
 - (void)setIsLeft:(BOOL)isLeftView
 {
   _isLeft = isLeftView;
+  
+  self.layer.shouldRasterize = YES;
+  self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
 }
 
 - (void)setIsBook:(BOOL)isBook
@@ -114,6 +117,61 @@
   //Flip content horizontally for odd page
   if (self.isLeft)    self.contentView.layer.transform = CATransform3DMakeRotation(M_PI, 0, 1, 0);
   else                self.contentView.layer.transform = CATransform3DMakeRotation(0, 0, 1, 0);
+}
+
+
+#pragma mark - Shadow
+
+- (void)setShadowOffset:(CGSize)newValue
+{
+  _shadowOffset = newValue;
+  [self setupShadow];
+  [self updateShadow];
+}
+
+- (void)setShadowOpacity:(float)newValue
+{
+  _shadowOpacity = newValue;
+  if (newValue == 0) {
+    [self.shadow removeFromSuperview];
+    self.shadow = nil;
+    return;
+  }
+  
+  self.shadow.alpha = newValue;
+}
+
+- (void)setShadowRadius:(float)newValue
+{
+  _shadowRadius = newValue;
+  [self setupShadow];
+  [self updateShadow];
+}
+
+- (void)setupShadow
+{
+  if (self.shadow != nil)
+    return;
+  
+  self.shadow = [[UIImageView alloc] init];
+  self.shadow.image = [UIImage imageNamed:@"page_bg_shadow"];
+  self.shadow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  self.shadow.backgroundColor = [UIColor clearColor];
+  [self insertSubview:self.shadow belowSubview:self.background];
+  [self updateShadow];
+}
+
+- (void)updateShadow
+{
+  CGRect frame = self.bounds;
+  frame.size.width += 2 * self.shadowRadius;
+  frame.size.height += 2 * self.shadowRadius;
+  frame.origin.x -= self.shadowRadius;
+  frame.origin.y -= self.shadowRadius;
+  
+  frame.origin.x += self.shadowOffset.width;
+  frame.origin.y += self.shadowOffset.height;
+  self.shadow.frame = frame;
 }
 
 @end

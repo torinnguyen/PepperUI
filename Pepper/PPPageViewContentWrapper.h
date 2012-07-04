@@ -23,4 +23,8 @@
 @property (nonatomic, assign) BOOL isBook;
 @property (nonatomic, assign) BOOL bgBookImage;
 
+@property (nonatomic, assign) float shadowRadius;
+@property (nonatomic, assign) float shadowOpacity;
+@property (nonatomic, assign) CGSize shadowOffset;
+
 @end
