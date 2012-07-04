@@ -1472,8 +1472,6 @@ static float deviceFactor = 0;
   if (newIndex > limit)
     newIndex = limit;
   
-  NSLog(@"newIndex: %.2f, limit: %.2f, total: %d", newIndex, limit, pageCount);
-  
   _controlIndex = newIndex;
 
   //Notify the delegate
@@ -1504,6 +1502,14 @@ static float deviceFactor = 0;
     if (page == nil)
       continue;
     [page.superview bringSubviewToFront:page];
+  }
+   
+  //Experimental shadow
+  for (int i=0; i < totalPages; i++) {
+    PPPageViewContentWrapper *wrapper = [self getPepperPageAtIndex:i];
+    wrapper.shadowOffset = CGSizeMake(0, 6);
+    wrapper.shadowRadius = 12;
+    wrapper.shadowOpacity = 0.35;
   }
 }
 
@@ -1719,56 +1725,10 @@ static float deviceFactor = 0;
   tempIndex = (int)round(theSpecialIndex + 1.5f);
   if (tempIndex >= 0 && tempIndex < pageCount)
     self.theView4 = [self getPepperPageAtIndex:tempIndex];
-  
-  //[self addShadow];
 }
 
 - (void)onSpecialControlIndexChanged {
   [self reusePepperViews];
-}
-
-- (void)addShadow
-{
-  float corner = 0;
-  float shadowRadius = 20.0;
-  float shadowOpacity = 0.3;
-  
-  //Shadow
-  self.theView1.layer.shadowColor = [[UIColor blackColor] CGColor];
-  self.theView1.layer.shadowOpacity = shadowOpacity;
-  self.theView1.layer.shadowRadius = shadowRadius;
-  self.theView1.layer.shadowOffset = CGSizeMake(0, 0);
-  self.theView1.layer.cornerRadius = corner;
-  self.theView1.layer.masksToBounds = NO;
-  UIBezierPath *path = [UIBezierPath bezierPathWithRect:self.theView1.bounds];
-  self.theView1.layer.shadowPath = path.CGPath;
-  
-  self.theView2.layer.shadowColor = [[UIColor blackColor] CGColor];
-  self.theView2.layer.shadowOpacity = shadowOpacity;
-  self.theView2.layer.shadowRadius = shadowRadius;
-  self.theView2.layer.shadowOffset = CGSizeMake(0, 0);
-  self.theView2.layer.cornerRadius = corner;
-  self.theView2.layer.masksToBounds = NO;
-  path = [UIBezierPath bezierPathWithRect:self.theView2.bounds];
-  self.theView2.layer.shadowPath = path.CGPath;
-  
-  self.theView3.layer.shadowColor = [[UIColor blackColor] CGColor];
-  self.theView3.layer.shadowOpacity = shadowOpacity;
-  self.theView3.layer.shadowRadius = shadowRadius;
-  self.theView3.layer.shadowOffset = CGSizeMake(0, 0);
-  self.theView3.layer.cornerRadius = corner;
-  self.theView3.layer.masksToBounds = NO;
-  path = [UIBezierPath bezierPathWithRect:self.theView3.bounds];
-  self.theView3.layer.shadowPath = path.CGPath;
-  
-  self.theView4.layer.shadowColor = [[UIColor blackColor] CGColor];
-  self.theView4.layer.shadowOpacity = shadowOpacity;
-  self.theView4.layer.shadowRadius = shadowRadius;
-  self.theView4.layer.shadowOffset = CGSizeMake(0, 0);
-  self.theView4.layer.cornerRadius = corner;
-  self.theView4.layer.masksToBounds = NO;
-  path = [UIBezierPath bezierPathWithRect:self.theView4.bounds];
-  self.theView4.layer.shadowPath = path.CGPath;
 }
 
 - (void)animateControlIndexTo:(float)index duration:(float)duration
