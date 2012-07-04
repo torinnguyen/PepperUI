@@ -50,7 +50,6 @@
 @property (nonatomic, assign) float m34;
 
 //Control
-@property (nonatomic, assign) float controlIndex;
 @property (nonatomic, assign) float controlAngle;
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
@@ -1466,12 +1465,8 @@ static float deviceFactor = 0;
     newIndex = MIN_CONTROL_INDEX;
   
   float limit = 0;
-  if (pageCount % 4 == 3) {
-    limit = pageCount-0.5+offset;
-  }
-  else {
-    limit = pageCount-1.5+offset;
-  }
+  if (pageCount % 2 != 0)    limit = pageCount-1.0+offset;       //odd
+  else                       limit = pageCount-1.5+offset;       //even
   
   //upper limit
   if (newIndex > limit)
