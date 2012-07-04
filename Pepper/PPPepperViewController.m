@@ -132,11 +132,11 @@
 @synthesize pepperView;
 @synthesize reusePepperWrapperArray;
 
-@synthesize currentBookIndex;
+@synthesize currentBookIndex = _currentBookIndex;
 @synthesize bookScrollView;
 @synthesize reuseBookViewArray;
 
-@synthesize currentPageIndex;
+@synthesize currentPageIndex = _currentPageIndex;
 @synthesize reusePageViewArray;
 @synthesize pageScrollView;
 
@@ -395,9 +395,6 @@ static float deviceFactor = 0;
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
   [self scrollViewDidScroll:self.bookScrollView];
-  
-  //Start downloading thumbnails for 1st page
-  //[self fetchBookThumbnailsMultithread];
    
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
@@ -1196,6 +1193,11 @@ static float deviceFactor = 0;
 
 #pragma mark - UI Helper functions (Page)
 
+- (int)getCurrentPageIndex
+{
+  return self.currentPageIndex;
+}
+
 - (void)destroyPageScrollView
 {
   while (self.pageScrollView.subviews.count > 0)
@@ -1458,9 +1460,25 @@ static float deviceFactor = 0;
   //Temporary, should be an elastic scale
   float offset = 0.48;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  //if (newIndex < MIN_CONTROL_INDEX-offset)   newIndex = MIN_CONTROL_INDEX-offset;
-  if (newIndex < MIN_CONTROL_INDEX)           newIndex = MIN_CONTROL_INDEX;
-  if (newIndex >= pageCount-1.5+offset)       newIndex = pageCount-1.5+offset;
+  
+  //lower limit
+  if (newIndex < MIN_CONTROL_INDEX)
+    newIndex = MIN_CONTROL_INDEX;
+  
+  float limit = 0;
+  if (pageCount % 4 == 3) {
+    limit = pageCount-0.5+offset;
+  }
+  else {
+    limit = pageCount-1.5+offset;
+  }
+  
+  //upper limit
+  if (newIndex > limit)
+    newIndex = limit;
+  
+  NSLog(@"newIndex: %.2f, limit: %.2f, total: %d", newIndex, limit, pageCount);
+  
   _controlIndex = newIndex;
 
   //Notify the delegate
@@ -2486,20 +2504,20 @@ static float deviceFactor = 0;
     subview.layer.anchorPoint = previousAnchor;
     subview.layer.transform = transform;
     
+    PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
     if (self.enableBookScale && self.enableBookShadow) {
       float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
-      subview.layer.shadowOffset = CGSizeMake(0, 5 + 40*shadowScale);
-      subview.layer.shadowRadius = 10 + 10 * shadowScale;
-      subview.layer.shadowOpacity = 0.4;
+      wrapper.shadowOffset = CGSizeMake(0, 5 + 5*shadowScale);
+      wrapper.shadowRadius = 10 + 8 * shadowScale;
+      wrapper.shadowOpacity = 0.35;
     }
     else if (self.enableBookShadow) {
-      subview.layer.shadowOffset = CGSizeMake(0, 5);
-      subview.layer.shadowRadius = 20;
-      subview.layer.shadowOpacity = 0.4;
+      wrapper.shadowOffset = CGSizeMake(0, 5);
+      wrapper.shadowRadius = 12;
+      wrapper.shadowOpacity = 0.35;
     }
     else {
-      subview.layer.shadowRadius = 0;
-      subview.layer.shadowOpacity = 0;
+      wrapper.shadowOpacity = 0;
     }
   }
   

@@ -137,7 +137,7 @@
 @property (nonatomic, assign) float pepperPageSpacing;
 
 // Read-only properties
-@property (nonatomic, readonly) float controlIndex;
+@property (nonatomic, assign) float controlIndex;
 @property (nonatomic, readonly) float controlAngle;
 @property (nonatomic, readonly) BOOL isBookView;
 @property (nonatomic, readonly) BOOL isDetailView;
@@ -155,8 +155,10 @@
 // Pepper list
 - (void)openPageIndex:(int)pageIndex;
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index;
+- (void)animateControlIndexTo:(float)index duration:(float)duration;
 
 // Page list
+- (int)getCurrentPageIndex;
 - (void)scrollToPage:(int)pageIndex duration:(float)duration;
 - (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)index;
 
