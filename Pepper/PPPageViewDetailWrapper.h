@@ -20,7 +20,7 @@
 
 - (void)unloadContent;
 - (void)reset;
-- (void)layoutForWidth:(int)width duration:(float)duration;
+- (void)layoutWithFrame:(CGRect)frame duration:(float)duration;
 
 
 @end

@@ -19,13 +19,14 @@
 #define ENABLE_BOOK_ROTATE           NO               //other book not in center will be slightly rotated (carousel effect)
 #define SMALLER_FRAME_FOR_PORTRAIT   YES              //resize everything smaller when device is in portrait mode
 #define LANDSCAPE_ZOOM_BOTH_SIDE     YES              //zoom side-by-side in landscape mode
+#define DIFFERENT_RATIO_FOR_LANDSCAPE NO             //use different aspect ratio for landscape to fit the screen if LANDSCAPE_ZOOM_BOTH_SIDE is enabled
 
 //Graphics
 #define EDGE_PADDING                 5                //Don't change this after graphic is fixed
 #define BOOK_BG_IMAGE                @"book_bg"
 #define PAGE_BG_IMAGE                @"page_bg"
 #define PAGE_BG_BORDERLESS_IMAGE     @"page_bg_borderless"
-#define USE_BORDERLESS_GRAPHIC       YES              //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
+#define USE_BORDERLESS_GRAPHIC       NO               //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 
 //Look & feel
 #define FRAME_ASPECT_RATIO           0.0f             //Heigth/Width - Change to non-zero for custom aspect ratio, default is (1.3333 or 4:3). Should be >= 1.0f

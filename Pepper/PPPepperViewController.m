@@ -316,7 +316,7 @@ static float deviceFactor = 0;
     
     //Layout subviews of each fullscreen page
     if ([subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      [(PPPageViewDetailWrapper*)subview layoutForWidth:frame.size.width duration:duration];
+      [(PPPageViewDetailWrapper*)subview layoutWithFrame:frame duration:duration];
     
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       subview.frame = frame;
@@ -1315,6 +1315,8 @@ static float deviceFactor = 0;
   float aspectRatio = self.frameHeight / self.frameWidth;
   if (FRAME_ASPECT_RATIO > 0)
     aspectRatio = FRAME_ASPECT_RATIO;
+  if (DIFFERENT_RATIO_FOR_LANDSCAPE)
+    aspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
   
   int height = aspectRatio * width;
   int y = [self getMidYForOrientation:interfaceOrientation] - height/2;   //vertically centered
@@ -1394,7 +1396,7 @@ static float deviceFactor = 0;
   else
     pageDetailView.contentView = nil;
 
-  [pageDetailView layoutForWidth:pageFrame.size.width duration:0];
+  [pageDetailView layoutWithFrame:pageFrame duration:0];
   
   /*
   UIImage *image = [self getCachedThumbnailForPageID:index];
@@ -2413,9 +2415,9 @@ static float deviceFactor = 0;
       break;
     }
     
-    float onePageWidth = CGRectGetWidth(self.pageScrollView.bounds);
-    if (onePage != nil)
-      onePageWidth = CGRectGetWidth(onePage.frame);
+    float onePageWidth = 2 * [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+    //if (onePage != nil)
+    //  onePageWidth = CGRectGetWidth(onePage.frame);
     
     int offsetX = fabs(self.pageScrollView.contentOffset.x);
     float pageIndex = offsetX / onePageWidth;
