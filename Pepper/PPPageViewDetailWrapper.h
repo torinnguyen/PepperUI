@@ -18,9 +18,9 @@
 @property (nonatomic, unsafe_unretained) id customDelegate;
 @property (nonatomic, strong) UIView *contentView;
 
+- (void)setBackgroundImage:(UIImage*)image;
 - (void)unloadContent;
 - (void)reset;
 - (void)layoutWithFrame:(CGRect)frame duration:(float)duration;
-
 
 @end

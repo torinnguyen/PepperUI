@@ -123,18 +123,20 @@
  PPScrollListViewControllerDelegate
 >
 
-
-@property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
 
+@property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
+
+// Configurable on-the-fly
 @property (nonatomic, assign) BOOL hideFirstPage;
+@property (nonatomic, assign) BOOL enableBorderlessGraphic;
 @property (nonatomic, assign) BOOL enableBookScale;
 @property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableBookRotate;
-@property (nonatomic, assign) BOOL oneSideZoom;
+@property (nonatomic, assign) BOOL enableOneSideZoom;
+@property (nonatomic, assign) BOOL enableHighSpeedScrolling;
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
-@property (nonatomic, assign) float pepperPageSpacing;
 
 // Read-only properties
 @property (nonatomic, assign) float controlIndex;

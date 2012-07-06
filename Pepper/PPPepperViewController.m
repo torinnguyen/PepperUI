@@ -13,9 +13,25 @@
 #import "PPPageViewContentWrapper.h"
 #import "PPPageViewDetailWrapper.h"
 
+//Used to be public contants
+#define HIDE_FIRST_PAGE               NO          //hide the first page
+#define FIRST_PAGE_BOOK_COVER         YES         //background of the first page uses book cover image
+#define ENABLE_BORDERLESS_GRAPHIC     NO          //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
+#define ENABLE_HIGH_SPEED_SCROLLING   YES         //in 3D mode only
+#define ENABLE_BOOK_SCALE             YES         //other book not in center will be smaller
+#define ENABLE_BOOK_SHADOW            YES         //dynamic shadow below books
+#define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
+#define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
+#define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
+
+//Graphics
+#define BOOK_BG_IMAGE                @"book_bg"
+#define PAGE_BG_IMAGE                @"page_bg"
+#define PAGE_BG_BORDERLESS_IMAGE     @"page_bg_borderless"
+
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
-#define PEPPER_PAGE_SPACING          35.0f        //gap between pages in 3D mode
+#define PEPPER_PAGE_SPACING          32.0f        //gap between edges of pages in 3D/Pepper mode
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
@@ -54,6 +70,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) float aspectRatioPortrait;
 @property (nonatomic, assign) float edgePaddingPercentage;    //percentage of EDGE_PADDING compared to background graphic height
 @property (nonatomic, assign) float bookSpacing;
+@property (nonatomic, assign) float pepperPageSpacing;
 @property (nonatomic, assign) float m34;
 
 //Control
@@ -103,15 +120,17 @@ static UIImage *pageBackgroundImage = nil;
 @implementation PPPepperViewController
 
 //public properties
+@synthesize hideFirstPage;
+@synthesize enableBorderlessGraphic;
 @synthesize animationSlowmoFactor;
 @synthesize enableBookScale;
 @synthesize enableBookShadow;
 @synthesize enableBookRotate;
-@synthesize hideFirstPage;
-@synthesize oneSideZoom;
-@synthesize pepperPageSpacing;
+@synthesize enableOneSideZoom;
+@synthesize enableHighSpeedScrolling;
 @synthesize scaleOnDeviceRotation;
 
+//readonly public properties
 @synthesize isBookView;
 @synthesize isDetailView;
 
@@ -129,6 +148,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
 @synthesize bookSpacing, m34;
+@synthesize pepperPageSpacing;
 
 @synthesize frameWidth, frameHeight;
 @synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
@@ -152,7 +172,6 @@ static UIImage *pageBackgroundImage = nil;
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
-static float layer3WidthAt90 = 0;
 static float deviceFactor = 0;
 
 #pragma mark - View life cycle
@@ -169,28 +188,26 @@ static float deviceFactor = 0;
   self.delegate = self;
   self.dataSource = self;
   
-  return self;
-}
-
-- (void)viewDidLoad
-{
-  [super viewDidLoad];
-  
   if (deviceFactor == 0)
     deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
   
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   self.m34 = isPad ? M34_IPAD : M34_IPHONE;
+  self.pepperPageSpacing = PEPPER_PAGE_SPACING;
   
-  //Configurable properties
+  //Configurable public properties
   self.hideFirstPage = HIDE_FIRST_PAGE;
-  self.oneSideZoom = !LANDSCAPE_ZOOM_BOTH_SIDE;
   self.animationSlowmoFactor = 1.0f;
+  self.enableBorderlessGraphic = ENABLE_BORDERLESS_GRAPHIC;
   self.enableBookScale = ENABLE_BOOK_SCALE;
   self.enableBookShadow = ENABLE_BOOK_SHADOW;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
-  self.pepperPageSpacing = PEPPER_PAGE_SPACING;
+  self.enableOneSideZoom = ENABLE_ONE_SIDE_ZOOM;
+  self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
+  
+  //Initialize once
+  [self initializeBackgroundImagesAndRatios];
   
   //Initial op flags
   [self updateFrameSizesForOrientation];
@@ -201,15 +218,6 @@ static float deviceFactor = 0;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
   
-  //Initialize once
-  [self initializeBackgroundImages];
-  
-  //Initialize self.view
-  self.view.autoresizesSubviews = YES;
-  self.view.clipsToBounds = YES;
-  self.view.backgroundColor = [UIColor clearColor];
-  self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
- 
   //Gesture recognizers
   UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
   pinchGestureRecognizer.delegate = self;
@@ -219,6 +227,19 @@ static float deviceFactor = 0;
   panGestureRecognizer.delegate = self;
   [self.view addGestureRecognizer:panGestureRecognizer];
   
+  return self;
+}
+
+- (void)viewDidLoad
+{
+  [super viewDidLoad];
+  
+  //Initialize self.view
+  self.view.autoresizesSubviews = YES;
+  self.view.clipsToBounds = YES;
+  self.view.backgroundColor = [UIColor clearColor];
+  self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+   
   if (self.bookScrollView == nil) {
     self.bookScrollView = [[UIScrollView alloc] init];
     self.bookScrollView.frame = self.view.bounds;
@@ -305,8 +326,8 @@ static float deviceFactor = 0;
 {
   [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
   
-  //Switching from portrait to landscape, with oneSideZoom disabled, need to set to even pageIndex
-  if (!self.oneSideZoom && UIInterfaceOrientationIsLandscape(toInterfaceOrientation)) {
+  //Switching from portrait to landscape, with enableOneSideZoom disabled, need to set to even pageIndex
+  if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape(toInterfaceOrientation)) {
     if ((int)self.currentPageIndex % 2 != 0)
       self.currentPageIndex -= 1;
   }
@@ -463,7 +484,7 @@ static float deviceFactor = 0;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  if (self.isBookView || (self.isDetailView && self.oneSideZoom))
+  if (self.isBookView || (self.isDetailView && self.enableOneSideZoom))
     return NO;
   
   if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
@@ -505,7 +526,7 @@ static float deviceFactor = 0;
   }
   
   float boost = 1.0f;
-  if (self.oneSideZoom && recognizer.scale > 1.0)
+  if (self.enableOneSideZoom && recognizer.scale > 1.0)
     boost = 0.3f;
   
   float dx = boost * (-90.0) * (1.0-recognizer.scale);
@@ -603,15 +624,31 @@ static float deviceFactor = 0;
 //
 // Initialize static UIImage variable declared at the top
 //
-- (void)initializeBackgroundImages
+- (void)initializeBackgroundImagesAndRatios
 {
-  if (bookCoverImage == nil)
-    bookCoverImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
-
-  if (pageBackgroundImage == nil)
-    pageBackgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+  BOOL graphicChanged = NO;
   
+  if (bookCoverImage == nil) {
+    graphicChanged = YES;
+    bookCoverImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
+  }
+
+  if (pageBackgroundImage == nil) {
+    graphicChanged = YES;
+    pageBackgroundImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+  }
+
   self.edgePaddingPercentage = EDGE_PADDING / bookCoverImage.size.height;
+  
+  if (!graphicChanged)
+    return;
+
+  for (PPPageViewContentWrapper *subview in self.reuseBookViewArray)
+    [subview setBackgroundImage:bookCoverImage];
+  
+  for (PPPageViewDetailWrapper *subview in self.reusePageViewArray)
+    [subview setBackgroundImage:pageBackgroundImage];
+
 }
 
 - (void)updateFrameSizesForOrientation:(UIInterfaceOrientation)orientation
@@ -625,24 +662,23 @@ static float deviceFactor = 0;
   
   //Add padding
   float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
-  float height = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
-  float scale = height / (1024+2*EDGE_PADDING);
-  height += 2*EDGE_PADDING*scale;
+  float contentHeight = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
   
-  if (FRAME_ASPECT_RATIO > 0) {
-    height = width * FRAME_ASPECT_RATIO;
-    scale = height / (1024+2*EDGE_PADDING);
-    height += 2*EDGE_PADDING*scale;
+  //Custom aspect ratio for content
+  if (FRAME_ASPECT_RATIO > 0)
+    contentHeight = width * FRAME_ASPECT_RATIO;
+  
+  //Fit the aspect ratio to self when self.enableOneSideZoom is disabled
+  if (!self.enableOneSideZoom && isLandscape) {
+    width = [self getMidXForOrientation:orientation];
+    contentHeight = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
   }
-  //Fit the aspect ratio to self when self.oneSideZoom is disabled
-  //if (!self.oneSideZoom)
-  //  contentAspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
   
-  self.frameWidth = width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
-  self.frameHeight = height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
+  float height = contentHeight / (1.0 - 2*self.edgePaddingPercentage);
   
-  self.frameWidth *= orientationFactor;
-  self.frameHeight *= orientationFactor;
+  //Scaling
+  self.frameWidth = orientationFactor * width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
+  self.frameHeight = orientationFactor * height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
 
   self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 3.2 * orientationFactor * deviceFactor;
   
@@ -650,7 +686,6 @@ static float deviceFactor = 0;
   if (self.scaleOnDeviceRotation) {
     layer23WidthAtMid = 0;
     layer2WidthAt90 = 0;
-    layer3WidthAt90 = 0;
   }
 }
 
@@ -709,7 +744,7 @@ static float deviceFactor = 0;
 
 //
 // Returns the correct X position of given page, according to current controlIndex
-// Note: layer3WidthAt90 static variable must already be calculated before using this function
+// Note: layer2WidthAt90 static variable must already be calculated before using this function
 //       this will NOT be valid for the middle 4 pages
 //
 - (float)getPepperFrameXForPageIndex:(int)pageIndex gapScale:(float)gapScale orientation:(UIInterfaceOrientation)interfaceOrientation {
@@ -723,7 +758,7 @@ static float deviceFactor = 0;
   float distance = indexDiff * self.pepperPageSpacing * deviceFactor;
   float maxDistance = NUM_VISIBLE_PAGE_ONE_SIDE * self.pepperPageSpacing * deviceFactor;
   float positionScale = 0.5;
-  float magicNumber = layer3WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
+  float magicNumber = layer2WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer2WidthAt90*positionScale/2.5;    //see formular for self.theView4.frame, flip to right case
   float diffFromMidX = magicNumber + distance;
   float maxDiffFromMidX = magicNumber + maxDistance;
   
@@ -901,9 +936,11 @@ static float deviceFactor = 0;
   
   pageView.tag = index;
   pageView.isBook = NO;
-  pageView.bgBookImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
-  
   pageView.frame = pageFrame;
+  
+  BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
+  [pageView setBackgroundImage:(useBookCoverImage ? bookCoverImage : pageBackgroundImage)];
+  
   pageView.alpha = 1;
   pageView.hidden = YES;        //control functions will unhide later
   pageView.delegate = self;  
@@ -1140,8 +1177,9 @@ static float deviceFactor = 0;
   coverPage.tag = index;
   coverPage.isLeft = NO;
   coverPage.isBook = YES;
-  coverPage.bgBookImage = !self.hideFirstPage;
   coverPage.delegate = self;
+  
+  [coverPage setBackgroundImage:(self.hideFirstPage ? pageBackgroundImage : bookCoverImage)];
   
   coverPage.hidden = NO;
   coverPage.alpha = 1;
@@ -1252,9 +1290,12 @@ static float deviceFactor = 0;
   self.reusePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
-  int total = self.oneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
-  for (int i=0; i<total; i++)
-    [self.reusePageViewArray addObject:[[PPPageViewDetailWrapper alloc] initWithFrame:self.pageScrollView.bounds]];
+  int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
+  for (int i=0; i<total; i++) {
+    PPPageViewDetailWrapper *wrapperView = [[PPPageViewDetailWrapper alloc] initWithFrame:self.pageScrollView.bounds];
+    [wrapperView setBackgroundImage:pageBackgroundImage];
+    [self.reusePageViewArray addObject:wrapperView];
+  }
 }
 
 - (void)setupPageScrollview
@@ -1303,7 +1344,7 @@ static float deviceFactor = 0;
   [tempArray removeAllObjects];
   
   //Visible indexes
-  int total = self.oneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
+  int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
   int range = total / 3;
   int startIndex = currentIndex - range;
   if (startIndex < 0)
@@ -1334,12 +1375,13 @@ static float deviceFactor = 0;
 
 //
 // Return the frame for this page in scrollview
+// This is on the frame for scrollview inside scrollview, not content frame
 //
 - (CGRect)getFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
   
   BOOL isPortrait = UIInterfaceOrientationIsPortrait(interfaceOrientation);
   
-  if (self.oneSideZoom || isPortrait) {
+  if (self.enableOneSideZoom || isPortrait) {
     int width = 2 * [self getMidXForOrientation:interfaceOrientation];
     int height = 2 * [self getMidYForOrientation:interfaceOrientation];
     int x = (self.hideFirstPage) ? (index-1)*width : index*width;
@@ -1354,8 +1396,8 @@ static float deviceFactor = 0;
   if (FRAME_ASPECT_RATIO > 0)
     contentAspectRatio = FRAME_ASPECT_RATIO;
   
-  //Fit the aspect ratio to self when self.oneSideZoom is disabled
-  if (!self.oneSideZoom)
+  //Fit the aspect ratio to self when self.enableOneSideZoom is disabled
+  if (!self.enableOneSideZoom)
     contentAspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
   
   int height = contentAspectRatio * width;
@@ -1437,17 +1479,6 @@ static float deviceFactor = 0;
     pageDetailView.contentView = nil;
 
   [pageDetailView layoutWithFrame:pageFrame duration:0];
-  
-  /*
-  UIImage *image = [self getCachedThumbnailForPageID:index];
-  UIImage *fullsize = [self getCachedFullsizeForPageID:index];
-  if (fullsize != nil) {
-    [pageDetailView loadWithFrame:pageFrame thumbnail:image fullsize:fullsize];
-  }
-  else {
-    //[self fetchFullsizeOnDemand:index];
-  }
-   */
 }
 
 - (void)updatePageScrollViewContentSize {
@@ -1599,15 +1630,6 @@ static float deviceFactor = 0;
     layer2.transform = transform;
     layer2WidthAt90 = layer2.frame.size.width;
   }
-  if (layer3WidthAt90 == 0) {
-    CALayer *layer3 = self.theView3.layer;
-    CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, (-90+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-    layer3.anchorPoint = CGPointMake(0, 0.5);
-    layer3.transform = transform;
-    layer3WidthAt90 = layer3.frame.size.width;
-  }
 
   //Transformation for center 4 pages
   CALayer *layer1 = self.theView1.layer;
@@ -1655,7 +1677,7 @@ static float deviceFactor = 0;
   }
   //Flip to left
   else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
-    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5,
+    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer2WidthAt90*positionScale/2.5,
                                      frameY, self.frameWidth, self.frameHeight);
     self.theView4.frame = CGRectMake(CGRectGetMaxX(layer3.frame), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = YES;
@@ -1664,7 +1686,7 @@ static float deviceFactor = 0;
   //Flip to right
   else {
     self.theView1.frame = CGRectMake(CGRectGetMinX(layer2.frame), frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer3WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer3WidthAt90*positionScale/2.5,
+    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer2WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer2WidthAt90*positionScale/2.5,
                                      frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
     self.theView3.hidden = YES;
@@ -1842,7 +1864,7 @@ static float deviceFactor = 0;
   //Populate detailed page scrollview
   [self setupPageScrollview];
 
-  if (!self.oneSideZoom)    diff /= 1.3;
+  if (!self.enableOneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
     
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
@@ -1863,7 +1885,7 @@ static float deviceFactor = 0;
   }
   
   float diff = fabs(self.controlAngle - 0) / 90.0;
-  if (!self.oneSideZoom)    diff /= 1.3;
+  if (!self.enableOneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
   
   [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
@@ -1890,7 +1912,7 @@ static float deviceFactor = 0;
   }
 
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
-  if (!self.oneSideZoom)    diff /= 1.3;
+  if (!self.enableOneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
   
   [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*diff];
@@ -2208,7 +2230,7 @@ static float deviceFactor = 0;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.oneSideZoom || isClosing)
+  if (!self.enableOneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale, 1.0);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
@@ -2218,7 +2240,7 @@ static float deviceFactor = 0;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.oneSideZoom || isClosing)
+  if (!self.enableOneSideZoom || isClosing)
     transform = CATransform3DScale(transform, scale,scale, 1.0);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
@@ -2235,7 +2257,7 @@ static float deviceFactor = 0;
   
   //Zoom in on 1 side
   BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
-  if (self.oneSideZoom || isPortrait)
+  if (self.enableOneSideZoom || isPortrait)
   {
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
@@ -2287,7 +2309,7 @@ static float deviceFactor = 0;
     }
 
     //If current left & right page already cover this page
-    if ((self.oneSideZoom || isPortrait) && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
+    if ((self.enableOneSideZoom || isPortrait) && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
       BOOL isCovered = CGRectGetMinX(self.theLeftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.theRightView.frame);
       if (isCovered) {
         page.hidden = YES;
@@ -2296,7 +2318,7 @@ static float deviceFactor = 0;
     }
     
     //Fallback hardcoded condition for above
-    if (self.oneSideZoom && scale > 1.15) {
+    if (self.enableOneSideZoom && scale > 1.15) {
 
       if (i > self.controlIndex) {
         if (self.zoomOnLeft) {
@@ -2456,12 +2478,12 @@ static float deviceFactor = 0;
     }
     
     float onePageWidth = 2 * [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-    //if (onePage != nil)
-    //  onePageWidth = CGRectGetWidth(onePage.frame);
+    if (onePage != nil)
+      onePageWidth = CGRectGetWidth(onePage.frame);
     
     int offsetX = fabs(self.pageScrollView.contentOffset.x);
     float pageIndex = offsetX / onePageWidth;
-    
+
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
       [self.delegate ppPepperViewController:self didScrollWithPageIndex:pageIndex];

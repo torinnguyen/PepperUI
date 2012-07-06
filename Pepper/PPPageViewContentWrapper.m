@@ -26,7 +26,6 @@
 @synthesize tapGestureRecognizer;
 @synthesize contentView = _contentView;
 @synthesize isLeft = _isLeft;
-@synthesize bgBookImage = _bgBookImage;
 @synthesize shadowOffset = _shadowOffset;
 @synthesize shadowRadius = _shadowRadius;
 @synthesize shadowOpacity = _shadowOpacity;
@@ -67,6 +66,11 @@
   return self;
 }
 
+- (void)setBackgroundImage:(UIImage*)image
+{
+  self.background.image = image;
+}
+
 - (void)onOneFingerTap
 {
   if (self.delegate != nil && [self.delegate respondsToSelector:@selector(PPPageViewWrapper:viewDidTap:)])
@@ -87,20 +91,6 @@
 - (void)setIsBook:(BOOL)isBook
 { 
   _isBook = isBook;
-}
-
-- (void)setBgBookImage:(BOOL)bgBookImage
-{
-  //Initialize once
-  static UIImage *book_bg = nil;
-  if (book_bg==nil)
-    book_bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
-  static UIImage *page_bg = nil;
-  if (page_bg==nil)
-    page_bg = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
-  
-  if (bgBookImage)    self.background.image = book_bg;
-  else                self.background.image = page_bg;
 }
 
 - (void)setContentView:(UIView *)theContentView

@@ -39,12 +39,13 @@ static UIImage *backgroundImageFlipped = nil;
     
     [self initBackgroundImage];
     
-    //Don't care about the frame, contentSize, we will relayout later
+    //Don't care about the frame & contentSize, we will relayout later
     
     self.background = [[UIImageView alloc] initWithImage:backgroundImage];
     self.background.backgroundColor = [UIColor clearColor];
     self.background.contentMode = UIViewContentModeScaleToFill;
-    [self addSubview:self.background];    
+    self.background.autoresizesSubviews = YES;
+    [self addSubview:self.background];
   }
   return self;
 }
@@ -66,23 +67,32 @@ static UIImage *backgroundImageFlipped = nil;
   if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;
   else                  self.background.image = backgroundImage;
   
+  theContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   [self.background addSubview:theContentView];
+}
+
+- (void)setBackgroundImage:(UIImage*)image
+{  
+  backgroundImageFlipped = nil;
+  backgroundImage = image;
+  [self initBackgroundImage];
+  
+  if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;
+  else                  self.background.image = backgroundImage;
 }
 
 - (void)initBackgroundImage
 {
-  if (backgroundImage == nil)
-  {
-    backgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+  if (self.background.image == nil) {
+    self.aspectRatio = 1;
+    self.edgePaddingHeightPercent = 0;
+    return;
+  }
+  
+  if (backgroundImageFlipped == nil)
     backgroundImageFlipped = [UIImage imageWithCGImage:backgroundImage.CGImage 
                                                  scale:1.0
                                            orientation:UIImageOrientationUpMirrored];
-    if (backgroundImage == nil) {
-      self.aspectRatio = 1;
-      self.edgePaddingHeightPercent = 0;
-      return;
-    }
-  }
   
   if (FRAME_ASPECT_RATIO > 0)
     self.aspectRatio = FRAME_ASPECT_RATIO;
@@ -92,31 +102,57 @@ static UIImage *backgroundImageFlipped = nil;
   self.edgePaddingHeightPercent = EDGE_PADDING / backgroundImage.size.height;
 }
 
+//
+// If the frame is bigger than native background frame, scale it to frame
+//
+- (float)initSmallerFrame:(CGRect)frame
+{
+  //Calculate the content height with current ratio
+  float ratio = self.aspectRatio;
+  float bgframeHeight = frame.size.width * ratio;
+  float margin = round( self.edgePaddingHeightPercent * (frame.size.width * ratio) );
+  float contentFrameHeight = bgframeHeight - 2*margin;
+  
+  //Not smaller, return the same number
+  if (contentFrameHeight >= frame.size.height)
+    return ratio;
+  contentFrameHeight = frame.size.height;
+  
+  //Calculate new background height
+  bgframeHeight = contentFrameHeight / (1.0 - 2*self.edgePaddingHeightPercent);
+  ratio = bgframeHeight / frame.size.width;
+  
+  return ratio;
+}
+
 - (void)layoutWithFrame:(CGRect)frame duration:(float)duration
 {
   //This is a bit complex
-  float margin = round( self.edgePaddingHeightPercent * (frame.size.width * self.aspectRatio) );
+  float ratio = self.aspectRatio;
+  ratio = [self initSmallerFrame:frame];
+  
+  float bgframeHeight = frame.size.width * ratio;
+  float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
   
   CGRect bgframe = CGRectZero;
   bgframe.origin.x = 0;
   bgframe.origin.y = -margin;
   bgframe.size.width = frame.size.width;
-  bgframe.size.height = frame.size.width * self.aspectRatio;
+  bgframe.size.height = bgframeHeight;
   
   //Relative to background view, not self
   CGRect contentFrame = CGRectZero;
   contentFrame.origin.x = 0;
-  contentFrame.origin.y = margin;
   contentFrame.size.width = bgframe.size.width;
-  contentFrame.size.height = bgframe.size.height - 2*margin;
+  contentFrame.size.height = bgframe.size.height;
   
   //Content size
-  self.contentSize = contentFrame.size;
   self.contentOffset = CGPointZero;
+  self.contentSize = CGSizeMake(contentFrame.size.width, contentFrame.size.height - 2*margin);   
 
   //Debugging
   /*
-  NSLog(@"%.1f %.1f", self.aspectRatio, margin);
+  NSLog(@"%.1f %.1f %.1f", self.aspectRatio, ratio, margin);
   NSLog(@"frame %.1f %.1f %.1f %.1f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
   NSLog(@"bgframe %.1f %.1f %.1f %.1f", bgframe.origin.x, bgframe.origin.y, bgframe.size.width, bgframe.size.height);
   NSLog(@"contentFrame %.1f %.1f %.1f %.1f", contentFrame.origin.x, contentFrame.origin.y, contentFrame.size.width, contentFrame.size.height);
