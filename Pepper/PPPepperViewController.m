@@ -45,7 +45,7 @@
 #define NUM_REUSE_3D_VIEW            12           //12 is minimum
 #define NUM_VISIBLE_PAGE_ONE_SIDE    4            //depends on the SCALE_ATTENUATION & also edge limit
 #define MIN_CONTROL_INDEX            0.5
-#define MINOR_X_ADJUSTMENT_14        4.0
+#define MINOR_X_ADJUSTMENT_14        0
 #define SCALE_ATTENUATION            0.03
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
@@ -670,8 +670,8 @@ static float deviceFactor = 0;
   
   //Fit the aspect ratio to self when self.enableOneSideZoom is disabled
   if (!self.enableOneSideZoom && isLandscape) {
-    width = [self getMidXForOrientation:orientation];
-    contentHeight = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
+    float ratio = [self getMidXForOrientation:orientation] / MIN(self.view.bounds.size.width, self.view.bounds.size.height);   
+    contentHeight = width / ratio;
   }
   
   float height = contentHeight / (1.0 - 2*self.edgePaddingPercentage);
