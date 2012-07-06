@@ -36,6 +36,10 @@
 #define M34_IPAD                     (-1.0 / 1300.0)  //0:flat, more negative: more perspective
 #define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
 
+//Declare once, used everywhere
+static UIImage *bookCoverImage = nil;
+static UIImage *pageBackgroundImage = nil;
+
 @interface PPPepperViewController()
 <
  UIGestureRecognizerDelegate,
@@ -46,6 +50,9 @@
 //Almost contants
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
+@property (nonatomic, assign) float aspectRatioLandscape;
+@property (nonatomic, assign) float aspectRatioPortrait;
+@property (nonatomic, assign) float edgePaddingPercentage;    //percentage of EDGE_PADDING compared to background graphic height
 @property (nonatomic, assign) float bookSpacing;
 @property (nonatomic, assign) float m34;
 
@@ -121,7 +128,10 @@
 @synthesize zoomOnLeft;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
-@synthesize frameWidth, frameHeight, bookSpacing, m34;
+@synthesize bookSpacing, m34;
+
+@synthesize frameWidth, frameHeight;
+@synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
 
 @synthesize controlAngleTimerTarget;
 @synthesize controlAngleTimerDx;
@@ -148,7 +158,7 @@ static float deviceFactor = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.1.2";
+  return @"1.3.0";
 }
 
 - (id)init {
@@ -181,8 +191,8 @@ static float deviceFactor = 0;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.pepperPageSpacing = PEPPER_PAGE_SPACING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
-
-  //Initial values
+  
+  //Initial op flags
   [self updateFrameSizesForOrientation];
   self.zoomOnLeft = YES;
   self.isBookView = YES;
@@ -191,12 +201,16 @@ static float deviceFactor = 0;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
   
-  //Initialize views
+  //Initialize once
+  [self initializeBackgroundImages];
+  
+  //Initialize self.view
   self.view.autoresizesSubviews = YES;
   self.view.clipsToBounds = YES;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-    
+ 
+  //Gesture recognizers
   UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
   pinchGestureRecognizer.delegate = self;
   [self.view addGestureRecognizer:pinchGestureRecognizer];
@@ -421,25 +435,27 @@ static float deviceFactor = 0;
       [self scrollToBook:tag animated:YES];
       return;
     }
-    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)])
-      [self.delegate ppPepperViewController:self didTapOnBookIndex:tag];
     
     //Optional: Delegate can decide to show or not
-    if (AUTO_OPEN_BOOK)
+    BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)];
+    if (hasDelegate)
+      [self.delegate ppPepperViewController:self didTapOnBookIndex:tag];
+    
+    //Without delegate, we open it automatically
+    else
       [self openBookWithIndex:tag pageIndex:0];
     
     return;
   }
-  
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnPageIndex:)])
+
+  //Optional: Delegate can decide to show or not
+  BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnPageIndex:)];
+  if (hasDelegate)
     [self.delegate ppPepperViewController:self didTapOnPageIndex:tag];
   
-  //Optional: Delegate can decide to show or not
-  if (!AUTO_OPEN_PAGE)
-    return;
-    
-  //Open one page in fullscreen
-  [self openPageIndex:tag];
+  //Without delegate, we open it automatically
+  else 
+    [self openPageIndex:tag];
 }
 
 
@@ -584,12 +600,25 @@ static float deviceFactor = 0;
   [self updateFrameSizesForOrientation:[UIApplication sharedApplication].statusBarOrientation];
 }
 
+//
+// Initialize static UIImage variable declared at the top
+//
+- (void)initializeBackgroundImages
+{
+  if (bookCoverImage == nil)
+    bookCoverImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
+
+  if (pageBackgroundImage == nil)
+    pageBackgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+  
+  self.edgePaddingPercentage = EDGE_PADDING / bookCoverImage.size.height;
+}
+
 - (void)updateFrameSizesForOrientation:(UIInterfaceOrientation)orientation
 {
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   
-  //This might be removed soon
   float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
   if (!self.scaleOnDeviceRotation)
     orientationFactor = 1.0f;
@@ -605,6 +634,9 @@ static float deviceFactor = 0;
     scale = height / (1024+2*EDGE_PADDING);
     height += 2*EDGE_PADDING*scale;
   }
+  //Fit the aspect ratio to self when self.oneSideZoom is disabled
+  //if (!self.oneSideZoom)
+  //  contentAspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
   
   self.frameWidth = width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
   self.frameHeight = height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
@@ -1318,13 +1350,15 @@ static float deviceFactor = 0;
   int width = [self getMidXForOrientation:interfaceOrientation];
   int x = (self.hideFirstPage) ? (index-1)*width : index*width;
   
-  float aspectRatio = self.frameHeight / self.frameWidth;
+  float contentAspectRatio = self.frameHeight / self.frameWidth;
   if (FRAME_ASPECT_RATIO > 0)
-    aspectRatio = FRAME_ASPECT_RATIO;
-  if (DIFFERENT_RATIO_FOR_LANDSCAPE)
-    aspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
+    contentAspectRatio = FRAME_ASPECT_RATIO;
   
-  int height = aspectRatio * width;
+  //Fit the aspect ratio to self when self.oneSideZoom is disabled
+  if (!self.oneSideZoom)
+    contentAspectRatio = self.view.bounds.size.height / [self getMidXForOrientation:interfaceOrientation];
+  
+  int height = contentAspectRatio * width;
   int y = [self getMidYForOrientation:interfaceOrientation] - height/2;   //vertically centered
 
   int maxHeight = 2 * [self getMidYForOrientation:interfaceOrientation];
@@ -2610,15 +2644,6 @@ static float deviceFactor = 0;
 
 
 
-
-#pragma mark - Dummy PPScrollListViewControllerDelegate
-
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)tag
-{
-  if (AUTO_OPEN_BOOK)
-    return;
-  [self openCurrentBookAtPageIndex:0];
-}
 
 #pragma mark - Dummy PPScrollListViewControllerDataSource
 

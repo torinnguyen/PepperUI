@@ -61,8 +61,8 @@
 
 /*
  * This is called when a book cover is tapped on
- * The book will open automatically by the library if AUTO_OPEN_BOOK is enabled (default)
- * Otherwise you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
+ * The book will open automatically if delegate does not implement this (default)
+ * If implemented you need to call [pepperViewController openCurrentBookAtPageIndex:0]; yourself
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnBookIndex:(int)bookIndex;
 
@@ -80,8 +80,8 @@
 
 /*
  * This is called when a page is tapped on
- * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
- * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
+ * The page will zoom to fullscreen mode automatically if delegate does not implement this (default)
+ * If implemented, you need to call [pepperViewController openPageIndex:xxx]; yourself
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex;
 
@@ -131,7 +131,7 @@
 @property (nonatomic, assign) BOOL enableBookScale;
 @property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableBookRotate;
-@property (nonatomic, assign) BOOL oneSideZoom;             //very experimental, don't touch this
+@property (nonatomic, assign) BOOL oneSideZoom;
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
 @property (nonatomic, assign) float pepperPageSpacing;

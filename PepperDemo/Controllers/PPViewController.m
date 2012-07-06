@@ -305,7 +305,7 @@
   if (self.switchRandomPage.on)
     NSLog(@"Open current book at random page: %d", randomPage);
   
-  //This is needed when AUTO_OPEN_BOOK is disabled (default)
+  //This is mandatory in version 1.3.0 and above
   [scrollList openCurrentBookAtPageIndex:pageIndex];
 }
 
@@ -355,6 +355,9 @@
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnPageIndex:(int)pageIndex
 {
+  //This is mandatory in version 1.3.0 and above
+  [scrollList openPageIndex:pageIndex];
+  
   NSLog(@"%@", [NSString stringWithFormat:@"didTapOnPageIndex:%d", pageIndex]);
 }
 
