@@ -51,25 +51,21 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)setContentView:(UIView *)theContentView
 {
- [_myContentView removeFromSuperview];
+  [self reset];
+  
+  [_myContentView removeFromSuperview];
+  _myContentView = nil;
   _myContentView = theContentView;
+  
   if (theContentView == nil) {
     self.contentSize = CGSizeZero;
     return;
   }
-  
+    
   //Flip background horizontally for even page
   if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;
   else                  self.background.image = backgroundImage;
   
-  /*
-  if (self.tag%2 == 0)  self.background.layer.transform = CATransform3DMakeRotation(M_PI, 0, 1, 0);
-  else                  self.background.layer.transform = CATransform3DIdentity;
-  if (self.tag%2 == 0)  self.contentView.layer.transform = CATransform3DMakeRotation(M_PI, 0, 1, 0);
-  else                  self.contentView.layer.transform = CATransform3DIdentity;
-   */
-
-  [self reset];    
   [self.background addSubview:theContentView];
 }
 
@@ -165,6 +161,8 @@ static UIImage *backgroundImageFlipped = nil;
   //Kill 'em all
   self.transform = CGAffineTransformIdentity;
   self.layer.transform = CATransform3DIdentity;
+  self.background.transform = CGAffineTransformIdentity;
+  self.background.layer.transform = CATransform3DIdentity;
   
   self.delegate = prevDelegate;
 }
