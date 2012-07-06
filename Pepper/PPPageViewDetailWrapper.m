@@ -75,19 +75,17 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)initBackgroundImage
 {
-  if (backgroundImage != nil)
-    return;
-
-  //OS will do caching for us
-  backgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
-  backgroundImageFlipped = [UIImage imageWithCGImage:backgroundImage.CGImage 
-                                               scale:1.0
-                                         orientation: UIImageOrientationUp];
-  
-  if (backgroundImage == nil) {
-    self.aspectRatio = 1;
-    self.edgePaddingHeightPercent = 0;
-    return;
+  if (backgroundImage == nil)
+  {
+    backgroundImage = [UIImage imageNamed:USE_BORDERLESS_GRAPHIC ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+    backgroundImageFlipped = [UIImage imageWithCGImage:backgroundImage.CGImage 
+                                                 scale:1.0
+                                           orientation:UIImageOrientationUpMirrored];
+    if (backgroundImage == nil) {
+      self.aspectRatio = 1;
+      self.edgePaddingHeightPercent = 0;
+      return;
+    }
   }
   
   if (FRAME_ASPECT_RATIO > 0)
@@ -122,13 +120,14 @@ static UIImage *backgroundImageFlipped = nil;
 
   //Debugging
   /*
+  NSLog(@"%.1f %.1f", self.aspectRatio, margin);
   NSLog(@"frame %.1f %.1f %.1f %.1f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
   NSLog(@"bgframe %.1f %.1f %.1f %.1f", bgframe.origin.x, bgframe.origin.y, bgframe.size.width, bgframe.size.height);
   NSLog(@"contentFrame %.1f %.1f %.1f %.1f", contentFrame.origin.x, contentFrame.origin.y, contentFrame.size.width, contentFrame.size.height);
   self.background.backgroundColor = [UIColor redColor];
   self.contentView.backgroundColor = [UIColor greenColor];
   self.contentView.alpha = 0.75;
-   */
+  */
   
   if (duration <= 0) {
     self.background.frame = bgframe;
