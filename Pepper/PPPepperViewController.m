@@ -291,6 +291,12 @@ static float deviceFactor = 0;
 {
   [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
   
+  //Switching from portrait to landscape, with oneSideZoom disabled, need to set to even pageIndex
+  if (!self.oneSideZoom && UIInterfaceOrientationIsLandscape(toInterfaceOrientation)) {
+    if ((int)self.currentPageIndex % 2 != 0)
+      self.currentPageIndex -= 1;
+  }
+  
   //Animate frame size
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     [self updateFrameSizesForOrientation:toInterfaceOrientation];
