@@ -65,7 +65,7 @@ static UIImage *pageBackgroundImage = nil;
  PPPageViewWrapperDelegate
 >
 
-//Almost contants
+//Op flags
 @property (nonatomic, assign) float frameWidth;
 @property (nonatomic, assign) float frameHeight;
 @property (nonatomic, assign) float aspectRatioLandscape;
@@ -74,6 +74,8 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) float bookSpacing;
 @property (nonatomic, assign) float pepperPageSpacing;
 @property (nonatomic, assign) float m34;
+@property (nonatomic, assign) int numBooks;
+@property (nonatomic, assign) int numPages;
 
 //Control
 @property (nonatomic, assign) float controlAngle;
@@ -110,6 +112,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, strong) UIView *theView3;
 @property (nonatomic, strong) UIView *theView4;
 @property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
+@property (nonatomic, retain) NSMutableArray *visiblePepperWrapperArray;
 
 //Page scrollview
 @property (nonatomic, assign) float currentPageIndex;
@@ -139,37 +142,45 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize delegate;
 @synthesize dataSource;
 
-@synthesize theBookCover, theLeftView, theRightView;
-@synthesize theView1, theView2, theView3, theView4;
+//Control
+@synthesize controlAngleTimerTarget;
+@synthesize controlAngleTimerDx;
+@synthesize controlAngleTimerLastTime;
+@synthesize controlAngleTimer;
+@synthesize controlIndex = _controlIndex;
+@synthesize controlIndexTimer;
+
 @synthesize controlAngle = _controlAngle;
 @synthesize controlFlipAngle = _controlFlipAngle;
 @synthesize touchDownControlAngle;
 @synthesize touchDownControlIndex;
 @synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
 @synthesize zoomOnLeft;
-@synthesize controlIndex = _controlIndex;
-@synthesize controlIndexTimer;
-@synthesize bookSpacing, m34;
-@synthesize pepperPageSpacing;
 
-@synthesize frameWidth, frameHeight;
-@synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
-
-@synthesize controlAngleTimerTarget;
-@synthesize controlAngleTimerDx;
-@synthesize controlAngleTimerLastTime;
-@synthesize controlAngleTimer;
-
-@synthesize pepperView;
-@synthesize reusePepperWrapperArray;
-
+//Book
 @synthesize currentBookIndex = _currentBookIndex;
 @synthesize bookScrollView;
+@synthesize theBookCover;
 @synthesize reuseBookViewArray;
 
+//Pepper
+@synthesize pepperView;
+@synthesize theLeftView, theRightView;
+@synthesize theView1, theView2, theView3, theView4;
+@synthesize reusePepperWrapperArray;
+@synthesize visiblePepperWrapperArray;
+
+//Op flags
+@synthesize bookSpacing, m34;
+@synthesize pepperPageSpacing;
+@synthesize frameWidth, frameHeight;
+@synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
+@synthesize numBooks, numPages;
+
+//Page
 @synthesize currentPageIndex = _currentPageIndex;
-@synthesize reusePageViewArray;
 @synthesize pageScrollView;
+@synthesize reusePageViewArray;
 
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
@@ -306,10 +317,7 @@ static float deviceFactor = 0;
   //Dealloc Pepper views
   BOOL canDestroyPepperView = ![self isPepperView] && !(self.isDetailView && self.controlAngle < 0);
   if (canDestroyPepperView) {
-    while (self.pepperView.subviews.count > 0)
-      [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
-    [self.reusePepperWrapperArray removeAllObjects];
-    self.reusePepperWrapperArray = nil;
+    [self destroyPeperView];
   }
   
   //Dealloc Page scrollview
@@ -367,7 +375,7 @@ static float deviceFactor = 0;
   [self scrollToPage:self.currentPageIndex duration:duration];
   
   //Relayout 3D views with animation
-  for (UIView *subview in self.pepperView.subviews) {
+  for (UIView *subview in self.visiblePepperWrapperArray) {
     int index = subview.tag;
     CGRect frame = [self getPepperFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
@@ -412,10 +420,13 @@ static float deviceFactor = 0;
 
 - (void)reload {
   
+  self.numBooks = -1;
+  self.numPages = -1;
+  
   //Initialize book views
   self.bookScrollView.contentOffset = CGPointMake(0,0);
-  int numBooks = [self getNumberOfBooks];
-  if (numBooks <= 0)
+  self.numBooks = [self getNumberOfBooks];
+  if (self.numBooks <= 0)
     return;
 
   self.bookScrollView.hidden = YES;
@@ -455,6 +466,8 @@ static float deviceFactor = 0;
       [self scrollToBook:tag animated:YES];
       return;
     }
+    
+    self.numPages = -1;
     
     //Optional: Delegate can decide to show or not
     BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)];
@@ -615,15 +628,29 @@ static float deviceFactor = 0;
 
 #pragma mark - Data Helper functions
 
-- (int)getNumberOfBooks {
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfBooks:)])
-    return [self.dataSource ppPepperViewController:self numberOfBooks:0];
+- (int)getNumberOfBooks
+{
+  if (self.numBooks >= 0)
+    return self.numBooks;
+  
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfBooks:)]) {
+    self.numBooks = [self.dataSource ppPepperViewController:self numberOfBooks:0];
+    return self.numBooks;
+  }
+  
   return 0;
 }
 
-- (int)getNumberOfPagesForBookIndex:(int)bookIndex {
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfPagesForBookIndex:)])
-    return [self.dataSource ppPepperViewController:self numberOfPagesForBookIndex:bookIndex];
+- (int)getNumberOfPagesForBookIndex:(int)bookIndex
+{
+  if (self.numPages >= 0)
+    return self.numPages;
+
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfPagesForBookIndex:)]) {
+    self.numPages = [self.dataSource ppPepperViewController:self numberOfPagesForBookIndex:bookIndex];
+    return self.numPages;
+  }
+  
   return 0;
 }
 
@@ -725,18 +752,44 @@ static float deviceFactor = 0;
 
 - (int)getMidXForOrientation:(UIInterfaceOrientation)orientation
 {
+  static int midXLandscape = 0;
+  static int midXPortrait = 0;
+  
+  //Cached
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
+  if (isLandscape && midXLandscape > 0)
+    return midXLandscape;
+  if (!isLandscape && midXPortrait > 0)
+    return midXPortrait;
+  
   int min = MIN(self.view.bounds.size.height, self.view.bounds.size.width);
   int max = MAX(self.view.bounds.size.height, self.view.bounds.size.width);
-  return isLandscape ? max/2 : min/2;
+
+  midXLandscape = max/2;
+  midXPortrait = min/2;
+  
+  return isLandscape ? midXLandscape : midXPortrait;
 }
 
 - (int)getMidYForOrientation:(UIInterfaceOrientation)orientation
 {
+  static int midYLandscape = 0;
+  static int midYPortrait = 0;
+  
+  //Cached
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
+  if (isLandscape && midYLandscape > 0)
+    return midYLandscape;
+  if (!isLandscape && midYPortrait > 0)
+    return midYPortrait;
+  
   int min = MIN(self.view.bounds.size.height, self.view.bounds.size.width);
   int max = MAX(self.view.bounds.size.height, self.view.bounds.size.width);
-  return isLandscape ? min/2 : max/2;
+  
+  midYLandscape = min/2;
+  midYPortrait = max/2;
+  
+  return isLandscape ? midYLandscape : midYPortrait;
 }
 
 
@@ -832,10 +885,17 @@ static float deviceFactor = 0;
 //
 // Hide & reuse all page in Pepper UI
 //
-- (void)destroyPeperView { 
+- (void)destroyPeperView
+{ 
+  if (self.reusePepperWrapperArray == nil)
+    return;
   
-  while (self.pepperView.subviews.count > 0)
-    [[self.pepperView.subviews objectAtIndex:0] removeFromSuperview];
+  while (self.visiblePepperWrapperArray.count > 0) {
+    [[self.visiblePepperWrapperArray objectAtIndex:0] removeFromSuperview];
+    [self.visiblePepperWrapperArray removeObjectAtIndex:0];
+  }
+  self.visiblePepperWrapperArray = nil;
+
   [self.reusePepperWrapperArray removeAllObjects];
   self.reusePepperWrapperArray = nil;
   
@@ -849,6 +909,7 @@ static float deviceFactor = 0;
     return;
   
   self.reusePepperWrapperArray = [[NSMutableArray alloc] init];
+  self.visiblePepperWrapperArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
@@ -865,16 +926,7 @@ static float deviceFactor = 0;
 - (void)reusePepperViews {
   
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  
-  //Some funny UIImageView gets into our view
-  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
-  for (UIView *subview in self.pepperView.subviews)
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
-      [tempArray addObject:subview];
-  for (UIView *subview in tempArray)
-    [subview removeFromSuperview];
-  [tempArray removeAllObjects];
-  
+    
   //Visible range
   int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
   float currentIndex = [self getCurrentSpecialIndex];
@@ -886,18 +938,13 @@ static float deviceFactor = 0;
     endIndex = pageCount-1;
     
   //Reuse out of bound views
-  for (int i=0; i<pageCount; i++) {
-    if (i > currentIndex-1.6 && i < currentIndex+1.6)   //Don't touch the middle 4 pages
-      continue;
-    if (i < startIndex || i > endIndex) {
+  for (int i=0; i<pageCount; i++)
+    if (i < startIndex || i > endIndex)
       [self removePageFromPepper:i];
-      continue;
-    }
-  }
     
   //Reuse hidden views
   NSMutableArray *toBeRemoved = [[NSMutableArray alloc] init];
-  for (UIView *subview in self.pepperView.subviews) {
+  for (UIView *subview in self.visiblePepperWrapperArray) {
     int idx = subview.tag;
     if (idx > currentIndex-1.6 && idx < currentIndex+1.6)   //Don't touch the middle 4 pages
       continue;
@@ -909,16 +956,16 @@ static float deviceFactor = 0;
   }
   while (toBeRemoved.count > 0) {
     UIView *subview = [toBeRemoved objectAtIndex:0];
-    [self removePageFromPepper:subview.tag];
+    [self.reusePepperWrapperArray addObject:subview];
+    [self.visiblePepperWrapperArray removeObject:subview];
+    [subview removeFromSuperview];
     [toBeRemoved removeObjectAtIndex:0];
   }
 
   //Add only relevant new views
-  NSMutableArray *toBeAdded = [[NSMutableArray alloc] init];
   for (int i=startIndex; i<=endIndex; i++) {
     if (i > currentIndex-1.6 && i < currentIndex+1.6) {
       [self addPageToPepperView:i];
-      [toBeAdded addObject:[NSString stringWithFormat:@"%d", i]];
       continue;
     }
     if (i < currentIndex && i%2!=0)
@@ -927,10 +974,15 @@ static float deviceFactor = 0;
       continue;
 
     [self addPageToPepperView:i];
-    [toBeAdded addObject:[NSString stringWithFormat:@"%d", i]];
   }
-  [toBeAdded removeAllObjects];
-  //NSLog(@"%@",[toBeAdded componentsJoinedByString: @","]);
+}
+
+- (BOOL)hasPageToPepperView:(int)index
+{
+  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray)
+    if (subview.tag == index)
+      return YES;
+  return NO;
 }
 
 - (void)addPageToPepperView:(int)index {
@@ -943,9 +995,8 @@ static float deviceFactor = 0;
     return;
     
   //Check if we already have this Page in pepper view
-  for (PPPageViewContentWrapper *subview in self.pepperView.subviews)
-    if (subview.tag == index)
-      return;
+  if ([self hasPageToPepperView:index])
+    return;
   
   int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int frameY = [self getFrameY];
@@ -969,11 +1020,29 @@ static float deviceFactor = 0;
   pageView.delegate = self;  
   pageView.isLeft = (index%2==0) ? YES : NO;
   [self.pepperView addSubview:pageView];
+  [self.visiblePepperWrapperArray addObject:pageView];
   
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
     pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds reusableView:pageView.contentView];
   else
     pageView.contentView = nil;
+  
+  //Reorder-Z for left pages
+  //int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  int totalPages = pageCount;
+  for (int i=0; i < (int)self.controlIndex; i++) {
+    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+    if (page == nil)
+      continue;
+    [page.superview bringSubviewToFront:page];
+  }
+  //Reorder-Z for right pages
+  for (int i=totalPages-1; i >= (int)self.controlIndex; i--) {
+    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+    if (page == nil)
+      continue;
+    [page.superview bringSubviewToFront:page];
+  }
 }
 
 - (void)removePageFromPepper:(int)index {
@@ -982,23 +1051,48 @@ static float deviceFactor = 0;
   if (index < 0 || index >= pageCount)
     return;
   
-  for (PPPageViewContentWrapper *subview in self.pepperView.subviews) {
+  //Visible range
+  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
+  float currentIndex = [self getCurrentSpecialIndex];
+  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
+  if (startIndex < 0)
+    startIndex = 0;
+  int endIndex = startIndex + range*2;
+  if (endIndex > pageCount-1)
+    endIndex = pageCount-1;
+  
+  if (index < startIndex-2 || index > endIndex+2)       //soft limit
+    return;
+  
+  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
     if (subview.tag != index)
-      continue;
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
     [self.reusePepperWrapperArray addObject:subview];
     [subview removeFromSuperview];
+    [self.visiblePepperWrapperArray removeObject:subview];
     break;
   }
 }
 
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index {
+  
+  //Visible range
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
+  float currentIndex = [self getCurrentSpecialIndex];
+  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
+  if (startIndex < 0)
+    startIndex = 0;
+  int endIndex = startIndex + range*2;
+  if (endIndex > pageCount-1)
+    endIndex = pageCount-1;
+  
+  if (index < startIndex || index > endIndex)
+    return nil;
+  
   PPPageViewContentWrapper *theView = nil;
-  for (PPPageViewContentWrapper *page in self.pepperView.subviews) {
+  for (PPPageViewContentWrapper *page in self.visiblePepperWrapperArray) {
     if (page.tag != index)
-      continue;
-    if (![page isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
     theView = page;
     break;
@@ -1013,7 +1107,7 @@ static float deviceFactor = 0;
   
   int firstPageIndex = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
-  for (UIView *subview in self.pepperView.subviews)
+  for (UIView *subview in self.visiblePepperWrapperArray)
     if (subview.tag < firstPageIndex
         && subview.tag%2 == 0
         && !subview.hidden
@@ -1585,11 +1679,12 @@ static float deviceFactor = 0;
 {
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  int numPages = self.hideFirstPage ? pageCount-1 : pageCount;
+  
+  int _pageCount = self.hideFirstPage ? pageCount-1 : pageCount;
   if (!self.enableOneSideZoom && isLandscape)
-    numPages = ceil(numPages / 2.0f);
+    _pageCount = ceil(numPages / 2.0f);
     
-  CGSize contentSize = CGSizeMake(numPages * CGRectGetWidth(self.pageScrollView.bounds), 100);
+  CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(self.pageScrollView.bounds), 100);
   self.pageScrollView.contentSize = contentSize;
 }
 
@@ -1645,7 +1740,6 @@ static float deviceFactor = 0;
 {
   //Temporary, should be an elastic scale
   float offset = 0.48;
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   //lower limit
   if (newIndex < MIN_CONTROL_INDEX)
@@ -1671,23 +1765,7 @@ static float deviceFactor = 0;
   float min = -(180+max+angleDiff);
   float newControlFlipAngle = max - normalizedGroupControlIndex * fabs(max-min);
   self.controlFlipAngle = newControlFlipAngle;
-  
-  //Reorder-Z for left pages
-  int totalPages = pageCount;
-  for (int i=0; i < (int)self.controlIndex; i++) {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    [page.superview bringSubviewToFront:page];
-  }
-  //Reorder-Z for right pages
-  for (int i=totalPages-1; i >= (int)self.controlIndex; i--) {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    [page.superview bringSubviewToFront:page];
-  }
-   
+       
   //Experimental shadow
   /*
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
@@ -1805,10 +1883,20 @@ static float deviceFactor = 0;
     self.theView2.hidden = NO;
     self.theView3.hidden = YES;
   }
-
-  //Hide irrelevant pages
+  
+  //Visible range
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  for (int i=0; i <pageCount; i++) {
+  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
+  float currentIndex = [self getCurrentSpecialIndex];
+  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
+  if (startIndex < 0)
+    startIndex = 0;
+  int endIndex = startIndex + range*2;
+  if (endIndex > pageCount-1)
+    endIndex = pageCount-1;
+  
+  //Hide irrelevant pages
+  for (int i=startIndex-1; i <= endIndex+1; i++) {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
@@ -1829,19 +1917,7 @@ static float deviceFactor = 0;
     }
     
     page.hidden = NO;
-  }
     
-  //Other pages transformation & position
-  for (int i=0; i <pageCount; i++)
-  {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    if ([page isEqual:self.theView1] || [page isEqual:self.theView2] || [page isEqual:self.theView3] || [page isEqual:self.theView4])
-      continue;
-    if (page.hidden)
-      continue;
-        
     float scale = [self getPepperScaleForPageIndex:i];
     
     if (i < self.controlIndex) {
@@ -1873,7 +1949,6 @@ static float deviceFactor = 0;
 {
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   float theSpecialIndex = [self getCurrentSpecialIndex];
-  int tempIndex = 0;
   
   //Detect change of page flipping index for cell reuse purpose
   static float previousControlIndex = -100;
@@ -1899,7 +1974,7 @@ static float deviceFactor = 0;
   if (tempIndex4 < 0 || tempIndex4 >= pageCount)    tempIndex4 = -1;
   
   //Optimized code
-  for (PPPageViewContentWrapper *page in self.pepperView.subviews)
+  for (PPPageViewContentWrapper *page in self.visiblePepperWrapperArray)
   {
     if (self.theView1 == nil && tempIndex1 >= 0)
     {
@@ -2124,7 +2199,7 @@ static float deviceFactor = 0;
   }];
 }
 
-- (void)closeCurrentList:(BOOL)animated
+- (void)closeCurrentBook:(BOOL)animated
 {
   self.isBookView = YES;
   self.isDetailView = NO;
@@ -2334,7 +2409,7 @@ static float deviceFactor = 0;
     [self showHalfOpenUsingTimer];
   
   else
-    [self closeCurrentList:YES];
+    [self closeCurrentBook:YES];
 }
 
 // This function controls everything about zooming
