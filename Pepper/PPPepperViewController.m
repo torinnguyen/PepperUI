@@ -14,6 +14,7 @@
 #import "PPPageViewDetailWrapper.h"
 
 //Used to be public contants
+//These are only default values at compile time, can be changed on-the-fly at runtime
 #define HIDE_FIRST_PAGE               NO          //hide the first page
 #define FIRST_PAGE_BOOK_COVER         YES         //background of the first page uses book cover image
 #define ENABLE_BORDERLESS_GRAPHIC     NO          //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
@@ -381,9 +382,9 @@ static float deviceFactor = 0;
 {
   [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
   [self updateBookScrollViewContentSize];
-  [self updatePageScrollViewContentSize];
-  
-  [self scrollViewDidScroll:self.bookScrollView];
+  [self updateBookScrollViewBookScale];
+  [self updatePageScrollViewContentSize]; 
+    
   self.controlFlipAngle = self.controlFlipAngle;
   if (self.isBookView || self.isDetailView)
     self.pepperView.hidden = YES;
@@ -431,7 +432,7 @@ static float deviceFactor = 0;
   for (int i=0; i<numBooks; i++)
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
-  [self scrollViewDidScroll:self.bookScrollView];
+  [self updateBookScrollViewBookScale];
    
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
@@ -518,6 +519,8 @@ static float deviceFactor = 0;
 
   //Snap control angle to 3 thresholds
   if (recognizer.state == UIGestureRecognizerStateEnded) {
+    if (self.controlAngle >= 0)
+      return;
     [self snapControlAngle];
     return;
   }
@@ -545,21 +548,31 @@ static float deviceFactor = 0;
   CGPoint translation = [recognizer translationInView:self.pepperView];
   CGPoint velocity = [recognizer velocityInView:self.pepperView];
   float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2);
+  
+  float direction = velocity.x / fabs(velocity.x);
+  float rawNormalizedVelocityX = normalizedVelocityX;
+  
+  if (rawNormalizedVelocityX < 1)          rawNormalizedVelocityX = rawNormalizedVelocityX * 0.8;       //expansion
+  else if (rawNormalizedVelocityX > 1.1)   rawNormalizedVelocityX = 1 + (rawNormalizedVelocityX-1)/2;   //compression
+  
   if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
   else if (normalizedVelocityX > 2.0)   normalizedVelocityX = 2.0;
-
+  
   //Snap to half open
-  if (recognizer.state == UIGestureRecognizerStateEnded) {    
+  if (recognizer.state == UIGestureRecognizerStateEnded) {
+    
     float snapTo = 0;
-    int lowerBound = (int)floor(self.controlIndex);
+    float newControlIndex = self.controlIndex - direction * rawNormalizedVelocityX;     //opposite direction
+    
+    int lowerBound = (int)floor(newControlIndex);
     int lowerBoundEven = lowerBound % 2 == 0;
-    int upperBound = (int)ceil(self.controlIndex);
-    int theIndex = (int)round(self.controlIndex);
+    int upperBound = (int)ceil(newControlIndex);
+    int theIndex = (int)round(newControlIndex);
     if (lowerBoundEven)               snapTo = lowerBound + 0.5;
     else if (theIndex == upperBound)  snapTo = upperBound + 0.5;
     else                              snapTo = lowerBound - 0.5;
 
-    float diff = fabs(snapTo - self.controlIndex);
+    float diff = fabs(snapTo - newControlIndex);
     float duration = diff / 2.0f;
     if (ENABLE_HIGH_SPEED_SCROLLING)
       duration /= normalizedVelocityX;
@@ -576,11 +589,13 @@ static float deviceFactor = 0;
     }
     
     //This has some kind of glitch
+    /*
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       self.controlIndex = snapTo;      
     } completion:^(BOOL finished) {
       _controlAngle = -THRESHOLD_HALF_ANGLE;
     }];
+     */
     return;
   }
   
@@ -1283,9 +1298,6 @@ static float deviceFactor = 0;
       wrapper.shadowOpacity = 0;
     }
   }
-  
-  int offsetX = fabs(self.bookScrollView.contentOffset.x);
-  float bookIndex = offsetX / (self.frameWidth+self.bookSpacing);
 }
 
 - (void)openCurrentBookAtPageIndex:(int)pageIndex {
@@ -1354,6 +1366,7 @@ static float deviceFactor = 0;
     [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
   [self.reusePageViewArray removeAllObjects];
   self.reusePageViewArray = nil;
+  self.pageScrollView.hidden = YES;
 }
 
 - (void)setupReuseablePoolPageViews
@@ -1978,7 +1991,7 @@ static float deviceFactor = 0;
   self.isDetailView = NO;
   
   //Hide other view
-  [self hidePageScrollview];
+  [self destroyPageScrollView];
   
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
@@ -1989,12 +2002,16 @@ static float deviceFactor = 0;
   }
 
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
-  if (!self.enableOneSideZoom)    diff /= 1.3;
-  else                      diff *= 1.3;
-  
-  [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*diff];
+  float duration = diff * 1.3;
+  if (duration < 0.2)     duration = 0.2;
+  if (duration > 0.5)     duration = 0.5;
+    
+  [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*duration];
 }
 
+//
+// This is only used in opening a book
+//
 - (void)showHalfOpen:(BOOL)animated
 {
   BOOL previousIsBookView = self.isBookView;
@@ -2020,15 +2037,17 @@ static float deviceFactor = 0;
   }
   
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
-  float duration = diff;
-  if (previousIsBookView)     duration *= 2;
-  else                        duration /= 2;
+  float duration = diff * 2;
   
   [UIView animateWithDuration:self.animationSlowmoFactor*duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
     self.controlIndex = self.controlIndex;
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
+      [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:self.currentPageIndex];
   }];
 }
 
@@ -2234,7 +2253,7 @@ static float deviceFactor = 0;
 // Snap control angle to 3 thresholds
 //
 - (void)snapControlAngle
-{
+{  
   if (self.controlAngle > -THRESHOLD_FULL_ANGLE)
     [self showFullscreenUsingTimer];
   
@@ -2246,9 +2265,9 @@ static float deviceFactor = 0;
 }
 
 // This function controls everything about zooming
-// @param: valid range 0 to -88
-//         0:  fully open (flat)
-//         -88: fully closed (leave a bit of perspective)
+// @param: valid range 0 to -MAXIMUM_ANGLE
+//                     0: fully open (flat)
+//        -MAXIMUM_ANGLE: fully closed (leave a bit of perspective)
 - (void)setControlAngle:(float)newControlAngle
 { 
   //Limits
@@ -2532,12 +2551,17 @@ static float deviceFactor = 0;
   self.controlAngle = self.controlAngleTimerTarget;
   
   //Not open fullscreen
-  if (self.controlAngle < 0)
+  if (self.controlAngle >= 0) {
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenPageIndex:)])
+      [self.delegate ppPepperViewController:self didOpenPageIndex:self.currentPageIndex];
     return;
+  }
   
-  //Notify the delegate about didOpenBookIndex
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
-    [self.delegate ppPepperViewController:self didOpenBookIndex:self.currentBookIndex atPageIndex:self.currentPageIndex];
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didClosePageIndex:)])
+    [self.delegate ppPepperViewController:self didClosePageIndex:self.currentPageIndex];
 }
 
 
@@ -2562,6 +2586,10 @@ static float deviceFactor = 0;
     
     int offsetX = fabs(self.pageScrollView.contentOffset.x);
     float pageIndex = offsetX / onePageWidth;
+    
+    //Don't notify the delegate if we are not in detail view
+    if (!self.isDetailView || self.controlAngle < 0)
+      return;
 
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
@@ -2573,6 +2601,10 @@ static float deviceFactor = 0;
     return;
   
   [self updateBookScrollViewBookScale];
+  
+  //Don't notify the delegate if bookScrollView is hidden
+  if (self.bookScrollView.hidden || !self.isBookView)
+    return;
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithBookIndex:)])

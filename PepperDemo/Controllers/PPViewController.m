@@ -408,4 +408,14 @@
   NSLog(@"%@", [NSString stringWithFormat:@"didEndZoomingWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
 }
 
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didOpenPageIndex:%d", pageIndex]);  
+}
+
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didClosePageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didClosePageIndex:%d", pageIndex]);
+}
+
 @end
