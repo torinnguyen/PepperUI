@@ -332,13 +332,9 @@ static float deviceFactor = 0;
       self.currentPageIndex -= 1;
   }
   
-  //Animate frame size
-  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-    [self updateFrameSizesForOrientation:toInterfaceOrientation];
-  } completion:^(BOOL finished) {
+  //Update new frame sizes
+  [self updateFrameSizesForOrientation:toInterfaceOrientation];
 
-  }];
-  
   //Relayout the Book views with animation
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews) {
     int index = subview.tag;
@@ -349,6 +345,7 @@ static float deviceFactor = 0;
       
     }];
   }
+  [self scrollToBook:self.currentBookIndex duration:duration];
   
   //Relayout fullsize views with animation
   for (UIView *subview in self.pageScrollView.subviews) {
@@ -1041,6 +1038,23 @@ static float deviceFactor = 0;
   int x = bookIndex * (self.frameWidth + self.bookSpacing);
   [self.bookScrollView setContentOffset:CGPointMake(x, 0) animated:animated];
   self.currentBookIndex = bookIndex;
+}
+
+- (void)scrollToBook:(int)bookIndex duration:(float)duration {
+  
+  int x = bookIndex * (self.frameWidth + self.bookSpacing);
+  self.currentBookIndex = bookIndex;
+  
+  if (duration <= 0) {
+    self.bookScrollView.contentOffset = CGPointMake(x, 0);
+    return;
+  }
+  
+  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    self.bookScrollView.contentOffset = CGPointMake(x, 0);
+  } completion:^(BOOL finished) {
+    
+  }];
 }
 
 - (void)snapBookScrollView {
