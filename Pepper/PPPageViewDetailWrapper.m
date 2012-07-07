@@ -83,7 +83,7 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)initBackgroundImage
 {
-  if (self.background.image == nil) {
+  if (backgroundImage == nil) {
     self.aspectRatio = 1;
     self.edgePaddingHeightPercent = 0;
     return;
@@ -150,16 +150,16 @@ static UIImage *backgroundImageFlipped = nil;
   self.contentOffset = CGPointZero;
   self.contentSize = CGSizeMake(contentFrame.size.width, contentFrame.size.height - 2*margin);   
 
-  //Debugging
+  //Debug
   /*
-  NSLog(@"%.1f %.1f %.1f", self.aspectRatio, ratio, margin);
+  NSLog(@"index: %d   %.1f %.1f %.1f", self.tag, self.aspectRatio, ratio, margin);
   NSLog(@"frame %.1f %.1f %.1f %.1f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
   NSLog(@"bgframe %.1f %.1f %.1f %.1f", bgframe.origin.x, bgframe.origin.y, bgframe.size.width, bgframe.size.height);
   NSLog(@"contentFrame %.1f %.1f %.1f %.1f", contentFrame.origin.x, contentFrame.origin.y, contentFrame.size.width, contentFrame.size.height);
   self.background.backgroundColor = [UIColor redColor];
   self.contentView.backgroundColor = [UIColor greenColor];
   self.contentView.alpha = 0.75;
-  */
+   */
   
   if (duration <= 0) {
     self.background.frame = bgframe;
