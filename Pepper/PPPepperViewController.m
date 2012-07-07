@@ -983,9 +983,9 @@ static float deviceFactor = 0;
     return;
   
   for (PPPageViewContentWrapper *subview in self.pepperView.subviews) {
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
-      continue;
     if (subview.tag != index)
+      continue;
+    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
     [self.reusePepperWrapperArray addObject:subview];
     [subview removeFromSuperview];
@@ -994,14 +994,16 @@ static float deviceFactor = 0;
 }
 
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index {
+  PPPageViewContentWrapper *theView = nil;
   for (PPPageViewContentWrapper *page in self.pepperView.subviews) {
-    if (![page isKindOfClass:[PPPageViewContentWrapper class]])
-      continue;
     if (page.tag != index)
       continue;
-    return page;
+    if (![page isKindOfClass:[PPPageViewContentWrapper class]])
+      continue;
+    theView = page;
+    break;
   }
-  return nil;
+  return theView;
 }
 
 //
@@ -1158,15 +1160,15 @@ static float deviceFactor = 0;
 //
 // Return the current index of book being selected
 //
-- (int)getCurrentBookIndex {
-  
+- (int)getCurrentBookIndex
+{
   int offsetX = fabs(self.bookScrollView.contentOffset.x);
   int index = round(offsetX / (self.frameWidth+self.bookSpacing));
   return index;
 }
 
-- (void)removeBookFromScrollView:(int)index {
-  
+- (void)removeBookFromScrollView:(int)index
+{
   int bookCount = [self getNumberOfBooks];
   if (index < 0 || index >= bookCount)
     return;
@@ -1174,28 +1176,33 @@ static float deviceFactor = 0;
   for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews) {
     if (subview.tag != index)
       continue;
+    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
+      continue;
     [self.reuseBookViewArray addObject:subview];
     [subview removeFromSuperview];
     break;
   }
 }
 
-- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index {
+- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index
+{
+  PPPageViewContentWrapper *theView = nil;
   for (PPPageViewContentWrapper *book in self.bookScrollView.subviews) {
-    if (![book isKindOfClass:[PPPageViewContentWrapper class]])
-      continue;
     if (book.tag != index)
       continue;
-    return book;
+    if (![book isKindOfClass:[PPPageViewContentWrapper class]])
+      continue;
+    theView = book;
+    break;
   }
-  return nil;
+  return theView;
 }
 
 //
 // Convert from Book data model to view
 //
-- (void)addBookToScrollView:(int)index {
-  
+- (void)addBookToScrollView:(int)index
+{  
   if (self.reuseBookViewArray.count <= 0)
     return;
   
@@ -1682,6 +1689,7 @@ static float deviceFactor = 0;
   }
    
   //Experimental shadow
+  /*
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   for (int i=0; i < totalPages; i++) {
     PPPageViewContentWrapper *wrapper = [self getPepperPageAtIndex:i];
@@ -1689,6 +1697,7 @@ static float deviceFactor = 0;
     wrapper.shadowRadius = isPad ? 12 : 3;
     wrapper.shadowOpacity = 0.35;
   }
+   */
 }
 
 - (void)setControlFlipAngle:(float)angle
@@ -1879,21 +1888,51 @@ static float deviceFactor = 0;
   self.theView3 = nil;
   self.theView4 = nil;
   
-  tempIndex = (int)round(theSpecialIndex - 1.5f);
-  if (tempIndex >= 0 && tempIndex < pageCount)
-    self.theView1 = [self getPepperPageAtIndex:tempIndex];
+  float tempIndex1 = (int)round(theSpecialIndex - 1.5f);
+  float tempIndex2 = (int)round(theSpecialIndex - 0.5f);
+  float tempIndex3 = (int)round(theSpecialIndex + 0.5f);
+  float tempIndex4 = (int)round(theSpecialIndex + 1.5f);
+
+  if (tempIndex1 < 0 || tempIndex1 >= pageCount)    tempIndex1 = -1;
+  if (tempIndex2 < 0 || tempIndex2 >= pageCount)    tempIndex2 = -1;
+  if (tempIndex3 < 0 || tempIndex3 >= pageCount)    tempIndex3 = -1;
+  if (tempIndex4 < 0 || tempIndex4 >= pageCount)    tempIndex4 = -1;
   
-  tempIndex = (int)round(theSpecialIndex - 0.5f);
-  if (tempIndex >= 0 && tempIndex < pageCount)
-    self.theView2 = [self getPepperPageAtIndex:tempIndex];
-  
-  tempIndex = (int)round(theSpecialIndex + 0.5f);
-  if (tempIndex >= 0 && tempIndex < pageCount)
-    self.theView3 = [self getPepperPageAtIndex:tempIndex];
-  
-  tempIndex = (int)round(theSpecialIndex + 1.5f);
-  if (tempIndex >= 0 && tempIndex < pageCount)
-    self.theView4 = [self getPepperPageAtIndex:tempIndex];
+  //Optimized code
+  for (PPPageViewContentWrapper *page in self.pepperView.subviews)
+  {
+    if (self.theView1 == nil && tempIndex1 >= 0)
+    {
+      if (page.tag == tempIndex1) {
+        self.theView1 = page;
+        continue;
+      }
+    }
+    
+    if (self.theView2 == nil && tempIndex2 >= 0)
+    {
+      if (page.tag == tempIndex2) {
+        self.theView2 = page;
+        continue;
+      }
+    }
+    
+    if (self.theView3 == nil && tempIndex3 >= 0)
+    {
+      if (page.tag == tempIndex3) {
+        self.theView3 = page;
+        continue;
+      }
+    }
+    
+    if (self.theView4 == nil && tempIndex4 >= 0)
+    {
+      if (page.tag == tempIndex4) {
+        self.theView4 = page;
+        continue;
+      }
+    }
+  }
 }
 
 - (void)onSpecialControlIndexChanged {

@@ -32,7 +32,7 @@
     self.imageView.backgroundColor = [UIColor clearColor];
     self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.clipsToBounds = YES;
-    self.imageView.layer.cornerRadius = margin;
+    //self.imageView.layer.cornerRadius = margin;
     self.imageView.layer.masksToBounds = YES;
     self.imageView.layer.shouldRasterize = YES;
     self.imageView.layer.rasterizationScale = [UIScreen mainScreen].scale;

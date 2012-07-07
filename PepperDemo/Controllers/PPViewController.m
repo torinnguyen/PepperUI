@@ -341,7 +341,8 @@
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha
 {
-  NSLog(@"%@", [NSString stringWithFormat:@"closingBookWithAlpha:%.2f", alpha]);
+  //Commented out for performance reason
+  //NSLog(@"%@", [NSString stringWithFormat:@"closingBookWithAlpha:%.2f", alpha]);
   
   //Show our menu together with the books
   self.menuView.alpha = alpha;
@@ -367,8 +368,9 @@
  * This is called when the 3D view is being flipped
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index
-{
-  NSLog(@"%@", [NSString stringWithFormat:@"didFlippedWithIndex:%.2f", index]);
+{ 
+  //Commented out for performance reason
+  //NSLog(@"%@", [NSString stringWithFormat:@"didFlippedWithIndex:%.2f", index]);
 }
 
 /*
@@ -384,7 +386,8 @@
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didScrollWithPageIndex:(float)pageIndex
 {
-  NSLog(@"%@", [NSString stringWithFormat:@"didScrollWithPageIndex:%.2f", pageIndex]);
+  //Commented out for performance reason
+  //NSLog(@"%@", [NSString stringWithFormat:@"didScrollWithPageIndex:%.2f", pageIndex]);
 }
 
 /*
@@ -400,7 +403,8 @@
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didZoomWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale
 {
-  NSLog(@"%@", [NSString stringWithFormat:@"didZoomWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
+  //Commented out for performance reason
+  //NSLog(@"%@", [NSString stringWithFormat:@"didZoomWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
 }
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didEndZoomingWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale
