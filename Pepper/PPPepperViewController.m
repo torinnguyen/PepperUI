@@ -484,12 +484,16 @@ static float deviceFactor = 0;
 {
   if (self.isBookView || (self.isDetailView && self.enableOneSideZoom))
     return NO;
+  if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
+    return NO;
+  if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
+    return NO;
   
   if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
     return YES;
   
   if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-    if ([self isFullscreen] || self.controlIndexTimer != nil || [self.controlIndexTimer isValid] || [self.controlAngleTimer isValid])
+    if ([self isFullscreen])
       return NO;
     return YES;
   }
@@ -587,15 +591,6 @@ static float deviceFactor = 0;
       });
       return;
     }
-    
-    //This has some kind of glitch
-    /*
-    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-      self.controlIndex = snapTo;      
-    } completion:^(BOOL finished) {
-      _controlAngle = -THRESHOLD_HALF_ANGLE;
-    }];
-     */
     return;
   }
   
@@ -1613,8 +1608,17 @@ static float deviceFactor = 0;
 
 #pragma mark - Flipping implementation
 
+- (float)maxControlIndex
+{
+  float limit = 0;
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  if (pageCount % 2 != 0)    limit = pageCount-1.0;       //odd
+  else                       limit = pageCount-1.5;       //even
+  return limit;
+}
+
 // This function controls everything about flipping
-// @param: valid range 0.5 to count-1.5
+// @param: valid range 0.5 to [self maxControlIndex]
 - (void)setControlIndex:(float)newIndex 
 {
   //Temporary, should be an elastic scale
@@ -1625,11 +1629,8 @@ static float deviceFactor = 0;
   if (newIndex < MIN_CONTROL_INDEX)
     newIndex = MIN_CONTROL_INDEX;
   
-  float limit = 0;
-  if (pageCount % 2 != 0)    limit = pageCount-1.0+offset;       //odd
-  else                       limit = pageCount-1.5+offset;       //even
-  
   //upper limit
+  float limit = [self maxControlIndex] + offset;
   if (newIndex > limit)
     newIndex = limit;
   
@@ -1888,6 +1889,14 @@ static float deviceFactor = 0;
   if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
     return;
   
+  //Upper limit
+  float limit = [self maxControlIndex];
+  if (index < MIN_CONTROL_INDEX)
+    index = MIN_CONTROL_INDEX;
+  if (index > limit)
+    index = limit;
+  self.controlIndexTimerTarget = index;
+  
   if (duration <= 0) {
     [self onControlIndexTimerFinish];
     return;
@@ -1895,7 +1904,6 @@ static float deviceFactor = 0;
   
   //0.016667 = 1/60
   self.controlIndexTimerLastTime = [[NSDate alloc] init];
-  self.controlIndexTimerTarget = index;
   self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / 0.0166666667);
   self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: 0.0166666667
                                                             target: self
@@ -1912,12 +1920,17 @@ static float deviceFactor = 0;
   float deltaDiff = deltaMs / 0.0166666667;
   
   float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
+  /*
+  if (newValue > [self maxControlIndex])
+    newValue = [self maxControlIndex];
+   */
+  
   if (self.controlIndexTimerDx >= 0 && newValue > self.controlIndexTimerTarget)
     newValue = self.controlIndexTimerTarget;
   else if (self.controlIndexTimerDx < 0 && newValue < self.controlIndexTimerTarget)
     newValue = self.controlIndexTimerTarget;
 
-  BOOL finish = fabs(newValue - self.controlIndexTimerTarget) <= fabs(self.controlIndexTimerDx*1.5);
+  BOOL finish = newValue == self.controlIndex || fabs(newValue - self.controlIndexTimerTarget) <= fabs(self.controlIndexTimerDx*1.5);
   
   if (!finish) {
     self.controlIndex = newValue;
@@ -1933,7 +1946,12 @@ static float deviceFactor = 0;
   self.controlIndexTimer = nil;
   
   [self reusePepperViews];
-  self.controlIndex = self.controlIndexTimerTarget;
+  
+  float newValue = self.controlIndexTimerTarget;
+  if (newValue > [self maxControlIndex])
+    newValue = [self maxControlIndex];
+  self.controlIndex = newValue;
+  
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   
   //Notify the delegate
@@ -1953,7 +1971,7 @@ static float deviceFactor = 0;
   [self setupPageScrollview];
 
   if (!self.enableOneSideZoom)    diff /= 1.3;
-  else                      diff *= 1.3;
+  else                            diff *= 1.3;
     
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
 }
