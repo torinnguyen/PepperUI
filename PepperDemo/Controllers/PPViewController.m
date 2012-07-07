@@ -131,9 +131,11 @@
 {
   int idx = self.contentSegmented.selectedSegmentIndex;
   if (idx == 0) {
+    self.pepperViewController.enableBorderlessGraphic = NO;
     self.pepperViewController.dataSource = self.pepperViewController;
   }
   else {
+    self.pepperViewController.enableBorderlessGraphic = YES;
     self.pepperViewController.dataSource = self;
   }
   [[MyImageCache sharedCached] removeAll];

@@ -121,7 +121,7 @@ static UIImage *pageBackgroundImage = nil;
 
 //public properties
 @synthesize hideFirstPage;
-@synthesize enableBorderlessGraphic;
+@synthesize enableBorderlessGraphic = _enableBorderlessGraphic;
 @synthesize animationSlowmoFactor;
 @synthesize enableBookScale;
 @synthesize enableBookShadow;
@@ -616,6 +616,14 @@ static float deviceFactor = 0;
 - (void)updateFrameSizesForOrientation
 {
   [self updateFrameSizesForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+}
+
+- (void)setEnableBorderlessGraphic:(BOOL)newValue
+{
+  _enableBorderlessGraphic = newValue;
+  bookCoverImage = nil;
+  pageBackgroundImage = nil;
+  [self initializeBackgroundImagesAndRatios];
 }
 
 //
@@ -1225,6 +1233,59 @@ static float deviceFactor = 0;
   CGRect lastFrame = [self getFrameForBookIndex:bookCount-1];
   CGSize contentSize = CGSizeMake(CGRectGetMaxX(lastFrame) + CGRectGetWidth(self.bookScrollView.bounds)/2, 100);
   self.bookScrollView.contentSize = contentSize;
+}
+
+- (void)updateBookScrollViewBookScale
+{
+  //Scale & rotate the book views
+  int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
+  for (UIView *subview in self.bookScrollView.subviews) {
+    float subviewMidX = CGRectGetMidX(subview.frame) - fabs(self.bookScrollView.contentOffset.x);
+    
+    float scaleForAngle = 1.0;
+    if (subviewMidX < edgeWidth)
+      scaleForAngle = subviewMidX / (float)edgeWidth;
+    else if (subviewMidX > CGRectGetWidth(self.bookScrollView.bounds)-edgeWidth)
+      scaleForAngle = 1.0 - (float)(subviewMidX-CGRectGetWidth(self.bookScrollView.bounds)+edgeWidth) / (float)edgeWidth;
+    
+    if (scaleForAngle < 0)        scaleForAngle = 0;
+    else if (scaleForAngle > 1)   scaleForAngle = 1;
+    float angle = ((1.0-scaleForAngle) * MAX_BOOK_ROTATE)/180.0*M_PI;
+    if (subviewMidX < edgeWidth)
+      angle *= -1;
+    
+    float scale = scaleForAngle * (MAX_BOOK_SCALE-MIN_BOOK_SCALE) + MIN_BOOK_SCALE;
+    if (!self.enableBookScale)
+      scale = MAX_BOOK_SCALE;
+    CGPoint previousAnchor = subview.layer.anchorPoint;
+    
+    CATransform3D transform = CATransform3DIdentity;
+    transform.m34 = self.m34;
+    transform = CATransform3DScale(transform, scale, scale, 1.0);
+    if (self.enableBookRotate)
+      transform = CATransform3DRotate(transform, angle, 0, 1, 0);
+    subview.layer.anchorPoint = previousAnchor;
+    subview.layer.transform = transform;
+    
+    PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
+    if (self.enableBookScale && self.enableBookShadow) {
+      float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
+      wrapper.shadowOffset = CGSizeMake(0, 5 + 5*shadowScale);
+      wrapper.shadowRadius = 10 + 8 * shadowScale;
+      wrapper.shadowOpacity = 0.35;
+    }
+    else if (self.enableBookShadow) {
+      wrapper.shadowOffset = CGSizeMake(0, 5);
+      wrapper.shadowRadius = 12;
+      wrapper.shadowOpacity = 0.35;
+    }
+    else {
+      wrapper.shadowOpacity = 0;
+    }
+  }
+  
+  int offsetX = fabs(self.bookScrollView.contentOffset.x);
+  float bookIndex = offsetX / (self.frameWidth+self.bookSpacing);
 }
 
 - (void)openCurrentBookAtPageIndex:(int)pageIndex {
@@ -1920,9 +1981,11 @@ static float deviceFactor = 0;
   [self hidePageScrollview];
   
   //Re-setup book scrollview if we are coming out from fullscreen
+  //And also apply correct scaling for books
   if (!previousIsBookView) {
     [self setupReuseablePoolBookViews];
     [self reuseBookScrollView];
+    [self updateBookScrollViewBookScale];
   }
 
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
@@ -1942,9 +2005,11 @@ static float deviceFactor = 0;
   [self destroyPageScrollView];
   
   //Re-setup book scrollview if we are coming out from fullscreen
+  //And also apply correct scaling for books
   if (!previousIsBookView) {
     [self setupReuseablePoolBookViews];
     [self reuseBookScrollView];
+    [self updateBookScrollViewBookScale];
   }
   
   if (!animated) {   
@@ -2507,59 +2572,11 @@ static float deviceFactor = 0;
   if (![theScrollView isEqual:self.bookScrollView])
     return;
   
-  //Scale & rotate the book views
-  int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
-  for (UIView *subview in self.bookScrollView.subviews) {
-    float subviewMidX = CGRectGetMidX(subview.frame) - fabs(self.bookScrollView.contentOffset.x);
-    
-    float scaleForAngle = 1.0;
-    if (subviewMidX < edgeWidth)
-      scaleForAngle = subviewMidX / (float)edgeWidth;
-    else if (subviewMidX > CGRectGetWidth(self.bookScrollView.bounds)-edgeWidth)
-      scaleForAngle = 1.0 - (float)(subviewMidX-CGRectGetWidth(self.bookScrollView.bounds)+edgeWidth) / (float)edgeWidth;
-    
-    if (scaleForAngle < 0)        scaleForAngle = 0;
-    else if (scaleForAngle > 1)   scaleForAngle = 1;
-    float angle = ((1.0-scaleForAngle) * MAX_BOOK_ROTATE)/180.0*M_PI;
-    if (subviewMidX < edgeWidth)
-      angle *= -1;
-    
-    float scale = scaleForAngle * (MAX_BOOK_SCALE-MIN_BOOK_SCALE) + MIN_BOOK_SCALE;
-    if (!self.enableBookScale)
-      scale = MAX_BOOK_SCALE;
-    CGPoint previousAnchor = subview.layer.anchorPoint;
-    
-    CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = self.m34;
-    transform = CATransform3DScale(transform, scale, scale, 1.0);
-    if (self.enableBookRotate)
-      transform = CATransform3DRotate(transform, angle, 0, 1, 0);
-    subview.layer.anchorPoint = previousAnchor;
-    subview.layer.transform = transform;
-    
-    PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
-    if (self.enableBookScale && self.enableBookShadow) {
-      float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
-      wrapper.shadowOffset = CGSizeMake(0, 5 + 5*shadowScale);
-      wrapper.shadowRadius = 10 + 8 * shadowScale;
-      wrapper.shadowOpacity = 0.35;
-    }
-    else if (self.enableBookShadow) {
-      wrapper.shadowOffset = CGSizeMake(0, 5);
-      wrapper.shadowRadius = 12;
-      wrapper.shadowOpacity = 0.35;
-    }
-    else {
-      wrapper.shadowOpacity = 0;
-    }
-  }
-  
-  int offsetX = fabs(self.bookScrollView.contentOffset.x);
-  float bookIndex = offsetX / (self.frameWidth+self.bookSpacing);
+  [self updateBookScrollViewBookScale];
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithBookIndex:)])
-    [self.delegate ppPepperViewController:self didScrollWithBookIndex:bookIndex];
+    [self.delegate ppPepperViewController:self didScrollWithBookIndex:self.currentBookIndex];
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate
