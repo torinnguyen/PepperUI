@@ -32,6 +32,7 @@
 
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
+#define TIMER_INTERVAL               0.0111111    //60fps
 #define PEPPER_PAGE_SPACING          32.0f        //gap between edges of pages in 3D/Pepper mode
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
@@ -591,6 +592,13 @@ static float deviceFactor = 0;
       });
       return;
     }
+    
+    //This has some kind of glitch
+    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+      self.controlIndex = snapTo;      
+    } completion:^(BOOL finished) {
+      _controlAngle = -THRESHOLD_HALF_ANGLE;
+    }];
     return;
   }
   
@@ -1247,6 +1255,8 @@ static float deviceFactor = 0;
 
 - (void)updateBookScrollViewBookScale
 {
+  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
+  
   //Scale & rotate the book views
   int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
   for (UIView *subview in self.bookScrollView.subviews) {
@@ -1280,13 +1290,13 @@ static float deviceFactor = 0;
     PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
     if (self.enableBookScale && self.enableBookShadow) {
       float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
-      wrapper.shadowOffset = CGSizeMake(0, 5 + 5*shadowScale);
-      wrapper.shadowRadius = 10 + 8 * shadowScale;
+      wrapper.shadowOffset = isPad ? CGSizeMake(0, 5 + 5*shadowScale) : CGSizeMake(0, 2 + 2*shadowScale);
+      wrapper.shadowRadius = isPad ? 10 + 8 * shadowScale : 5 + 4 * shadowScale;
       wrapper.shadowOpacity = 0.35;
     }
     else if (self.enableBookShadow) {
-      wrapper.shadowOffset = CGSizeMake(0, 5);
-      wrapper.shadowRadius = 12;
+      wrapper.shadowOffset = isPad ? CGSizeMake(0, 5) : CGSizeMake(0, 2);
+      wrapper.shadowRadius = isPad ? 12 : 6;
       wrapper.shadowOpacity = 0.35;
     }
     else {
@@ -1564,9 +1574,14 @@ static float deviceFactor = 0;
   [pageDetailView layoutWithFrame:pageFrame duration:0];
 }
 
-- (void)updatePageScrollViewContentSize {
+- (void)updatePageScrollViewContentSize
+{
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   int numPages = self.hideFirstPage ? pageCount-1 : pageCount;
+  if (!self.enableOneSideZoom && isLandscape)
+    numPages = ceil(numPages / 2.0f);
+    
   CGSize contentSize = CGSizeMake(numPages * CGRectGetWidth(self.pageScrollView.bounds), 100);
   self.pageScrollView.contentSize = contentSize;
 }
@@ -1667,10 +1682,11 @@ static float deviceFactor = 0;
   }
    
   //Experimental shadow
+  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   for (int i=0; i < totalPages; i++) {
     PPPageViewContentWrapper *wrapper = [self getPepperPageAtIndex:i];
-    wrapper.shadowOffset = CGSizeMake(0, 6);
-    wrapper.shadowRadius = 12;
+    wrapper.shadowOffset = isPad ? CGSizeMake(0, 6) : CGSizeMake(0, 2);
+    wrapper.shadowRadius = isPad ? 12 : 3;
     wrapper.shadowOpacity = 0.35;
   }
 }
@@ -1904,8 +1920,8 @@ static float deviceFactor = 0;
   
   //0.016667 = 1/60
   self.controlIndexTimerLastTime = [[NSDate alloc] init];
-  self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / 0.0166666667);
-  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: 0.0166666667
+  self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / TIMER_INTERVAL);
+  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: TIMER_INTERVAL
                                                             target: self
                                                           selector: @selector(onControlIndexTimer:)
                                                           userInfo: nil
@@ -1917,7 +1933,7 @@ static float deviceFactor = 0;
   NSDate *nowDate = [[NSDate alloc] init];
   float deltaMs = fabsf([self.controlIndexTimerLastTime timeIntervalSinceNow]);
   self.controlIndexTimerLastTime = nowDate;
-  float deltaDiff = deltaMs / 0.0166666667;
+  float deltaDiff = deltaMs / TIMER_INTERVAL;
   
   float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
   /*
@@ -2527,11 +2543,11 @@ static float deviceFactor = 0;
     return;
   }
   
-  //0.0166666667 = 1/60
+  //TIMER_INTERVAL = 1/60
   self.controlAngleTimerLastTime = [[NSDate alloc] init];
   self.controlAngleTimerTarget = angle;
-  self.controlAngleTimerDx = (self.controlAngleTimerTarget - self.controlAngle) / (duration / 0.0166666667);
-  self.controlAngleTimer = [NSTimer scheduledTimerWithTimeInterval: 0.0166666667
+  self.controlAngleTimerDx = (self.controlAngleTimerTarget - self.controlAngle) / (duration / TIMER_INTERVAL);
+  self.controlAngleTimer = [NSTimer scheduledTimerWithTimeInterval: TIMER_INTERVAL
                                                             target: self
                                                           selector: @selector(onControlAngleTimer:)
                                                           userInfo: nil
@@ -2543,7 +2559,7 @@ static float deviceFactor = 0;
   NSDate *nowDate = [[NSDate alloc] init];
   float deltaMs = fabsf([self.controlAngleTimerLastTime timeIntervalSinceNow]);
   self.controlAngleTimerLastTime = nowDate;
-  float deltaDiff = deltaMs / 0.0166666667;
+  float deltaDiff = deltaMs / TIMER_INTERVAL;
   
   float newValue = self.controlAngle + self.controlAngleTimerDx * deltaDiff;
   if (self.controlAngleTimerDx >= 0 && newValue > self.controlAngleTimerTarget)
