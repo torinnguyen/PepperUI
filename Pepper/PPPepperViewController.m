@@ -2728,6 +2728,10 @@ static float deviceFactor = 0;
       break;
     }
     
+    //Don't notify the delegate if we are not in detail view
+    if (!self.isDetailView || self.controlAngle < 0)
+      return;
+    
     float onePageWidth = 2 * [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
     if (onePage != nil)
       onePageWidth = CGRectGetWidth(onePage.frame);
@@ -2735,10 +2739,6 @@ static float deviceFactor = 0;
     int offsetX = fabs(self.pageScrollView.contentOffset.x);
     float pageIndex = offsetX / onePageWidth;
     
-    //Don't notify the delegate if we are not in detail view
-    if (!self.isDetailView || self.controlAngle < 0)
-      return;
-
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
       [self.delegate ppPepperViewController:self didScrollWithPageIndex:pageIndex];
@@ -2754,9 +2754,12 @@ static float deviceFactor = 0;
   if (self.bookScrollView.hidden || !self.isBookView)
     return;
   
+  int offsetX = fabs(self.bookScrollView.contentOffset.x);
+  float bookIndex = offsetX / (self.frameWidth+self.bookSpacing);
+  
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithBookIndex:)])
-    [self.delegate ppPepperViewController:self didScrollWithBookIndex:self.currentBookIndex];
+    [self.delegate ppPepperViewController:self didScrollWithBookIndex:bookIndex];
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate
