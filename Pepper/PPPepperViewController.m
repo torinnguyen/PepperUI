@@ -1732,7 +1732,7 @@ static float deviceFactor = 0;
 {
   float limit = 0;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  if (pageCount % 2 != 0)    limit = pageCount-1.0;       //odd
+  if (pageCount % 2 != 0)    limit = pageCount-0.5;       //odd
   else                       limit = pageCount-1.5;       //even
   return limit;
 }
