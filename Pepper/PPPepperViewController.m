@@ -140,7 +140,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize isDetailView;
 
 @synthesize delegate;
-@synthesize dataSource;
+@synthesize dataSource = _dataSource;
 
 //Control
 @synthesize controlAngleTimerTarget;
@@ -192,6 +192,27 @@ static float deviceFactor = 0;
 + (NSString*)version {
   return @"1.3.0";
 }
+
+- (id)dataSource {
+//Prevent free-to-try version to modify the datasource
+#ifdef DEMO
+  self.dataSource = self;
+#endif 
+  return _dataSource;
+}
+
+- (void)setDataSource:(id)newValue {
+//Prevent free-to-try version to modify the datasource
+#ifdef DEMO
+  if (![newValue isEqual:self]) {
+    NSLog(@"Free-to-try version does not allow you to change dataSource");
+    _dataSource = self;
+    return;    
+  }
+#endif 
+  _dataSource = newValue;
+}
+
 
 - (id)init {
   self = [super init];
