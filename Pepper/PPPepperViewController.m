@@ -1,6 +1,5 @@
 //
 //  PPScrollListViewControllerViewController.m
-//  pepper
 //
 //  Created by Torin Nguyen on 25/4/12.
 //  Copyright (c) 2012 torinnguyen@gmail.com. All rights reserved.
@@ -32,7 +31,7 @@
 
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
-#define TIMER_INTERVAL               0.0111111    //60fps
+#define TIMER_INTERVAL               0.0111111    //90fps
 #define PEPPER_PAGE_SPACING          32.0f        //gap between edges of pages in 3D/Pepper mode
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
@@ -82,6 +81,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
 @property (nonatomic, assign) float touchDownControlIndex;
+@property (nonatomic, assign) float previousSpecialControlIndex;
 @property (nonatomic, assign) BOOL zoomOnLeft;
 @property (nonatomic, assign) BOOL isBookView;
 @property (nonatomic, assign) BOOL isDetailView;
@@ -102,6 +102,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, strong) UIView *theBookCover;
 @property (nonatomic, strong) UIScrollView *bookScrollView;
 @property (nonatomic, strong) NSMutableArray *reuseBookViewArray;
+@property (nonatomic, strong) NSMutableArray *visibleBookViewArray;
 
 //Pepper views
 @property (nonatomic, strong) UIView *pepperView;
@@ -118,6 +119,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
+@property (nonatomic, strong) NSMutableArray *visiblePageViewArray;
 
 @end
 
@@ -154,6 +156,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize controlFlipAngle = _controlFlipAngle;
 @synthesize touchDownControlAngle;
 @synthesize touchDownControlIndex;
+@synthesize previousSpecialControlIndex;
 @synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
 @synthesize zoomOnLeft;
 
@@ -162,6 +165,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize bookScrollView;
 @synthesize theBookCover;
 @synthesize reuseBookViewArray;
+@synthesize visibleBookViewArray;
 
 //Pepper
 @synthesize pepperView;
@@ -181,6 +185,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize currentPageIndex = _currentPageIndex;
 @synthesize pageScrollView;
 @synthesize reusePageViewArray;
+@synthesize visiblePageViewArray;
 
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
@@ -190,7 +195,7 @@ static float deviceFactor = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.3.1";
+  return @"1.3.2";
 }
 
 - (id)dataSource {
@@ -367,7 +372,7 @@ static float deviceFactor = 0;
   [self updateFrameSizesForOrientation:toInterfaceOrientation];
 
   //Relayout the Book views with animation
-  for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews) {
+  for (PPPageViewContentWrapper *subview in self.visibleBookViewArray) {
     int index = subview.tag;
     CGRect frame = [self getFrameForBookIndex:index forOrientation:toInterfaceOrientation];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
@@ -379,7 +384,7 @@ static float deviceFactor = 0;
   [self scrollToBook:self.currentBookIndex duration:duration];
   
   //Relayout fullsize views with animation
-  for (UIView *subview in self.pageScrollView.subviews) {
+  for (UIView *subview in self.visiblePageViewArray) {
     int index = subview.tag;
     CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
@@ -421,7 +426,7 @@ static float deviceFactor = 0;
   
   //Increase number of reusable views for landscape
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
-  int totalViews = self.reuseBookViewArray.count + self.bookScrollView.subviews.count;
+  int totalViews = self.reuseBookViewArray.count + self.visibleBookViewArray.count;
   if (isLandscape) {
     for (int i=totalViews; i<NUM_REUSE_BOOK_LANDSCAPE; i++)
       [self.reuseBookViewArray addObject:[[PPPageViewContentWrapper alloc] init]];
@@ -963,7 +968,7 @@ static float deviceFactor = 0;
     if (i < startIndex || i > endIndex)
       [self removePageFromPepper:i];
     
-  //Reuse hidden views
+  //Reuse out of bound views & hidden views
   NSMutableArray *toBeRemoved = [[NSMutableArray alloc] init];
   for (UIView *subview in self.visiblePepperWrapperArray) {
     int idx = subview.tag;
@@ -971,6 +976,10 @@ static float deviceFactor = 0;
       continue;
     if (subview.hidden) {
       [toBeRemoved addObject:subview];
+      continue;
+    }
+    if (idx < startIndex || idx > endIndex) {
+      [self removePageFromPepper:idx];
       continue;
     }
     if (idx > currentIndex && idx%2!=0)   //odd page on the right side, should not be removed
@@ -983,8 +992,11 @@ static float deviceFactor = 0;
     UIView *subview = [toBeRemoved objectAtIndex:0];
     [self.reusePepperWrapperArray addObject:subview];
     [self.visiblePepperWrapperArray removeObject:subview];
-    [subview removeFromSuperview];
     [toBeRemoved removeObjectAtIndex:0];
+    
+    //This is quite expensive, substitute by just hiding it & use self.visiblePepperWrapperArray to keep track
+    //[subview removeFromSuperview];
+    subview.hidden = YES;
   }
 
   //Add only relevant new views
@@ -1002,7 +1014,7 @@ static float deviceFactor = 0;
   }
 }
 
-- (BOOL)hasPageToPepperView:(int)index
+- (BOOL)hasPageInPepperView:(int)index
 {
   BOOL retValue = NO;
   for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
@@ -1026,7 +1038,7 @@ static float deviceFactor = 0;
     return;
     
   //Check if we already have this Page in pepper view
-  if ([self hasPageToPepperView:index])
+  if ([self hasPageInPepperView:index])
     return;
   
   int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
@@ -1050,29 +1062,45 @@ static float deviceFactor = 0;
   pageView.hidden = YES;        //control functions will unhide later
   pageView.delegate = self;  
   pageView.isLeft = (index%2==0) ? YES : NO;
-  [self.pepperView addSubview:pageView];
-  [self.visiblePepperWrapperArray addObject:pageView];
-  
+    
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
     pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds reusableView:pageView.contentView];
   else
     pageView.contentView = nil;
   
+  [self.pepperView addSubview:pageView];
+  [self.visiblePepperWrapperArray addObject:pageView];
+  
+  //Visible range
+  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
+  float currentIndex = [self getCurrentSpecialIndex];
+  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
+  if (startIndex < 0)
+    startIndex = 0;
+  int endIndex = startIndex + range*2;
+  if (endIndex > pageCount-1)
+    endIndex = pageCount-1;
+  
   //Reorder-Z for left pages
-  //int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  int totalPages = pageCount;
-  for (int i=0; i < (int)self.controlIndex; i++) {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    [page.superview bringSubviewToFront:page];
+  if (index < self.controlIndex)
+  {
+    for (int i=startIndex; i < (int)self.controlIndex; i++) {
+      PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+      if (page == nil)
+        continue;
+      [page.superview bringSubviewToFront:page];    //expensive, need to be further optimized
+    }
   }
+
   //Reorder-Z for right pages
-  for (int i=totalPages-1; i >= (int)self.controlIndex; i--) {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    [page.superview bringSubviewToFront:page];
+  else
+  {
+    for (int i=endIndex; i >= (int)self.controlIndex; i--) {
+      PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+      if (page == nil)
+        continue;
+      [page.superview bringSubviewToFront:page];    //expensive, need to be further optimized
+    }
   }
 }
 
@@ -1086,8 +1114,11 @@ static float deviceFactor = 0;
     if (subview.tag != index)
       continue;
     [self.reusePepperWrapperArray addObject:subview];
-    [subview removeFromSuperview];
     [self.visiblePepperWrapperArray removeObject:subview];
+    
+    //This is quite expensive, substitute by just hiding it & use self.visiblePepperWrapperArray to keep track
+    //[subview removeFromSuperview];
+    subview.hidden = YES;
     break;
   }
 }
@@ -1105,7 +1136,7 @@ static float deviceFactor = 0;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
-  if (index < startIndex-3 || index > endIndex+3)       //soft limit
+  if (index < startIndex-1 || index > endIndex+1)       //soft limit
     return nil;
   
   PPPageViewContentWrapper *theView = nil;
@@ -1153,10 +1184,19 @@ static float deviceFactor = 0;
 
 - (void)destroyBookScrollView
 {
-  while (self.bookScrollView.subviews.count > 0)
-    [[self.bookScrollView.subviews objectAtIndex:0] removeFromSuperview];
+  if (self.reuseBookViewArray == nil)
+    return;
+  
+  while (self.visibleBookViewArray.count > 0) {
+    [[self.visibleBookViewArray objectAtIndex:0] removeFromSuperview];
+    [self.visibleBookViewArray removeObjectAtIndex:0];
+  }
+  self.visibleBookViewArray = nil;
+  
   [self.reuseBookViewArray removeAllObjects];
   self.reuseBookViewArray = nil;
+  
+  self.bookScrollView.hidden = YES;
 }
 
 - (void)setupReuseablePoolBookViews
@@ -1165,13 +1205,17 @@ static float deviceFactor = 0;
   if (self.reuseBookViewArray != nil || self.reuseBookViewArray.count > 0)
     return;
   
+  self.reuseBookViewArray = [[NSMutableArray alloc] init];
+  self.visibleBookViewArray = [[NSMutableArray alloc] init];
+  
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int numReuse = isLandscape ? NUM_REUSE_BOOK_LANDSCAPE : NUM_REUSE_BOOK_PORTRAIT;
-  self.reuseBookViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
   for (int i=0; i<numReuse; i++)
     [self.reuseBookViewArray addObject:[[PPPageViewContentWrapper alloc] init]];
+  
+  self.bookScrollView.hidden = NO;
 }
 
 - (void)scrollToBook:(int)bookIndex animated:(BOOL)animated {
@@ -1209,15 +1253,6 @@ static float deviceFactor = 0;
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int bookCount = [self getNumberOfBooks];
   
-  //Some funny UIImageView gets into our view
-  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
-  for (UIView *subview in self.bookScrollView.subviews)
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
-      [tempArray addObject:subview];
-  for (UIView *subview in tempArray)
-    [subview removeFromSuperview];
-  [tempArray removeAllObjects];
-  
   //Visible indexes
   int range = isLandscape ? floor(NUM_REUSE_BOOK_LANDSCAPE/2.0) : floor(NUM_REUSE_BOOK_PORTRAIT/2.0);
   int currentIndex = [self getCurrentBookIndex];
@@ -1238,16 +1273,6 @@ static float deviceFactor = 0;
   for (int i=startIndex; i<=endIndex; i++)
     if (i != self.currentBookIndex)
       [self addBookToScrollView:i];
-}
-
-- (void)hideBookScrollview
-{
-  //Reuse all book views
-  for (UIView *subview in self.bookScrollView.subviews)
-    [self.reuseBookViewArray addObject:subview];
-  while (self.bookScrollView.subviews.count > 0)
-    [[self.bookScrollView.subviews objectAtIndex:0] removeFromSuperview];
-  self.bookScrollView.hidden = YES;
 }
 
 //
@@ -1285,13 +1310,17 @@ static float deviceFactor = 0;
   if (index < 0 || index >= bookCount)
     return;
   
-  for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews) {
+  for (PPPageViewContentWrapper *subview in self.visibleBookViewArray) {
     if (subview.tag != index)
       continue;
     if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
       continue;
     [self.reuseBookViewArray addObject:subview];
-    [subview removeFromSuperview];
+    [self.visibleBookViewArray removeObject:subview];
+    
+    //This is quite expensive, substitute by just hiding it & use self.visibleBookViewArray to keep track
+    //[subview removeFromSuperview];
+    subview.hidden = YES;
     break;
   }
 }
@@ -1299,7 +1328,7 @@ static float deviceFactor = 0;
 - (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index
 {
   PPPageViewContentWrapper *theView = nil;
-  for (PPPageViewContentWrapper *book in self.bookScrollView.subviews) {
+  for (PPPageViewContentWrapper *book in self.visibleBookViewArray) {
     if (book.tag != index)
       continue;
     if (![book isKindOfClass:[PPPageViewContentWrapper class]])
@@ -1310,9 +1339,18 @@ static float deviceFactor = 0;
   return theView;
 }
 
-//
-// Convert from Book data model to view
-//
+- (BOOL)hasBookInBookScrollView:(int)index
+{
+  BOOL retValue = NO;
+  for (PPPageViewContentWrapper *subview in self.visibleBookViewArray) {
+    if (subview.tag == index) {
+      retValue = YES;
+      break;
+    }
+  }
+  return retValue;
+}
+
 - (void)addBookToScrollView:(int)index
 {  
   if (self.reuseBookViewArray.count <= 0)
@@ -1324,9 +1362,8 @@ static float deviceFactor = 0;
     return;
   
   //Check if we already have this Book in scrollview
-  for (PPPageViewContentWrapper *subview in self.bookScrollView.subviews)
-    if (subview.tag == index)
-      return;
+  if ([self hasBookInBookScrollView:index])
+    return;
     
   PPPageViewContentWrapper *coverPage = [self.reuseBookViewArray objectAtIndex:0];
   [self.reuseBookViewArray removeObjectAtIndex:0];
@@ -1340,7 +1377,6 @@ static float deviceFactor = 0;
   
   [coverPage setBackgroundImage:(self.hideFirstPage ? pageBackgroundImage : bookCoverImage)];
   
-  coverPage.hidden = NO;
   coverPage.alpha = 1;
   coverPage.transform = CGAffineTransformIdentity;
   coverPage.frame = [self getFrameForBookIndex:index];
@@ -1351,17 +1387,9 @@ static float deviceFactor = 0;
   else
     coverPage.contentView = nil;
 
+  coverPage.hidden = NO;
   [self.bookScrollView addSubview:coverPage];
-    
-  /*
-  coverPage.layer.shadowColor = [UIColor blackColor].CGColor;
-  coverPage.layer.shadowOpacity = 0.4f;
-  coverPage.layer.shadowOffset = CGSizeMake(0,15);
-  coverPage.layer.shadowRadius = 10.0f;
-  coverPage.layer.masksToBounds = NO;
-  UIBezierPath *path = [UIBezierPath bezierPathWithRect:coverPage.bounds];
-  coverPage.layer.shadowPath = path.CGPath;
-   */
+  [self.visibleBookViewArray addObject:coverPage];
 }
 
 
@@ -1378,7 +1406,7 @@ static float deviceFactor = 0;
   
   //Scale & rotate the book views
   int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
-  for (UIView *subview in self.bookScrollView.subviews) {
+  for (UIView *subview in self.visibleBookViewArray) {
     float subviewMidX = CGRectGetMidX(subview.frame) - fabs(self.bookScrollView.contentOffset.x);
     
     float scaleForAngle = 1.0;
@@ -1438,14 +1466,17 @@ static float deviceFactor = 0;
 - (void)openBookWithIndex:(int)bookIndex pageIndex:(int)pageIndex {
   
   self.currentBookIndex = bookIndex;
+  self.numPages = -1;
+  self.previousSpecialControlIndex = -100;
+  
   [self updatePageScrollViewContentSize];
   int pageCount = [self getNumberOfPagesForBookIndex:bookIndex];
   
-  //Even page only
+  //Accept even page as argument only
   if (pageIndex%2 != 0)
     pageIndex -= 1;
     
-  //Convert integer to actual 0.5 indexes
+  //Convert integer pageIndex to controlIndex .5 indexes
   if (pageIndex+0.5 < MIN_CONTROL_INDEX)
     _controlIndex = MIN_CONTROL_INDEX;
   else if (pageIndex+0.5 > pageCount - 1.5)
@@ -1486,10 +1517,18 @@ static float deviceFactor = 0;
 
 - (void)destroyPageScrollView
 {
-  while (self.pageScrollView.subviews.count > 0)
-    [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
+  if (self.reusePageViewArray == nil)
+    return;
+  
+  while (self.visiblePageViewArray.count > 0) {
+    [[self.visiblePageViewArray objectAtIndex:0] removeFromSuperview];
+    [self.visiblePageViewArray removeObjectAtIndex:0];
+  }
+  self.visiblePageViewArray = nil;
+  
   [self.reusePageViewArray removeAllObjects];
   self.reusePageViewArray = nil;
+  
   self.pageScrollView.hidden = YES;
 }
 
@@ -1500,6 +1539,7 @@ static float deviceFactor = 0;
     return;
   
   self.reusePageViewArray = [[NSMutableArray alloc] init];
+  self.visiblePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
   int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
@@ -1519,7 +1559,7 @@ static float deviceFactor = 0;
   [self reusePageScrollview];
   
   //Reset pages UI
-  for (UIView *subview in self.pageScrollView.subviews) {
+  for (UIView *subview in self.visiblePageViewArray) {
     if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
       continue;
     subview.hidden = NO;
@@ -1545,16 +1585,7 @@ static float deviceFactor = 0;
 - (void)reusePageScrollview {
   int currentIndex = (int)self.currentPageIndex;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  
-  //Some funny UIImageView gets into our view
-  NSMutableArray *tempArray = [[NSMutableArray alloc] init];
-  for (UIView *subview in self.pageScrollView.subviews)
-    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      [tempArray addObject:subview];
-  for (UIView *subview in tempArray)
-    [subview removeFromSuperview];
-  [tempArray removeAllObjects];
-  
+    
   //Visible indexes
   int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
   int range = total / 3;
@@ -1573,16 +1604,6 @@ static float deviceFactor = 0;
   //Add new views
   for (int i=startIndex; i<=endIndex; i++)
     [self addPageToScrollView:i];
-}
-
-- (void)hidePageScrollview
-{
-  //Reuse all PDF views
-  for (UIView *subview in self.pageScrollView.subviews)
-    [self.reusePageViewArray addObject:subview];
-  while (self.pageScrollView.subviews.count > 0)
-    [[self.pageScrollView.subviews objectAtIndex:0] removeFromSuperview];
-  self.pageScrollView.hidden = YES;
 }
 
 //
@@ -1636,27 +1657,41 @@ static float deviceFactor = 0;
   if (index < 0 || index >= pageCount)
     return;
   
-  for (UIView *subview in self.pageScrollView.subviews) {
-    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      continue;
+  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     if (subview.tag != index)
       continue;
-    [(PPPageViewDetailWrapper*)subview unloadContent];
+    [subview unloadContent];
     [self.reusePageViewArray addObject:subview];
-    [subview removeFromSuperview];
+    [self.visiblePageViewArray removeObject:subview];
+    
+    //This is quite expensive, substitute by just hiding it & use self.visiblePageViewArray to keep track
+    //[subview removeFromSuperview];
+    subview.hidden = YES;
     break;
   }
 }
 
 - (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)index {
-  for (PPPageViewDetailWrapper *page in self.pageScrollView.subviews) {
-    if (![page isKindOfClass:[PPPageViewDetailWrapper class]])
-      continue;
+  for (PPPageViewDetailWrapper *page in self.visiblePageViewArray) {
     if (page.tag != index)
+      continue;
+    if (![page isKindOfClass:[PPPageViewDetailWrapper class]])
       continue;
     return page;
   }
   return nil;
+}
+
+- (BOOL)hasPageInPageScrollView:(int)index
+{
+  BOOL retValue = NO;
+  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
+    if (subview.tag == index) {
+      retValue = YES;
+      break;
+    }
+  }
+  return retValue;
 }
 
 - (void)addPageToScrollView:(int)index {
@@ -1668,9 +1703,8 @@ static float deviceFactor = 0;
     return;
   
   //Check if we already have this Page in scrollview
-  for (UIView *subview in self.pageScrollView.subviews)
-    if (subview.tag == index)
-      return;
+  if ([self hasPageInPageScrollView:index])
+    return;
   
   CGRect pageFrame = [self getFrameForPageIndex:index];
   PPPageViewDetailWrapper *pageDetailView = [self.reusePageViewArray objectAtIndex:0];
@@ -1681,9 +1715,7 @@ static float deviceFactor = 0;
   pageDetailView.tag = index; 
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
-  pageDetailView.hidden = NO;
   pageDetailView.customDelegate = self;
-  [self.pageScrollView addSubview:pageDetailView];
    
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
@@ -1691,6 +1723,10 @@ static float deviceFactor = 0;
     pageDetailView.contentView = nil;
 
   [pageDetailView layoutWithFrame:pageFrame duration:0];
+  
+  pageDetailView.hidden = NO;
+  [self.pageScrollView addSubview:pageDetailView];
+  [self.visiblePageViewArray addObject:pageDetailView];
 }
 
 - (void)updatePageScrollViewContentSize
@@ -1970,14 +2006,23 @@ static float deviceFactor = 0;
 {
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   float theSpecialIndex = [self getCurrentSpecialIndex];
+  BOOL specialIndexChanged = NO;
   
   //Detect change of page flipping index for cell reuse purpose
-  static float previousControlIndex = -100;
-  if (previousControlIndex == -100)
-    previousControlIndex = theSpecialIndex;
-  if (previousControlIndex != theSpecialIndex)
-    [self onSpecialControlIndexChanged];
-  previousControlIndex = theSpecialIndex;
+  if (self.previousSpecialControlIndex < -5) {
+    self.previousSpecialControlIndex = theSpecialIndex;
+    specialIndexChanged = YES;
+  }
+  
+  if (self.previousSpecialControlIndex != theSpecialIndex)
+    specialIndexChanged = YES;
+  
+  self.previousSpecialControlIndex = theSpecialIndex;
+  
+  if (!specialIndexChanged)
+    return;
+  
+  [self onSpecialControlIndexChanged];
   
   self.theView1 = nil;
   self.theView2 = nil;
@@ -2242,7 +2287,7 @@ static float deviceFactor = 0;
   
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
-  for (UIView *subview in self.bookScrollView.subviews)
+  for (UIView *subview in self.visibleBookViewArray)
     if (subview.tag != self.currentBookIndex)
       subview.alpha = 1;
   
@@ -2334,7 +2379,7 @@ static float deviceFactor = 0;
 
 - (UIView*)getCurrentBookCover
 { 
-  for (UIView *subview in self.bookScrollView.subviews)
+  for (UIView *subview in self.visibleBookViewArray)
     if (subview.tag == self.currentBookIndex)
       return subview;
   return nil;
@@ -2354,6 +2399,7 @@ static float deviceFactor = 0;
   if (firstPageView == nil)
     return;
 
+  firstPageView.hidden = NO;
   [firstPageView addSubview:self.theBookCover];
   [firstPageView.superview bringSubviewToFront:firstPageView];
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1);
@@ -2484,7 +2530,7 @@ static float deviceFactor = 0;
   
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
-  for (UIView *subview in self.bookScrollView.subviews)
+  for (UIView *subview in self.visibleBookViewArray)
     if (subview.tag == self.currentBookIndex)
       subview.alpha = 0;
   
@@ -2742,7 +2788,7 @@ static float deviceFactor = 0;
   if ([theScrollView isEqual:self.pageScrollView]) {
     
     PPPageViewDetailWrapper *onePage = nil;
-    for (PPPageViewDetailWrapper *subview in self.pageScrollView.subviews) {
+    for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
       if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
         continue;
       onePage = subview;
@@ -2870,7 +2916,7 @@ static float deviceFactor = 0;
 - (void)didSnapPageScrollview {
   
   PPPageViewDetailWrapper *onePage = nil;
-  for (PPPageViewDetailWrapper *subview in self.pageScrollView.subviews) {
+  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
       continue;
     onePage = subview;
