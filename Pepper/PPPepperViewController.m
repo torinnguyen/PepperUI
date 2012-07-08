@@ -372,7 +372,7 @@ static float deviceFactor = 0;
       
     }];
   }
-  [self scrollToPage:self.currentPageIndex duration:duration];
+  [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
   
   //Relayout 3D views with animation
   for (UIView *subview in self.visiblePepperWrapperArray) {
@@ -1654,7 +1654,7 @@ static float deviceFactor = 0;
     if (subview.tag == index)
       return;
   
-  CGRect pageFrame = [self getFrameForPageIndex:self.hideFirstPage ? index-1 : index];
+  CGRect pageFrame = [self getFrameForPageIndex:index];
   PPPageViewDetailWrapper *pageDetailView = [self.reusePageViewArray objectAtIndex:0];
   [self.reusePageViewArray removeObjectAtIndex:0];
   if (pageDetailView == nil)
@@ -1689,9 +1689,12 @@ static float deviceFactor = 0;
 }
 
 - (void)scrollToPage:(int)pageIndex duration:(float)duration {
-  if (self.hideFirstPage)
-    pageIndex -= 1;
-  CGRect pageFrame = [self getFrameForPageIndex:pageIndex];
+  [self scrollToPage:pageIndex duration:duration forOrientation:[UIApplication sharedApplication].statusBarOrientation];
+}
+
+- (void)scrollToPage:(int)pageIndex duration:(float)duration forOrientation:(UIInterfaceOrientation)interfaceOrientation {
+  
+  CGRect pageFrame = [self getFrameForPageIndex:pageIndex forOrientation:interfaceOrientation];
   
   if (duration <= 0) {
     self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
@@ -2856,11 +2859,11 @@ static float deviceFactor = 0;
     break;
   }
   
-  float onePageWidth = CGRectGetWidth(self.pageScrollView.bounds);
+  float onePageWidth = 2*[self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   if (onePage != nil)
-    onePageWidth = CGRectGetWidth(onePage.frame);
+    onePageWidth = CGRectGetWidth(onePage.bounds);
   
-  self.currentPageIndex = floor((self.pageScrollView.contentOffset.x - onePageWidth / 2) / onePageWidth) + 1;
+  self.currentPageIndex = floor((self.pageScrollView.contentOffset.x) / onePageWidth);
   if (self.hideFirstPage)
     self.currentPageIndex += 1;
   
@@ -2869,7 +2872,7 @@ static float deviceFactor = 0;
   self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
   self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
   self.controlAngle = 0;
-  [self.view bringSubviewToFront:self.pageScrollView];
+  //[self.view bringSubviewToFront:self.pageScrollView];
   
   [self reusePageScrollview];
   
