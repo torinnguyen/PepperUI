@@ -612,7 +612,7 @@ static float deviceFactor = 0;
     else                              snapTo = lowerBound - 0.5;
 
     float diff = fabs(snapTo - newControlIndex);
-    float duration = diff / 2.0f;
+    float duration = diff / 2.5f;
     if (ENABLE_HIGH_SPEED_SCROLLING)
       duration /= normalizedVelocityX;
     if (diff <= 0)
@@ -969,9 +969,13 @@ static float deviceFactor = 0;
     int idx = subview.tag;
     if (idx > currentIndex-1.6 && idx < currentIndex+1.6)   //Don't touch the middle 4 pages
       continue;
-    if (idx > currentIndex && idx%2!=0)
+    if (subview.hidden) {
+      [toBeRemoved addObject:subview];
       continue;
-    if (idx < currentIndex && idx%2==0)
+    }
+    if (idx > currentIndex && idx%2!=0)   //odd page on the right side, should not be removed
+      continue;
+    if (idx < currentIndex && idx%2==0)   //even page on the left side, should not be removed
       continue;
     [toBeRemoved addObject:subview];
   }
@@ -989,9 +993,9 @@ static float deviceFactor = 0;
       [self addPageToPepperView:i];
       continue;
     }
-    if (i < currentIndex && i%2!=0)
+    if (i < currentIndex && i%2!=0)   //odd page on the left side, should not be added
       continue;
-    if (i >= currentIndex && i%2==0)
+    if (i > currentIndex && i%2==0)   //even page on the right side, should not be added
       continue;
 
     [self addPageToPepperView:i];
@@ -1000,13 +1004,19 @@ static float deviceFactor = 0;
 
 - (BOOL)hasPageToPepperView:(int)index
 {
-  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray)
-    if (subview.tag == index)
-      return YES;
-  return NO;
+  BOOL retValue = NO;
+  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
+    if (subview.tag == index) {
+      retValue = YES;
+      break;
+    }
+  }
+  return retValue;
 }
 
 - (void)addPageToPepperView:(int)index {
+  
+  //Reuseable pool is empty, should not happen, check removePageFromPepperView code
   if (self.reusePepperWrapperArray.count <= 0)
     return;
   
@@ -1028,7 +1038,7 @@ static float deviceFactor = 0;
     return;
   if (![pageView isKindOfClass:[PPPageViewContentWrapper class]])    //some sands
     return;
-  
+    
   pageView.tag = index;
   pageView.isBook = NO;
   pageView.frame = pageFrame;
@@ -1071,20 +1081,7 @@ static float deviceFactor = 0;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   if (index < 0 || index >= pageCount)
     return;
-  
-  //Visible range
-  int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
-  float currentIndex = [self getCurrentSpecialIndex];
-  int startIndex = currentIndex - range + 2;            //because currentIndex is being bias towards the left
-  if (startIndex < 0)
-    startIndex = 0;
-  int endIndex = startIndex + range*2;
-  if (endIndex > pageCount-1)
-    endIndex = pageCount-1;
-  
-  if (index < startIndex-2 || index > endIndex+2)       //soft limit
-    return;
-  
+    
   for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
     if (subview.tag != index)
       continue;
@@ -1108,7 +1105,7 @@ static float deviceFactor = 0;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
-  if (index < startIndex || index > endIndex)
+  if (index < startIndex-3 || index > endIndex+3)       //soft limit
     return nil;
   
   PPPageViewContentWrapper *theView = nil;
