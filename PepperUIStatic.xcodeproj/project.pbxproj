@@ -1,0 +1,271 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		423E5CE315A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 423E5CE215A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch */; };
+		42ED4C52158FA0790055BAE7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C51158FA0790055BAE7 /* Foundation.framework */; };
+		42ED4C5F158FA0A30055BAE7 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C5E158FA0A30055BAE7 /* QuartzCore.framework */; };
+		42ED4C6D158FA0E00055BAE7 /* PPPageViewContentWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 42ED4C66158FA0E00055BAE7 /* PPPageViewContentWrapper.h */; };
+		42ED4C6E158FA0E00055BAE7 /* PPPageViewContentWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42ED4C67158FA0E00055BAE7 /* PPPageViewContentWrapper.m */; };
+		42ED4C6F158FA0E00055BAE7 /* PPPageViewDetailWrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 42ED4C68158FA0E00055BAE7 /* PPPageViewDetailWrapper.h */; };
+		42ED4C70158FA0E00055BAE7 /* PPPageViewDetailWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42ED4C69158FA0E00055BAE7 /* PPPageViewDetailWrapper.m */; };
+		42ED4C71158FA0E00055BAE7 /* PPPepperContants.h in Headers */ = {isa = PBXBuildFile; fileRef = 42ED4C6A158FA0E00055BAE7 /* PPPepperContants.h */; };
+		42ED4C72158FA0E00055BAE7 /* PPPepperViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 42ED4C6B158FA0E00055BAE7 /* PPPepperViewController.h */; };
+		42ED4C73158FA0E00055BAE7 /* PPPepperViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42ED4C6C158FA0E00055BAE7 /* PPPepperViewController.m */; };
+		42ED4C79158FA1180055BAE7 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C78158FA1180055BAE7 /* CoreGraphics.framework */; };
+		42ED4C7B158FA11D0055BAE7 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C7A158FA11D0055BAE7 /* UIKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		423E5CE215A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "PepperUIStatic-Prefix.pch"; sourceTree = "<group>"; };
+		42ED4C4E158FA0790055BAE7 /* libPepperUI.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPepperUI.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		42ED4C51158FA0790055BAE7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		42ED4C5E158FA0A30055BAE7 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		42ED4C66158FA0E00055BAE7 /* PPPageViewContentWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewContentWrapper.h; sourceTree = "<group>"; };
+		42ED4C67158FA0E00055BAE7 /* PPPageViewContentWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewContentWrapper.m; sourceTree = "<group>"; };
+		42ED4C68158FA0E00055BAE7 /* PPPageViewDetailWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetailWrapper.h; sourceTree = "<group>"; };
+		42ED4C69158FA0E00055BAE7 /* PPPageViewDetailWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetailWrapper.m; sourceTree = "<group>"; };
+		42ED4C6A158FA0E00055BAE7 /* PPPepperContants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPepperContants.h; sourceTree = "<group>"; };
+		42ED4C6B158FA0E00055BAE7 /* PPPepperViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPepperViewController.h; sourceTree = "<group>"; };
+		42ED4C6C158FA0E00055BAE7 /* PPPepperViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPepperViewController.m; sourceTree = "<group>"; };
+		42ED4C78158FA1180055BAE7 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		42ED4C7A158FA11D0055BAE7 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		42ED4C4B158FA0790055BAE7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42ED4C7B158FA11D0055BAE7 /* UIKit.framework in Frameworks */,
+				42ED4C79158FA1180055BAE7 /* CoreGraphics.framework in Frameworks */,
+				42ED4C5F158FA0A30055BAE7 /* QuartzCore.framework in Frameworks */,
+				42ED4C52158FA0790055BAE7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		423E5CE115A9DD3800D7AB34 /* PepperUIStatic */ = {
+			isa = PBXGroup;
+			children = (
+				423E5CE215A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch */,
+			);
+			path = PepperUIStatic;
+			sourceTree = "<group>";
+		};
+		42ED4C43158FA0790055BAE7 = {
+			isa = PBXGroup;
+			children = (
+				42ED4C60158FA0E00055BAE7 /* Pepper */,
+				423E5CE115A9DD3800D7AB34 /* PepperUIStatic */,
+				42ED4C50158FA0790055BAE7 /* Frameworks */,
+				42ED4C4F158FA0790055BAE7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		42ED4C4F158FA0790055BAE7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				42ED4C4E158FA0790055BAE7 /* libPepperUI.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		42ED4C50158FA0790055BAE7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				42ED4C7A158FA11D0055BAE7 /* UIKit.framework */,
+				42ED4C78158FA1180055BAE7 /* CoreGraphics.framework */,
+				42ED4C5E158FA0A30055BAE7 /* QuartzCore.framework */,
+				42ED4C51158FA0790055BAE7 /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		42ED4C60158FA0E00055BAE7 /* Pepper */ = {
+			isa = PBXGroup;
+			children = (
+				42ED4C66158FA0E00055BAE7 /* PPPageViewContentWrapper.h */,
+				42ED4C67158FA0E00055BAE7 /* PPPageViewContentWrapper.m */,
+				42ED4C68158FA0E00055BAE7 /* PPPageViewDetailWrapper.h */,
+				42ED4C69158FA0E00055BAE7 /* PPPageViewDetailWrapper.m */,
+				42ED4C6A158FA0E00055BAE7 /* PPPepperContants.h */,
+				42ED4C6B158FA0E00055BAE7 /* PPPepperViewController.h */,
+				42ED4C6C158FA0E00055BAE7 /* PPPepperViewController.m */,
+			);
+			path = Pepper;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		42ED4C4C158FA0790055BAE7 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42ED4C6D158FA0E00055BAE7 /* PPPageViewContentWrapper.h in Headers */,
+				42ED4C6F158FA0E00055BAE7 /* PPPageViewDetailWrapper.h in Headers */,
+				42ED4C71158FA0E00055BAE7 /* PPPepperContants.h in Headers */,
+				42ED4C72158FA0E00055BAE7 /* PPPepperViewController.h in Headers */,
+				423E5CE315A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		42ED4C4D158FA0790055BAE7 /* PepperUIStatic */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 42ED4C5B158FA0790055BAE7 /* Build configuration list for PBXNativeTarget "PepperUIStatic" */;
+			buildPhases = (
+				42ED4C4A158FA0790055BAE7 /* Sources */,
+				42ED4C4B158FA0790055BAE7 /* Frameworks */,
+				42ED4C4C158FA0790055BAE7 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PepperUIStatic;
+			productName = PepperUI;
+			productReference = 42ED4C4E158FA0790055BAE7 /* libPepperUI.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		42ED4C45158FA0790055BAE7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0430;
+				ORGANIZATIONNAME = "torinnguyen@gmail.com";
+			};
+			buildConfigurationList = 42ED4C48158FA0790055BAE7 /* Build configuration list for PBXProject "PepperUIStatic" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 42ED4C43158FA0790055BAE7;
+			productRefGroup = 42ED4C4F158FA0790055BAE7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				42ED4C4D158FA0790055BAE7 /* PepperUIStatic */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		42ED4C4A158FA0790055BAE7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42ED4C6E158FA0E00055BAE7 /* PPPageViewContentWrapper.m in Sources */,
+				42ED4C70158FA0E00055BAE7 /* PPPageViewDetailWrapper.m in Sources */,
+				42ED4C73158FA0E00055BAE7 /* PPPepperViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		42ED4C59158FA0790055BAE7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		42ED4C5A158FA0790055BAE7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		42ED4C5C158FA0790055BAE7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/PepperUI.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "PepperUIStatic/PepperUIStatic-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = PepperUI;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		42ED4C5D158FA0790055BAE7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/PepperUI.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "PepperUIStatic/PepperUIStatic-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = PepperUI;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		42ED4C48158FA0790055BAE7 /* Build configuration list for PBXProject "PepperUIStatic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42ED4C59158FA0790055BAE7 /* Debug */,
+				42ED4C5A158FA0790055BAE7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		42ED4C5B158FA0790055BAE7 /* Build configuration list for PBXNativeTarget "PepperUIStatic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42ED4C5C158FA0790055BAE7 /* Debug */,
+				42ED4C5D158FA0790055BAE7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 42ED4C45158FA0790055BAE7 /* Project object */;
+}

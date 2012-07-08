@@ -1,0 +1,19 @@
+//
+// Prefix header for all source files of the 'PepperUI' target in the 'PepperUI' project
+//
+
+#ifdef __OBJC__
+  #import <Foundation/Foundation.h>
+#endif
+
+#warning DEMO FLAG
+/*
+ Uncomment this to compile as non-demo version
+ The following header files needed for the static library
+  - PPPepperViewController.h
+  - PPPageViewContentWrapper.h
+  - PPPageViewDetailWrapper.h
+  - PPPepperContants.h (optional)
+ */
+#define DEMO 1
+
