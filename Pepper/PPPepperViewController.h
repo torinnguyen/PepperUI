@@ -127,6 +127,7 @@
 
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDelegate> delegate;
 
+//This cannot be changed in free-to-try version
 @property (nonatomic, unsafe_unretained) id <PPScrollListViewControllerDataSource> dataSource;
 
 // Configurable on-the-fly
