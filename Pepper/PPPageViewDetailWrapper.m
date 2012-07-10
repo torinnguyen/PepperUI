@@ -57,7 +57,7 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)setContentView:(UIView *)theContentView
 {
-  [self reset];
+  [self reset:NO];
   
   [_myContentView removeFromSuperview];
   _myContentView = nil;
@@ -131,7 +131,7 @@ static UIImage *backgroundImageFlipped = nil;
 }
 
 - (void)layoutWithFrame:(CGRect)frame duration:(float)duration
-{
+{    
   //This is a bit complex
   float ratio = self.aspectRatio;
   ratio = [self initSmallerFrame:frame];
@@ -167,13 +167,13 @@ static UIImage *backgroundImageFlipped = nil;
    */
   
   if (duration <= 0) {
+    [self reset:NO];
     self.background.frame = bgframe;
     self.contentView.frame = contentFrame;
-    [self reset];
     return;
   }
   
-  [self reset];
+  [self reset:YES];
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.background.frame = bgframe;
     self.contentView.frame = contentFrame;
@@ -190,7 +190,7 @@ static UIImage *backgroundImageFlipped = nil;
   self.contentView = nil;
 }
 
-- (void)reset
+- (void)reset:(BOOL)animated
 {
   //Prevent unwanted delegate call;
   id prevDelegate = self.delegate;
@@ -200,14 +200,40 @@ static UIImage *backgroundImageFlipped = nil;
   self.zoomScale = 1.0f;
   
   //Kill 'em all
+  //if (!animated) {
   self.transform = CGAffineTransformIdentity;
   self.layer.transform = CATransform3DIdentity;
   self.background.transform = CGAffineTransformIdentity;
   self.background.layer.transform = CATransform3DIdentity;
   
+  if (self.contentView != nil && [self.contentView respondsToSelector:@selector(reset)])
+    [self.contentView performSelector:@selector(reset)];
+  
   self.delegate = prevDelegate;
+  return;
+  //}
+  
+  return;
+  
+  //Doesn't seem to have any effect
+  [UIView animateWithDuration:0.4 delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    self.transform = CGAffineTransformIdentity;
+    self.background.transform = CGAffineTransformIdentity;
+  } completion:^(BOOL finished) {
+    self.delegate = prevDelegate;
+  }];
+  
+  CABasicAnimation *theAnimation;
+  theAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
+  theAnimation.delegate = self;
+  theAnimation.duration = 0.4;
+  theAnimation.repeatCount = 0;
+  theAnimation.removedOnCompletion = YES;
+  theAnimation.fillMode = kCAFillModeBoth;
+  theAnimation.autoreverses = NO;
+  theAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
+  [self.background.layer addAnimation:theAnimation forKey:@"animateLayer"];
 }
-
 
 
 #pragma mark - UIScrollViewDelegate

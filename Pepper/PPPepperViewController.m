@@ -192,6 +192,12 @@ static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
 static float deviceFactor = 0;
 
+//Optimize for performance
+static int midXLandscape = 0;
+static int midXPortrait = 0;
+static int midYLandscape = 0;
+static int midYPortrait = 0;
+
 #pragma mark - View life cycle
 
 + (NSString*)version {
@@ -362,6 +368,12 @@ static float deviceFactor = 0;
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
 {
+  //Invalidate UI cache, causing problem because of status bar
+  midXLandscape = 0;
+  midXPortrait = 0;
+  midYLandscape = 0;
+  midYPortrait = 0;
+  
   [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
   
   //Switching from portrait to landscape, with enableOneSideZoom disabled, need to set to even pageIndex
@@ -397,6 +409,7 @@ static float deviceFactor = 0;
       
     }];
   }
+  [self updatePageScrollViewContentSizeForOrientation:toInterfaceOrientation];
   [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
   
   //Relayout 3D views with animation
@@ -775,10 +788,7 @@ static float deviceFactor = 0;
 }
 
 - (int)getMidXForOrientation:(UIInterfaceOrientation)orientation
-{
-  static int midXLandscape = 0;
-  static int midXPortrait = 0;
-  
+{  
   //Cached
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   if (isLandscape && midXLandscape > 0)
@@ -797,9 +807,6 @@ static float deviceFactor = 0;
 
 - (int)getMidYForOrientation:(UIInterfaceOrientation)orientation
 {
-  static int midYLandscape = 0;
-  static int midYPortrait = 0;
-  
   //Cached
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   if (isLandscape && midYLandscape > 0)
@@ -1570,7 +1577,7 @@ static float deviceFactor = 0;
   //Reset pages UI
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     subview.hidden = NO;
-    [subview reset];
+    [subview reset:NO];
   }
 
   [self updatePageScrollViewContentSize];
@@ -1710,7 +1717,9 @@ static float deviceFactor = 0;
   pageDetailView.tag = index; 
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
-  pageDetailView.customDelegate = self;
+  
+  BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
+  [pageDetailView setBackgroundImage:(useBookCoverImage ? bookCoverImage : pageBackgroundImage)];
    
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
@@ -1718,7 +1727,8 @@ static float deviceFactor = 0;
     pageDetailView.contentView = nil;
 
   [pageDetailView layoutWithFrame:pageFrame duration:0];
-  
+
+  pageDetailView.customDelegate = self;
   pageDetailView.hidden = NO;
   [self.pageScrollView addSubview:pageDetailView];
   [self.visiblePageViewArray addObject:pageDetailView];
@@ -1726,14 +1736,20 @@ static float deviceFactor = 0;
 
 - (void)updatePageScrollViewContentSize
 {
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
+  [self updatePageScrollViewContentSizeForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+}
+
+- (void)updatePageScrollViewContentSizeForOrientation:(UIInterfaceOrientation)orientation
+{
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   
   int _pageCount = self.hideFirstPage ? pageCount-1 : pageCount;
   if (!self.enableOneSideZoom && isLandscape)
     _pageCount = ceil(numPages / 2.0f);
     
-  CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(self.pageScrollView.bounds), 20);
+  CGRect onePageFrame = [self getFrameForPageIndex:0 forOrientation:orientation];
+  CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(onePageFrame), 20);
   self.pageScrollView.contentSize = contentSize;
 }
 
@@ -2916,24 +2932,18 @@ static float deviceFactor = 0;
       [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
 }
 
-- (void)didSnapPageScrollview {
-  
-  PPPageViewDetailWrapper *onePage = nil;
-  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
-    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      continue;
-    onePage = subview;
-    break;
-  }
+- (void)didSnapPageScrollview
+{
+  PPPageViewDetailWrapper *anyPage = [self.visiblePageViewArray objectAtIndex:0];
   
   float onePageWidth = 2*[self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  //if (onePage != nil)
-  //  onePageWidth = CGRectGetWidth(onePage.bounds);
+  if (anyPage != nil)
+    onePageWidth = CGRectGetWidth(anyPage.bounds);
   
   self.currentPageIndex = floor((self.pageScrollView.contentOffset.x) / onePageWidth);
   if (self.hideFirstPage)
     self.currentPageIndex += 1;
-  
+    
   self.pepperView.hidden = YES;
   self.pageScrollView.userInteractionEnabled = YES;
   self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
