@@ -627,8 +627,6 @@ static float deviceFactor = 0;
     //Correct behavior but sluggish
     if (CONTROL_INDEX_USE_TIMER) {
       [self animateControlIndexTo:snapTo duration:duration];
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, duration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-      });
       return;
     }
     
@@ -1521,7 +1519,9 @@ static float deviceFactor = 0;
     return;
   
   while (self.visiblePageViewArray.count > 0) {
-    [[self.visiblePageViewArray objectAtIndex:0] removeFromSuperview];
+    PPPageViewDetailWrapper *wrapper = [self.visiblePageViewArray objectAtIndex:0];
+    [wrapper unloadContent];
+    [wrapper removeFromSuperview];
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   self.visiblePageViewArray = nil;
@@ -1551,7 +1551,10 @@ static float deviceFactor = 0;
 }
 
 - (void)setupPageScrollview
-{  
+{
+  if (self.reusePageViewArray != nil)
+    return;
+  
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
   
@@ -1569,17 +1572,6 @@ static float deviceFactor = 0;
   [self updatePageScrollViewContentSize]; 
   [self scrollToPage:self.currentPageIndex duration:0];
   [self.view bringSubviewToFront:self.pageScrollView];
-  
-  //Start loading index
-  /*
-  int startIndex = self.currentPageIndex - 1;
-  if (startIndex < 0)     startIndex = 0;
-  if (self.hideFirstPage && startIndex < 1)
-    startIndex = 1;
-  
-  //Start downloading PDFs
-  [self fetchFullsizeInBackground:startIndex];
-  */
 }
 
 - (void)reusePageScrollview {
@@ -2204,8 +2196,8 @@ static float deviceFactor = 0;
   self.isBookView = NO;
   self.isDetailView = NO;
   
-  //Hide other view
-  [self destroyPageScrollView];
+  //Destroy other view
+  //[self destroyPageScrollView];
   
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
@@ -2418,7 +2410,7 @@ static float deviceFactor = 0;
     [self hideBookCoverFromFirstPage];
   });
   
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self removeBookCoverFromFirstPage];
   });
 }
@@ -2442,7 +2434,7 @@ static float deviceFactor = 0;
   self.theBookCover.hidden = NO;
   self.theBookCover.transform = CGAffineTransformIdentity;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
-  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1.0);
+  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
   
   //De-reference, dealloc
   self.theBookCover = nil;
@@ -2773,7 +2765,10 @@ static float deviceFactor = 0;
       [self.delegate ppPepperViewController:self didOpenPageIndex:self.currentPageIndex];
     return;
   }
-  
+
+  //Destroy page view
+  [self destroyPageScrollView];
+
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didClosePageIndex:)])
     [self.delegate ppPepperViewController:self didClosePageIndex:self.currentPageIndex];

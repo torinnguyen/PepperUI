@@ -50,6 +50,11 @@ static UIImage *backgroundImageFlipped = nil;
   return self;
 }
 
+- (void)dealloc
+{
+  [self unloadContent];
+}
+
 - (void)setContentView:(UIView *)theContentView
 {
   [self reset];
@@ -181,6 +186,7 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)unloadContent
 {
+  self.delegate = nil;
   [self.contentView removeFromSuperview];
   self.contentView = nil;
 }
