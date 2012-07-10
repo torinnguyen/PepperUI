@@ -156,10 +156,12 @@
 - (int)getCurrentBookIndex;
 - (BOOL)hasBookInBookScrollView:(int)index;
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
+- (void)closeCurrentBook:(BOOL)animated;
 - (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index;
 
 // Pepper list
 - (void)openPageIndex:(int)pageIndex;
+- (void)closeCurrentPage:(BOOL)animated;
 - (BOOL)hasPageInPepperView:(int)index;
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index;
 - (void)animateControlIndexTo:(float)index duration:(float)duration;

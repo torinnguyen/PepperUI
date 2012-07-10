@@ -1795,7 +1795,8 @@ static int midYPortrait = 0;
   }];
 }
 
-- (void)openPageIndex:(int)pageIndex {
+- (void)openPageIndex:(int)pageIndex
+{
   if (self.isBookView) {
     NSLog(@"You can't call this function in book mode");
     return;
@@ -1818,6 +1819,24 @@ static int midYPortrait = 0;
   [self showFullscreenUsingTimer];
 }
 
+- (void)closeCurrentPage:(BOOL)animated
+{
+  if (self.isBookView) {
+    NSLog(@"You can't call this function in book mode");
+    return;
+  }
+  if ([self isPepperView]) {
+    NSLog(@"You can't call this function in pepper mode");
+    return;
+  }
+  
+  if (animated) {
+    [self showHalfOpenUsingTimer];
+    return;
+  }
+  
+  [self showHalfOpen:NO];
+}
 
 
 #pragma mark - Flipping implementation
