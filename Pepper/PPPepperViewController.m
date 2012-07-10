@@ -278,7 +278,9 @@ static float deviceFactor = 0;
   self.view.clipsToBounds = YES;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-   
+  
+  //Initialize big views, in their correct order
+  
   if (self.bookScrollView == nil) {
     self.bookScrollView = [[UIScrollView alloc] init];
     self.bookScrollView.frame = self.view.bounds;
@@ -292,6 +294,15 @@ static float deviceFactor = 0;
     self.bookScrollView.delegate = self;
     self.bookScrollView.alpha = 1;
     [self.view addSubview:self.bookScrollView];
+  }
+  
+  if (self.pepperView == nil) {
+    self.pepperView = [[UIScrollView alloc] init];
+    self.pepperView.frame = self.view.bounds;
+    self.pepperView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.pepperView.autoresizesSubviews = NO;
+    self.pepperView.hidden = YES;
+    [self.view addSubview:self.pepperView];
   }
   
   if (self.pageScrollView == nil) {
@@ -308,15 +319,6 @@ static float deviceFactor = 0;
     self.pageScrollView.hidden = YES;
     self.pageScrollView.pagingEnabled = YES;
     [self.view addSubview:self.pageScrollView];
-  }
-  
-  if (self.pepperView == nil) {
-    self.pepperView = [[UIScrollView alloc] init];
-    self.pepperView.frame = self.view.bounds;
-    self.pepperView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.pepperView.autoresizesSubviews = NO;
-    self.pepperView.hidden = YES;
-    [self.view addSubview:self.pepperView];
   }
 }
 
@@ -363,10 +365,9 @@ static float deviceFactor = 0;
   [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
   
   //Switching from portrait to landscape, with enableOneSideZoom disabled, need to set to even pageIndex
-  if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape(toInterfaceOrientation)) {
+  if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape(toInterfaceOrientation))
     if ((int)self.currentPageIndex % 2 != 0)
       self.currentPageIndex -= 1;
-  }
   
   //Update new frame sizes
   [self updateFrameSizesForOrientation:toInterfaceOrientation];
@@ -509,12 +510,13 @@ static float deviceFactor = 0;
 
   //Optional: Delegate can decide to show or not
   BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnPageIndex:)];
-  if (hasDelegate)
+  if (hasDelegate) {
     [self.delegate ppPepperViewController:self didTapOnPageIndex:tag];
+    return;
+  }
   
   //Without delegate, we open it automatically
-  else 
-    [self openPageIndex:tag];
+  [self openPageIndex:tag];
 }
 
 
@@ -1533,7 +1535,7 @@ static float deviceFactor = 0;
 }
 
 - (void)setupReuseablePoolPageViews
-{  
+{
   //No need to re-setup
   if (self.reusePageViewArray != nil || self.reusePageViewArray.count > 0)
     return;
@@ -1551,27 +1553,21 @@ static float deviceFactor = 0;
 }
 
 - (void)setupPageScrollview
-{
-  if (self.reusePageViewArray != nil)
-    return;
-  
+{  
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
   
-  //Populate page scrollview  
+  //Populate page scrollview
   [self reusePageScrollview];
   
   //Reset pages UI
-  for (UIView *subview in self.visiblePageViewArray) {
-    if (![subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      continue;
+  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     subview.hidden = NO;
-    [(PPPageViewDetailWrapper*)subview reset];
+    [subview reset];
   }
-        
-  [self updatePageScrollViewContentSize]; 
+
+  [self updatePageScrollViewContentSize];
   [self scrollToPage:self.currentPageIndex duration:0];
-  [self.view bringSubviewToFront:self.pageScrollView];
 }
 
 - (void)reusePageScrollview {
@@ -1763,9 +1759,16 @@ static float deviceFactor = 0;
     NSLog(@"You can't call this function in fullscreen mode");
     return;
   }
-
+  
+  //In landscape, with enableOneSideZoom disabled, need to set to even pageIndex
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
+  if (!self.enableOneSideZoom && isLandscape)
+    if (pageIndex % 2 != 0)
+      pageIndex -= 1;
+  
   self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
+  
   [self destroyBookScrollView];
   [self showFullscreenUsingTimer];
 }
@@ -2154,8 +2157,8 @@ static float deviceFactor = 0;
   self.isBookView = NO;
   self.isDetailView = YES;
   float diff = fabs(self.controlAngle - 0) / 45.0;
-
-  //Populate detailed page scrollview
+  
+  //Populate detailed page scrollview & scroll to the correct position
   [self setupPageScrollview];
 
   if (!self.enableOneSideZoom)    diff /= 1.3;
@@ -2186,7 +2189,6 @@ static float deviceFactor = 0;
     self.controlAngle = 0;
   } completion:^(BOOL finished) {
     self.pageScrollView.hidden = NO;
-    [[self.pageScrollView superview] bringSubviewToFront:self.pageScrollView];
   }];
 }
 
@@ -2931,7 +2933,6 @@ static float deviceFactor = 0;
   self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
   self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
   self.controlAngle = 0;
-  //[self.view bringSubviewToFront:self.pageScrollView];
   
   [self reusePageScrollview];
   
