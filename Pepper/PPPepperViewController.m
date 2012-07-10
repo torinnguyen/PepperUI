@@ -384,14 +384,12 @@ static float deviceFactor = 0;
   }
   [self scrollToBook:self.currentBookIndex duration:duration];
   
-  //Relayout fullsize views with animation
-  for (UIView *subview in self.visiblePageViewArray) {
+  //Relayout detail views with animation
+  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     int index = subview.tag;
     CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
-    //Layout subviews of each fullscreen page
-    if ([subview isKindOfClass:[PPPageViewDetailWrapper class]])
-      [(PPPageViewDetailWrapper*)subview layoutWithFrame:frame duration:duration];
+    [subview layoutWithFrame:frame duration:duration];
     
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       subview.frame = frame;
@@ -402,7 +400,7 @@ static float deviceFactor = 0;
   [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
   
   //Relayout 3D views with animation
-  for (UIView *subview in self.visiblePepperWrapperArray) {
+  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
     int index = subview.tag;
     CGRect frame = [self getPepperFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
@@ -1310,19 +1308,16 @@ static float deviceFactor = 0;
   if (index < 0 || index >= bookCount)
     return;
   
-  for (PPPageViewContentWrapper *subview in self.visibleBookViewArray) {
-    if (subview.tag != index)
-      continue;
-    if (![subview isKindOfClass:[PPPageViewContentWrapper class]])
-      continue;
-    [self.reuseBookViewArray addObject:subview];
-    [self.visibleBookViewArray removeObject:subview];
-    
-    //This is quite expensive, substitute by just hiding it & use self.visibleBookViewArray to keep track
-    //[subview removeFromSuperview];
-    subview.hidden = YES;
-    break;
-  }
+  PPPageViewContentWrapper *subview = [self getBookViewAtIndex:index];
+  if (subview == nil)
+    return;
+  
+  [self.reuseBookViewArray addObject:subview];
+  [self.visibleBookViewArray removeObject:subview];
+  
+  //This is quite expensive, substitute by just hiding it & use self.visibleBookViewArray to keep track
+  //[subview removeFromSuperview];
+  subview.hidden = YES;
 }
 
 - (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index
@@ -1497,7 +1492,19 @@ static float deviceFactor = 0;
   [self flattenAllPepperViews:0];
   
   //Clone the book cover and add to backside of first page
-  [self addBookCoverToFirstPage:YES];
+  if (!self.hideFirstPage)
+  {
+    [self addBookCoverToFirstPage:YES];
+  }
+  //Hide the book cover immediately
+  else
+  {
+    UIView *bookCover = [self getBookViewAtIndex:self.currentBookIndex];
+    bookCover.hidden = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, self.animationSlowmoFactor*OPEN_BOOK_DURATION * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+      bookCover.hidden = NO;
+    });
+  }
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenBookIndex:andDuration:)])
@@ -1726,7 +1733,7 @@ static float deviceFactor = 0;
   if (!self.enableOneSideZoom && isLandscape)
     _pageCount = ceil(numPages / 2.0f);
     
-  CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(self.pageScrollView.bounds), 100);
+  CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(self.pageScrollView.bounds), 20);
   self.pageScrollView.contentSize = contentSize;
 }
 
@@ -1746,7 +1753,7 @@ static float deviceFactor = 0;
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
   } completion:^(BOOL finished) {
-    
+  
   }];
 }
 
@@ -2396,7 +2403,7 @@ static float deviceFactor = 0;
   firstPageView.hidden = NO;
   [firstPageView addSubview:self.theBookCover];
   [firstPageView.superview bringSubviewToFront:firstPageView];
-  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, 1);
+  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
   self.theBookCover.frame = firstPageView.bounds;
   self.theBookCover.hidden = NO;
   self.theBookCover.alpha = 1;
@@ -2412,7 +2419,7 @@ static float deviceFactor = 0;
     [self hideBookCoverFromFirstPage];
   });
   
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.2) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self removeBookCoverFromFirstPage];
   });
 }
@@ -2524,9 +2531,8 @@ static float deviceFactor = 0;
   
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
-  for (UIView *subview in self.visibleBookViewArray)
-    if (subview.tag == self.currentBookIndex)
-      subview.alpha = 0;
+  UIView *bookCover = [self getBookViewAtIndex:self.currentBookIndex];
+  [bookCover setAlpha:0];
   
   //Notify the delegate
   if (self.controlAngle < -THRESHOLD_HALF_ANGLE)
@@ -2921,8 +2927,8 @@ static float deviceFactor = 0;
   }
   
   float onePageWidth = 2*[self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  if (onePage != nil)
-    onePageWidth = CGRectGetWidth(onePage.bounds);
+  //if (onePage != nil)
+  //  onePageWidth = CGRectGetWidth(onePage.bounds);
   
   self.currentPageIndex = floor((self.pageScrollView.contentOffset.x) / onePageWidth);
   if (self.hideFirstPage)

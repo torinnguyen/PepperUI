@@ -186,7 +186,6 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)unloadContent
 {
-  self.delegate = nil;
   [self.contentView removeFromSuperview];
   self.contentView = nil;
 }
