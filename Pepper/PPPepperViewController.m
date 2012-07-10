@@ -393,6 +393,28 @@ static int midYPortrait = 0;
     } completion:^(BOOL finished) {
       
     }];
+    
+    //Animate the tranformation. Not perfect yet, but ok at high speed
+    
+    float scale = (index == self.currentBookIndex) ? MAX_BOOK_SCALE : MIN_BOOK_SCALE;
+    float angle = (index == self.currentBookIndex) ? 0 : MAX_BOOK_ROTATE;
+    CATransform3D transform = CATransform3DIdentity;
+    transform.m34 = self.m34;
+    transform = CATransform3DScale(transform, scale, scale, 1.0);
+    if (self.enableBookRotate)
+      transform = CATransform3DRotate(transform, angle, 0, 1, 0);
+    
+    CABasicAnimation *theAnimation;
+    theAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
+    theAnimation.delegate = nil;
+    theAnimation.duration = duration;
+    theAnimation.repeatCount = 0;
+    theAnimation.removedOnCompletion = YES;
+    theAnimation.fillMode = kCAFillModeForwards;
+    theAnimation.autoreverses = NO;
+    theAnimation.fromValue = [NSValue valueWithCATransform3D:subview.layer.transform];
+    theAnimation.toValue = [NSValue valueWithCATransform3D:transform];
+    [subview.layer addAnimation:theAnimation forKey:[NSString stringWithFormat:@"animateBookLayerTransform%d", index]];
   }
   [self scrollToBook:self.currentBookIndex duration:duration];
   
@@ -2382,15 +2404,8 @@ static int midYPortrait = 0;
     animation.duration = self.animationSlowmoFactor * animationDuration;
     animation.fillMode = kCAFillModeForwards;
     animation.removedOnCompletion = NO;
-    [animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut]];
-    
-    CAAnimationGroup *animationGroup = [CAAnimationGroup animation];
-    animationGroup.fillMode = kCAFillModeBoth;
-    animationGroup.removedOnCompletion = NO;
-    [animationGroup setDuration:self.animationSlowmoFactor * animationDuration];
-    [animationGroup setAnimations:[NSArray arrayWithObject:animation]];
-    
-    [layer addAnimation:animationGroup forKey:[NSString stringWithFormat:@"closeBookAnimation%d",i]];
+    [animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut]];    
+    [layer addAnimation:animation forKey:[NSString stringWithFormat:@"closeBookAnimation%d",i]];
   }
 }
 
