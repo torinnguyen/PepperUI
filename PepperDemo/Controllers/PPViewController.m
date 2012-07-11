@@ -51,7 +51,15 @@
   self.pepperViewController.delegate = self;        //we are simply printing out all delegate events in this demo
   //self.pepperViewController.dataSource = self;    //refer to onContentChange function below for this config
   
-  //Optional
+  //Optional customization
+  /*
+  self.pepperViewController.enableBookShadow = YES;
+  self.pepperViewController.enableBorderlessGraphic = YES;
+  self.pepperViewController.enableOneSideZoom = YES;
+  self.pepperViewController.hideFirstPage = YES;
+   */
+  
+  //Update customization options
   [self onSpeedChange:self.speedSegmented];
   [self onSwitchRandomPage:self.switchRandomPage];
   [self onSwitchScaleOnDeviceRotation:self.switchScaleOnDeviceRotation];
