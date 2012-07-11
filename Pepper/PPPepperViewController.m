@@ -519,11 +519,12 @@ static int midYPortrait = 0;
 
 - (void)PPPageViewWrapper:(PPPageViewContentWrapper*)thePage viewDidTap:(int)tag
 {
+  //UI is busy
   if ([self.controlAngleTimer isValid] || [self.controlIndexTimer isValid])
     return;
   if (!self.isBookView && self.controlAngle == 0)
     return;
-  
+    
   if (thePage.isBook) {
     if (self.currentBookIndex != tag) {
       [self scrollToBook:tag animated:YES];
@@ -543,6 +544,10 @@ static int midYPortrait = 0;
     
     return;
   }
+  
+  //Tag correction due to wrong z-index
+  if (tag < self.controlIndex)      tag = self.controlIndex - 0.5;
+  else                              tag = self.controlIndex + 0.5;
 
   //Optional: Delegate can decide to show or not
   BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnPageIndex:)];
@@ -634,11 +639,11 @@ static int midYPortrait = 0;
   float direction = velocity.x / fabs(velocity.x);
   float rawNormalizedVelocityX = normalizedVelocityX;
   
-  if (rawNormalizedVelocityX < 1)          rawNormalizedVelocityX = rawNormalizedVelocityX * 0.8;       //expansion
-  else if (rawNormalizedVelocityX > 1.1)   rawNormalizedVelocityX = 1 + (rawNormalizedVelocityX-1)/2;   //compression
+  if (rawNormalizedVelocityX < 1)           rawNormalizedVelocityX = rawNormalizedVelocityX * 0.8;       //expansion
+  else if (rawNormalizedVelocityX > 1.1)    rawNormalizedVelocityX = 1 + (rawNormalizedVelocityX-1)/2;   //compression
   
-  if (normalizedVelocityX < 1)          normalizedVelocityX = 1;
-  else if (normalizedVelocityX > 2.0)   normalizedVelocityX = 2.0;
+  if (normalizedVelocityX < 1)              normalizedVelocityX = 1;
+  else if (normalizedVelocityX > 2.0)       normalizedVelocityX = 2.0;
   
   //Snap to half open
   if (recognizer.state == UIGestureRecognizerStateEnded) {
@@ -975,6 +980,7 @@ static int midYPortrait = 0;
     PPPageViewContentWrapper *box = [[PPPageViewContentWrapper alloc] initWithFrame:pageFrame];
     box.delegate = self;
     box.alpha = 1;
+    box.tag = -1;
     [self.reusePepperWrapperArray addObject:box];
   }
 }
@@ -1143,6 +1149,7 @@ static int midYPortrait = 0;
   for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
     if (subview.tag != index)
       continue;
+    subview.tag = -1;
     [self.reusePepperWrapperArray addObject:subview];
     [self.visiblePepperWrapperArray removeObject:subview];
     
