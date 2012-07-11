@@ -134,8 +134,8 @@
 @property (nonatomic, assign) BOOL hideFirstPage;
 @property (nonatomic, assign) BOOL enableBorderlessGraphic;
 @property (nonatomic, assign) BOOL enableBookScale;
-@property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableBookRotate;
+@property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableOneSideZoom;
 @property (nonatomic, assign) BOOL enableOneSideMiddleZoom;
 @property (nonatomic, assign) BOOL enableHighSpeedScrolling;
@@ -155,22 +155,22 @@
 
 // Book list
 - (int)getCurrentBookIndex;
-- (BOOL)hasBookInBookScrollView:(int)index;
+- (BOOL)hasBookInBookScrollView:(int)bookIndex;
 - (void)openCurrentBookAtPageIndex:(int)pageIndex;
 - (void)closeCurrentBook:(BOOL)animated;
-- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)index;
+- (PPPageViewContentWrapper*)getBookViewAtIndex:(int)bookIndex;
 
 // Pepper list
 - (void)openPageIndex:(int)pageIndex;
 - (void)closeCurrentPage:(BOOL)animated;
 - (BOOL)hasPageInPepperView:(int)index;
-- (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)index;
+- (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)pageIndex;
 - (void)animateControlIndexTo:(float)index duration:(float)duration;
 
 // Page list
 - (int)getCurrentPageIndex;
-- (BOOL)hasPageInPageScrollView:(int)index;
+- (BOOL)hasPageInPageScrollView:(int)pageIndex;
 - (void)scrollToPage:(int)pageIndex duration:(float)duration;
-- (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)index;
+- (PPPageViewDetailWrapper*)getDetailViewAtIndex:(int)pageIndex;
 
 @end
