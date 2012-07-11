@@ -22,6 +22,7 @@
 #define ENABLE_BOOK_SHADOW            YES         //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
 #define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
+#define ENABLE_ONE_SIDE_MIDDLE_ZOOM   YES         //zoom into one side, anchor at middle of the page
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
 //Graphics
@@ -134,6 +135,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize enableBookShadow;
 @synthesize enableBookRotate;
 @synthesize enableOneSideZoom;
+@synthesize enableOneSideMiddleZoom;
 @synthesize enableHighSpeedScrolling;
 @synthesize scaleOnDeviceRotation;
 
@@ -201,7 +203,7 @@ static int midYPortrait = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.3.3";
+  return @"1.3.4";
 }
 
 - (id)dataSource {
@@ -248,6 +250,7 @@ static int midYPortrait = 0;
   self.enableBookShadow = ENABLE_BOOK_SHADOW;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.enableOneSideZoom = ENABLE_ONE_SIDE_ZOOM;
+  self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
   
@@ -1604,6 +1607,19 @@ static int midYPortrait = 0;
 
   [self updatePageScrollViewContentSize];
   [self scrollToPage:self.currentPageIndex duration:0];
+  
+  if (!self.enableOneSideMiddleZoom)
+    return;
+    
+  //Scroll to vertically center
+  PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:self.currentPageIndex];
+  if (wrapper == nil)
+    return;
+  
+  CGSize contentSize = wrapper.contentSize;
+  int offsetX = 0;
+  int offsetY = contentSize.height/2 - wrapper.bounds.size.height/2;
+  wrapper.contentOffset = CGPointMake(offsetX, offsetY);
 }
 
 - (void)reusePageScrollview {
@@ -2223,7 +2239,7 @@ static int midYPortrait = 0;
   float diff = fabs(self.controlAngle - 0) / 45.0;
   
   //Populate detailed page scrollview & scroll to the correct position
-  [self setupPageScrollview];
+  //[self setupPageScrollview];
 
   if (!self.enableOneSideZoom)    diff /= 1.3;
   else                            diff *= 1.3;
@@ -2261,10 +2277,7 @@ static int midYPortrait = 0;
   BOOL previousIsBookView = self.isBookView;
   self.isBookView = NO;
   self.isDetailView = NO;
-  
-  //Destroy other view
-  //[self destroyPageScrollView];
-  
+    
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
   if (!previousIsBookView) {
@@ -2541,13 +2554,16 @@ static int midYPortrait = 0;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
+  
+  BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
+  BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
     
   //Memory management
-  if (previousControlAngle < 0 && self.controlAngle >= 0) {
+  if (switchingToFullscreen) {
     [self setupPageScrollview];
     self.pepperView.hidden = YES;
   }
-  else if (previousControlAngle >= 0 && self.controlAngle < 0) {
+  else if (switchingToPepper) {
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
@@ -2613,6 +2629,7 @@ static int midYPortrait = 0;
   self.currentPageIndex = self.controlIndex - 0.5;
   
   int frameY = [self getFrameY];
+  int midY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
   float aspectRatio = (float)self.frameWidth / (float)self.frameHeight;
@@ -2625,7 +2642,15 @@ static int midYPortrait = 0;
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
-    frame.origin.y = leftFrameOriginal.origin.y - (leftFrameOriginal.origin.y * frameScale) - EDGE_PADDING*frameScale;
+    
+    if (!self.enableOneSideMiddleZoom) {
+      frame.origin.y = leftFrameOriginal.origin.y - (leftFrameOriginal.origin.y * frameScale) - EDGE_PADDING*frameScale;
+    }
+    else {
+      float fullHeight = self.view.bounds.size.width / aspectRatio;
+      float dy = fullHeight/2 - (midY - leftFrameOriginal.origin.y);
+      frame.origin.y = leftFrameOriginal.origin.y - (dy * frameScale) - EDGE_PADDING*frameScale;
+    }
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }

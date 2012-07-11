@@ -58,6 +58,7 @@
   self.pepperViewController.enableOneSideZoom = YES;
   self.pepperViewController.hideFirstPage = YES;
    */
+  self.pepperViewController.enableOneSideZoom = YES;
   
   //Update customization options
   [self onSpeedChange:self.speedSegmented];

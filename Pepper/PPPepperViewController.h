@@ -137,6 +137,7 @@
 @property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableBookRotate;
 @property (nonatomic, assign) BOOL enableOneSideZoom;
+@property (nonatomic, assign) BOOL enableOneSideMiddleZoom;
 @property (nonatomic, assign) BOOL enableHighSpeedScrolling;
 @property (nonatomic, assign) BOOL scaleOnDeviceRotation;
 @property (nonatomic, assign) float animationSlowmoFactor;
