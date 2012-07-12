@@ -19,9 +19,9 @@
 #define ENABLE_BORDERLESS_GRAPHIC     NO          //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 #define ENABLE_HIGH_SPEED_SCROLLING   YES         //in 3D mode only
 #define ENABLE_BOOK_SCALE             YES         //other book not in center will be smaller
-#define ENABLE_BOOK_SHADOW            YES         //dynamic shadow below books
+#define ENABLE_BOOK_SHADOW            NO          //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
-#define ENABLE_ONE_SIDE_ZOOM          YES         //zoom into one side, instead of side-by-side like Paper
+#define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
@@ -2656,7 +2656,7 @@ static int midYPortrait = 0;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
     
-    if (!self.enableOneSideMiddleZoom)      fullFrameY = - contentOffsetY;
+    if (!self.enableOneSideMiddleZoom)      fullFrameY = 0;                       //- contentOffsetY;
     else                                    fullFrameY = midY - fullHeight/2;
 
     float fullDy = leftFrameOriginal.origin.y - fullFrameY;
