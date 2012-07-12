@@ -21,7 +21,7 @@
 #define ENABLE_BOOK_SCALE             YES         //other book not in center will be smaller
 #define ENABLE_BOOK_SHADOW            NO          //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
-#define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
+#define ENABLE_ONE_SIDE_ZOOM          YES         //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
@@ -76,6 +76,7 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) float m34;
 @property (nonatomic, assign) int numBooks;
 @property (nonatomic, assign) int numPages;
+@property (nonatomic, assign) float currenPageContentOffsetY;
 
 //Control
 @property (nonatomic, assign) float controlAngle;
@@ -182,6 +183,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize frameWidth, frameHeight;
 @synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
 @synthesize numBooks, numPages;
+@synthesize currenPageContentOffsetY;
 
 //Page
 @synthesize currentPageIndex = _currentPageIndex;
@@ -2336,6 +2338,7 @@ static int midYPortrait = 0;
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
     self.controlIndex = self.controlIndex;
+    self.currenPageContentOffsetY = 0;
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
@@ -2564,7 +2567,6 @@ static int midYPortrait = 0;
   
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
-  static float contentOffsetY = 0;
     
   //Memory management
   if (switchingToFullscreen) {
@@ -2577,7 +2579,7 @@ static int midYPortrait = 0;
     self.pepperView.hidden = NO;
     
     PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
-    contentOffsetY = detailView.contentOffset.y;
+    self.currenPageContentOffsetY = detailView.contentOffset.y;
   }
   self.pageScrollView.hidden = (newControlAngle < 0);
   
@@ -2639,8 +2641,9 @@ static int midYPortrait = 0;
   //Default bias to left page
   self.currentPageIndex = self.controlIndex - 0.5;
   
-  int frameY = [self getFrameY];
-  int fullFrameY = 0;
+  float fullFrameY = 0;   //desired Y position of the fullsize page
+  
+  int frameY = [self getFrameY];  
   int midY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
@@ -2655,10 +2658,10 @@ static int midYPortrait = 0;
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
-    
-    if (!self.enableOneSideMiddleZoom)      fullFrameY = 0;                       //- contentOffsetY;
+        
+    if (!self.enableOneSideMiddleZoom)      fullFrameY = - self.currenPageContentOffsetY;    //zoom halfway
     else                                    fullFrameY = midY - fullHeight/2;
-
+    
     float fullDy = leftFrameOriginal.origin.y - fullFrameY;
     frame.origin.y = leftFrameOriginal.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;
     
@@ -2849,6 +2852,7 @@ static int midYPortrait = 0;
   self.controlAngleTimer = nil;
   
   self.controlAngle = self.controlAngleTimerTarget;
+  self.currenPageContentOffsetY = 0;
   
   //Not open fullscreen
   if (self.controlAngle >= 0) {
