@@ -21,7 +21,7 @@
 #define ENABLE_BOOK_SCALE             YES         //other book not in center will be smaller
 #define ENABLE_BOOK_SHADOW            NO          //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
-#define ENABLE_ONE_SIDE_ZOOM          YES         //zoom into one side, instead of side-by-side like Paper
+#define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
@@ -53,6 +53,7 @@
 #define CONTROL_INDEX_USE_TIMER      YES
 #define M34_IPAD                     (-1.0 / 1300.0)  //0:flat, more negative: more perspective
 #define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
+#define INVALID_NUMBER               999999
 
 //Declare once, used everywhere
 static UIImage *bookCoverImage = nil;
@@ -205,7 +206,7 @@ static int midYPortrait = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.3.4";
+  return @"1.3.5";
 }
 
 - (id)dataSource {
@@ -2565,11 +2566,22 @@ static int midYPortrait = 0;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
   
+  //BOOL hasNoBookView = self.reuseBookViewArray == nil;
+  //BOOL hasNoPepperView = self.reusePepperWrapperArray == nil;
+  BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
+  BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && self.controlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
+  
+  //Memory management & setup
+  if (switchingFromPepperToFullscreen) {
+    self.currenPageContentOffsetY = INVALID_NUMBER;
     
-  //Memory management
-  if (switchingToFullscreen) {
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenPageIndex:)])
+      [self.delegate ppPepperViewController:self willOpenPageIndex:self.currentPageIndex];
+  }
+  else if (switchingToFullscreen) {
     [self setupPageScrollview];
     self.pepperView.hidden = YES;
   }
@@ -2658,9 +2670,17 @@ static int midYPortrait = 0;
     frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
     frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
     frame.size.height = frame.size.width / aspectRatio;
-        
-    if (!self.enableOneSideMiddleZoom)      fullFrameY = - self.currenPageContentOffsetY;    //zoom halfway
-    else                                    fullFrameY = midY - fullHeight/2;
+
+    //Reset content offset upon opening
+    if (self.currenPageContentOffsetY == INVALID_NUMBER)
+      self.currenPageContentOffsetY = 0;
+
+    //Intermediate zoom OUT (normal case)
+    fullFrameY = - self.currenPageContentOffsetY;
+    
+    //Zoom INTO middle of page
+    if (hasNoPageScrollView && self.enableOneSideMiddleZoom)
+      fullFrameY = midY - fullHeight/2;
     
     float fullDy = leftFrameOriginal.origin.y - fullFrameY;
     frame.origin.y = leftFrameOriginal.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;

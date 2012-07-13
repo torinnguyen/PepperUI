@@ -56,6 +56,7 @@
   self.pepperViewController.enableBookShadow = YES;
   self.pepperViewController.enableBorderlessGraphic = YES;
   self.pepperViewController.enableOneSideZoom = YES;
+  self.pepperViewController.enableOneSideMiddleZoom = YES;
   self.pepperViewController.hideFirstPage = YES;
    */
   
@@ -419,6 +420,11 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didEndZoomingWithPageIndex:(int)pageIndex zoomScale:(float)zoomScale
 {
   NSLog(@"%@", [NSString stringWithFormat:@"didEndZoomingWithPageIndex:%d zoomScale:%.2f", pageIndex, zoomScale]);
+}
+
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList willOpenPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"willOpenPageIndex:%d", pageIndex]);  
 }
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenPageIndex:(int)pageIndex
