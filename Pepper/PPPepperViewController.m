@@ -615,7 +615,7 @@ static int midYPortrait = 0;
     return;
   }
   
-  float boost = 1.0f;
+  float boost = 1.25f;
   if (self.enableOneSideZoom && recognizer.scale > 1.0)
     boost = 0.3f;
   
@@ -952,6 +952,8 @@ static int midYPortrait = 0;
 - (void)destroyPeperView
 { 
   if (self.reusePepperWrapperArray == nil)
+    return;
+  if (self.controlAngle < 0 && self.controlAngle >= -THRESHOLD_HALF_ANGLE)
     return;
   
   while (self.visiblePepperWrapperArray.count > 0) {
@@ -1567,6 +1569,8 @@ static int midYPortrait = 0;
 - (void)destroyPageScrollView
 {
   if (self.reusePageViewArray == nil)
+    return;
+  if (self.controlAngle >= 0)
     return;
   
   while (self.visiblePageViewArray.count > 0) {
@@ -2255,6 +2259,9 @@ static int midYPortrait = 0;
   else                            diff *= 1.3;
     
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
+  
+  //Worst case senario
+  [self performSelector:@selector(destroyPeperView) withObject:nil afterDelay:1.5 * self.animationSlowmoFactor];
 }
 
 - (void)showFullscreen:(BOOL)animated
@@ -2284,17 +2291,18 @@ static int midYPortrait = 0;
 
 - (void)showHalfOpenUsingTimer
 {
-  BOOL previousIsBookView = self.isBookView;
   self.isBookView = NO;
   self.isDetailView = NO;
     
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
-  if (!previousIsBookView) {
+  /*
+  if (self.reuseBookViewArray == nil) {
     [self setupReuseablePoolBookViews];
     [self reuseBookScrollView];
     [self updateBookScrollViewBookScale];
   }
+   */
 
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
   float duration = diff * 1.3;
@@ -2302,6 +2310,9 @@ static int midYPortrait = 0;
   if (duration > 0.5)     duration = 0.5;
     
   [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*duration];
+
+  //Worst case senario
+  [self performSelector:@selector(destroyPageScrollView) withObject:nil afterDelay:1.5 * self.animationSlowmoFactor];
 }
 
 //
@@ -2349,7 +2360,6 @@ static int midYPortrait = 0;
 
 - (void)closeCurrentBook:(BOOL)animated
 {
-  self.isBookView = YES;
   self.isDetailView = NO;
   
   float diff = fabs(self.controlAngle - (-MAXIMUM_ANGLE)) / 90.0 / 1.3;
@@ -2392,6 +2402,11 @@ static int midYPortrait = 0;
   
   //This is where magic happens (animation)
   [self flattenAllPepperViews:diff];
+  
+  //Flag
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    self.isBookView = YES;
+  });
 }
 
 - (void)flattenAllPepperViews:(float)animationDuration
@@ -2544,14 +2559,17 @@ static int midYPortrait = 0;
 //
 - (void)snapControlAngle
 {  
-  if (self.controlAngle > -THRESHOLD_FULL_ANGLE)
+  if (self.controlAngle > -THRESHOLD_FULL_ANGLE) {
     [self showFullscreenUsingTimer];
+  }
   
-  else if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE)
+  else if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE) {
     [self showHalfOpenUsingTimer];
+  }
   
-  else
+  else {
     [self closeCurrentBook:YES];
+  }
 }
 
 // This function controls everything about zooming
@@ -2566,12 +2584,13 @@ static int midYPortrait = 0;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
   
-  //BOOL hasNoBookView = self.reuseBookViewArray == nil;
+  BOOL hasNoBookView = self.reuseBookViewArray == nil;
   //BOOL hasNoPepperView = self.reusePepperWrapperArray == nil;
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && self.controlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
+  BOOL switchingToBookView = hasNoBookView && self.controlAngle < -THRESHOLD_HALF_ANGLE;
   
   //Memory management & setup
   if (switchingFromPepperToFullscreen) {
@@ -2586,14 +2605,20 @@ static int midYPortrait = 0;
     self.pepperView.hidden = YES;
   }
   else if (switchingToPepper) {
+
+    //For intermediate zoom OUT
+    PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
+    self.currenPageContentOffsetY = detailView.contentOffset.y;
+    
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
-    
-    PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
-    self.currenPageContentOffsetY = detailView.contentOffset.y;
   }
+  
+  //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
+  if (!self.isBookView && newControlAngle < 0)
+    self.pepperView.hidden = NO;
   
   float scale = 1;
   BOOL isClosing = (newControlAngle < -THRESHOLD_HALF_ANGLE);
@@ -3001,8 +3026,8 @@ static int midYPortrait = 0;
     }
     
     float scale = theScrollView.zoomScale;      //1.0 and smaller
-    theScrollView.hidden = (scale < 1.0) ? YES : NO;
-    self.pepperView.hidden = !theScrollView.hidden;
+    //theScrollView.hidden = (scale < 1.0) ? YES : NO;
+    //self.pepperView.hidden = !theScrollView.hidden;
 
     //Memory warning kills Pepper view
     /*
