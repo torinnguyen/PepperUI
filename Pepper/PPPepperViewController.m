@@ -350,7 +350,7 @@ static int midYPortrait = 0;
   
   //The functions will check if the view can be destroyed
   [self destroyBookScrollView:NO];
-  [self destroyPeperView:NO];
+  [self destroyPepperView:NO];
   [self destroyPageScrollView:NO];
 }
 
@@ -493,7 +493,7 @@ static int midYPortrait = 0;
   
   //Initialize books scrollview
   [self destroyBookScrollView:YES];
-  [self destroyPeperView:YES];
+  [self destroyPepperView:YES];
   [self destroyPageScrollView:YES];
 
   //Initialize books scrollview
@@ -944,7 +944,7 @@ static int midYPortrait = 0;
 //
 // Hide & reuse all page in Pepper UI
 //
-- (void)destroyPeperView:(BOOL)force
+- (void)destroyPepperView:(BOOL)force
 {  
   if (!force)
     if (!self.isDetailView && !self.isBookView)
@@ -2276,7 +2276,9 @@ static int midYPortrait = 0;
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
   
   //Worst case senario
-  [self performSelector:@selector(destroyPeperView) withObject:nil afterDelay:1.5 * self.animationSlowmoFactor];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    [self destroyPepperView:NO];
+  });
 }
 
 - (void)showFullscreen:(BOOL)animated
@@ -2315,7 +2317,9 @@ static int midYPortrait = 0;
   [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*duration];
 
   //Worst case senario
-  [self performSelector:@selector(destroyPageScrollView) withObject:nil afterDelay:1.5 * self.animationSlowmoFactor];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    [self destroyPageScrollView:NO];
+  });
 }
 
 //
@@ -2389,7 +2393,7 @@ static int midYPortrait = 0;
   if (!animated) {
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
-    [self destroyPeperView:NO];
+    [self destroyPepperView:NO];
     return;
   }
   
@@ -2401,7 +2405,7 @@ static int midYPortrait = 0;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
-    [self destroyPeperView:NO];
+    [self destroyPepperView:NO];
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
