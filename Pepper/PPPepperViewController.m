@@ -55,10 +55,6 @@
 #define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
 #define INVALID_NUMBER               999999
 
-//Declare once, used everywhere
-static UIImage *bookCoverImage = nil;
-static UIImage *pageBackgroundImage = nil;
-
 @interface PPPepperViewController()
 <
  UIGestureRecognizerDelegate,
@@ -78,6 +74,8 @@ static UIImage *pageBackgroundImage = nil;
 @property (nonatomic, assign) int numBooks;
 @property (nonatomic, assign) int numPages;
 @property (nonatomic, assign) float currenPageContentOffsetY;
+@property (nonatomic, strong) UIImage *bookCoverImage;
+@property (nonatomic, strong) UIImage *pageBackgroundImage;
 
 //Control
 @property (nonatomic, assign) float controlAngle;
@@ -185,6 +183,7 @@ static UIImage *pageBackgroundImage = nil;
 @synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
 @synthesize numBooks, numPages;
 @synthesize currenPageContentOffsetY;
+@synthesize bookCoverImage, pageBackgroundImage;
 
 //Page
 @synthesize currentPageIndex = _currentPageIndex;
@@ -350,9 +349,9 @@ static int midYPortrait = 0;
   [super didReceiveMemoryWarning];
   
   //The functions will check if the view can be destroyed
-  [self destroyBookScrollView];
-  [self destroyPeperView];
-  [self destroyPageScrollView];
+  [self destroyBookScrollView:NO];
+  [self destroyPeperView:NO];
+  [self destroyPageScrollView:NO];
 }
 
 - (void)viewDidUnload
@@ -477,6 +476,11 @@ static int midYPortrait = 0;
   self.numBooks = -1;
   self.numPages = -1;
   
+  //Graphic
+  self.bookCoverImage = nil;
+  self.pageBackgroundImage = nil;
+  [self initializeBackgroundImagesAndRatios];
+  
   //Initialize book views
   self.bookScrollView.contentOffset = CGPointMake(0,0);
   self.numBooks = [self getNumberOfBooks];
@@ -486,11 +490,11 @@ static int midYPortrait = 0;
   self.bookScrollView.hidden = YES;
   self.isBookView = YES;
   self.isDetailView = NO;
-
+  
   //Initialize books scrollview
-  [self destroyBookScrollView];
-  [self destroyPeperView];
-  [self destroyPageScrollView];
+  [self destroyBookScrollView:YES];
+  [self destroyPeperView:YES];
+  [self destroyPageScrollView:YES];
 
   //Initialize books scrollview
   [self setupReuseablePoolBookViews];
@@ -727,8 +731,8 @@ static int midYPortrait = 0;
 - (void)setEnableBorderlessGraphic:(BOOL)newValue
 {
   _enableBorderlessGraphic = newValue;
-  bookCoverImage = nil;
-  pageBackgroundImage = nil;
+  self.bookCoverImage = nil;
+  self.pageBackgroundImage = nil;
   [self initializeBackgroundImagesAndRatios];
 }
 
@@ -739,26 +743,26 @@ static int midYPortrait = 0;
 {
   BOOL graphicChanged = NO;
   
-  if (bookCoverImage == nil) {
+  if (self.bookCoverImage == nil) {
     graphicChanged = YES;
-    bookCoverImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
+    self.bookCoverImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : BOOK_BG_IMAGE];
   }
 
-  if (pageBackgroundImage == nil) {
+  if (self.pageBackgroundImage == nil) {
     graphicChanged = YES;
-    pageBackgroundImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
+    self.pageBackgroundImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
   }
 
-  self.edgePaddingPercentage = EDGE_PADDING / bookCoverImage.size.height;
+  self.edgePaddingPercentage = EDGE_PADDING / self.bookCoverImage.size.height;
   
   if (!graphicChanged)
     return;
 
   for (PPPageViewContentWrapper *subview in self.reuseBookViewArray)
-    [subview setBackgroundImage:bookCoverImage];
+    [subview setBackgroundImage:self.bookCoverImage];
   
   for (PPPageViewDetailWrapper *subview in self.reusePageViewArray)
-    [subview setBackgroundImage:pageBackgroundImage];
+    [subview setBackgroundImage:self.pageBackgroundImage];
 
 }
 
@@ -940,10 +944,11 @@ static int midYPortrait = 0;
 //
 // Hide & reuse all page in Pepper UI
 //
-- (void)destroyPeperView
+- (void)destroyPeperView:(BOOL)force
 {  
-  if (!self.isDetailView && !self.isBookView)
-    return;
+  if (!force)
+    if (!self.isDetailView && !self.isBookView)
+      return;
   
   self.pepperView.hidden = YES;
   
@@ -1092,7 +1097,7 @@ static int midYPortrait = 0;
   pageView.frame = pageFrame;
   
   BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
-  [pageView setBackgroundImage:(useBookCoverImage ? bookCoverImage : pageBackgroundImage)];
+  [pageView setBackgroundImage:(useBookCoverImage ? self.bookCoverImage : self.pageBackgroundImage)];
   
   pageView.alpha = 1;
   pageView.hidden = YES;        //control functions will unhide later
@@ -1219,10 +1224,11 @@ static int midYPortrait = 0;
 
 #pragma mark - UI Helper functions (Book)
 
-- (void)destroyBookScrollView
+- (void)destroyBookScrollView:(BOOL)force
 {
-  if (self.isBookView)
-    return;
+  if (!force)
+    if (self.isBookView)
+      return;
   
   self.bookScrollView.hidden = YES;
   
@@ -1416,7 +1422,7 @@ static int midYPortrait = 0;
   coverPage.isBook = YES;
   coverPage.delegate = self;
   
-  [coverPage setBackgroundImage:(self.hideFirstPage ? pageBackgroundImage : bookCoverImage)];
+  [coverPage setBackgroundImage:(self.hideFirstPage ? self.pageBackgroundImage : self.bookCoverImage)];
   
   coverPage.alpha = 1;
   coverPage.transform = CGAffineTransformIdentity;
@@ -1568,10 +1574,11 @@ static int midYPortrait = 0;
   return self.currentPageIndex;
 }
 
-- (void)destroyPageScrollView
+- (void)destroyPageScrollView:(BOOL)force
 {
-  if (self.controlAngle >= 0 || self.isDetailView)
-    return;
+  if (!force)
+    if (self.controlAngle >= 0 || self.isDetailView)
+      return;
     
   self.pageScrollView.hidden = YES;
     
@@ -1602,7 +1609,7 @@ static int midYPortrait = 0;
   int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
   for (int i=0; i<total; i++) {
     PPPageViewDetailWrapper *wrapperView = [[PPPageViewDetailWrapper alloc] initWithFrame:self.pageScrollView.bounds];
-    [wrapperView setBackgroundImage:pageBackgroundImage];
+    [wrapperView setBackgroundImage:self.pageBackgroundImage];
     [self.reusePageViewArray addObject:wrapperView];
   }
 }
@@ -1779,7 +1786,7 @@ static int midYPortrait = 0;
   pageDetailView.alpha = 1;
   
   BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
-  [pageDetailView setBackgroundImage:(useBookCoverImage ? bookCoverImage : pageBackgroundImage)];
+  [pageDetailView setBackgroundImage:(useBookCoverImage ? self.bookCoverImage : self.pageBackgroundImage)];
    
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
@@ -1853,7 +1860,7 @@ static int midYPortrait = 0;
   self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
   
-  [self destroyBookScrollView];
+  [self destroyBookScrollView:NO];
   [self showFullscreenUsingTimer];
 }
 
@@ -2321,7 +2328,7 @@ static int midYPortrait = 0;
   self.isDetailView = NO;
   
   //Hide other view
-  [self destroyPageScrollView];
+  [self destroyPageScrollView:NO];
   
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
@@ -2363,7 +2370,7 @@ static int midYPortrait = 0;
     diff = 0.4;
   
   //Dealloc fullscreen view
-  [self destroyPageScrollView];
+  [self destroyPageScrollView:NO];
   
   //Re-setup book scrollview if needed
   [self setupReuseablePoolBookViews];
@@ -2382,7 +2389,7 @@ static int midYPortrait = 0;
   if (!animated) {
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
-    [self destroyPeperView];
+    [self destroyPeperView:NO];
     return;
   }
   
@@ -2394,7 +2401,7 @@ static int midYPortrait = 0;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
-    [self destroyPeperView];
+    [self destroyPeperView:NO];
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
@@ -2898,7 +2905,7 @@ static int midYPortrait = 0;
   }
 
   //Destroy page view
-  [self destroyPageScrollView];
+  [self destroyPageScrollView:NO];
 
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didClosePageIndex:)])
