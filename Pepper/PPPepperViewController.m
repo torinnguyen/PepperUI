@@ -556,7 +556,10 @@ static int midYPortrait = 0;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  if (self.isBookView || (self.isDetailView && self.enableOneSideZoom))
+  BOOL isPortrait = UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
+  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || isPortrait);
+  
+  if (self.isBookView || noGestureInDetailView)
     return NO;
   if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
     return NO;
@@ -592,7 +595,7 @@ static int midYPortrait = 0;
   }
   
   //Don't scale the first page
-  if (self.theLeftView.tag == 0 && self.zoomOnLeft)
+  if (!self.isDetailView && self.theLeftView.tag <= 0 && self.zoomOnLeft)
     return;
 
   //Snap control angle to 3 thresholds
