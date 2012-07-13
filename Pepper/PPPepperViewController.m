@@ -314,6 +314,7 @@ static int midYPortrait = 0;
     self.pepperView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.pepperView.autoresizesSubviews = NO;
     self.pepperView.hidden = YES;
+//    self.pepperView.backgroundColor = [UIColor greenColor];
     [self.view addSubview:self.pepperView];
   }
   
@@ -348,23 +349,10 @@ static int midYPortrait = 0;
 {
   [super didReceiveMemoryWarning];
   
-  //Dealloc Book scrollview
-  BOOL canDestroyBookView = !self.isBookView;
-  if (canDestroyBookView) {
-    [self destroyBookScrollView];
-  }
-  
-  //Dealloc Pepper views
-  BOOL canDestroyPepperView = ![self isPepperView] && !(self.isDetailView && self.controlAngle < 0);
-  if (canDestroyPepperView) {
-    [self destroyPeperView];
-  }
-  
-  //Dealloc Page scrollview
-  BOOL canDestroyPageView = !self.isDetailView && !([self isPepperView] && self.controlAngle > -THRESHOLD_HALF_ANGLE);
-  if (canDestroyPageView) {
-    [self destroyPageScrollView];
-  }
+  //The functions will check if the view can be destroyed
+  [self destroyBookScrollView];
+  [self destroyPeperView];
+  [self destroyPageScrollView];
 }
 
 - (void)viewDidUnload
@@ -950,32 +938,32 @@ static int midYPortrait = 0;
 // Hide & reuse all page in Pepper UI
 //
 - (void)destroyPeperView
-{ 
-  if (self.reusePepperWrapperArray == nil)
-    return;
-  if (self.controlAngle < 0 && self.controlAngle >= -THRESHOLD_HALF_ANGLE)
+{  
+  if (!self.isDetailView && !self.isBookView)
     return;
   
-  while (self.visiblePepperWrapperArray.count > 0) {
+  self.pepperView.hidden = YES;
+  
+  [self.reusePepperWrapperArray removeAllObjects];
+  self.reusePepperWrapperArray = nil;
+  
+  while ([self.visiblePepperWrapperArray count] > 0) {
     [[self.visiblePepperWrapperArray objectAtIndex:0] removeFromSuperview];
     [self.visiblePepperWrapperArray removeObjectAtIndex:0];
   }
   self.visiblePepperWrapperArray = nil;
-
-  [self.reusePepperWrapperArray removeAllObjects];
-  self.reusePepperWrapperArray = nil;
-  
-  self.pepperView.hidden = YES;
 }
 
 - (void)setupReusablePoolPepperViews
 {
   //No need to re-setup
-  if (self.reusePepperWrapperArray != nil || self.reusePepperWrapperArray.count > 0)
+  if (self.reusePepperWrapperArray != nil || [self.reusePepperWrapperArray count] > 0)
     return;
   
-  self.reusePepperWrapperArray = [[NSMutableArray alloc] init];
-  self.visiblePepperWrapperArray = [[NSMutableArray alloc] init];
+  if (self.reusePepperWrapperArray == nil)
+    self.reusePepperWrapperArray = [[NSMutableArray alloc] init];
+  if (self.visiblePepperWrapperArray == nil)
+    self.visiblePepperWrapperArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
@@ -993,7 +981,7 @@ static int midYPortrait = 0;
 - (void)reusePepperViews {
   
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-    
+      
   //Visible range
   int range = NUM_VISIBLE_PAGE_ONE_SIDE * 2 + 1;        //plus buffer
   float currentIndex = [self getCurrentSpecialIndex];
@@ -1068,6 +1056,10 @@ static int midYPortrait = 0;
 }
 
 - (void)addPageToPepperView:(int)index {
+  
+  //Worst case senario: some bugs causing both array to be empty
+  if ([self.reusePepperWrapperArray count] <= 0 && [self.visiblePepperWrapperArray count] <= 0)
+    [self setupReusablePoolPepperViews];
   
   //Reuseable pool is empty, should not happen, check removePageFromPepperView code
   if (self.reusePepperWrapperArray.count <= 0)
@@ -1226,29 +1218,31 @@ static int midYPortrait = 0;
 
 - (void)destroyBookScrollView
 {
-  if (self.reuseBookViewArray == nil)
+  if (self.isBookView)
     return;
   
-  while (self.visibleBookViewArray.count > 0) {
-    [[self.visibleBookViewArray objectAtIndex:0] removeFromSuperview];
-    [self.visibleBookViewArray removeObjectAtIndex:0];
-  }
-  self.visibleBookViewArray = nil;
+  self.bookScrollView.hidden = YES;
   
   [self.reuseBookViewArray removeAllObjects];
   self.reuseBookViewArray = nil;
   
-  self.bookScrollView.hidden = YES;
+  while ([self.visibleBookViewArray count] > 0) {
+    [[self.visibleBookViewArray objectAtIndex:0] removeFromSuperview];
+    [self.visibleBookViewArray removeObjectAtIndex:0];
+  }
+  self.visibleBookViewArray = nil;
 }
 
 - (void)setupReuseablePoolBookViews
 {  
   //No need to re-setup
-  if (self.reuseBookViewArray != nil || self.reuseBookViewArray.count > 0)
+  if (self.reuseBookViewArray != nil || [self.reuseBookViewArray count] > 0)
     return;
   
-  self.reuseBookViewArray = [[NSMutableArray alloc] init];
-  self.visibleBookViewArray = [[NSMutableArray alloc] init];
+  if (self.reuseBookViewArray == nil)
+    self.reuseBookViewArray = [[NSMutableArray alloc] init];
+  if (self.visibleBookViewArray == nil)
+    self.visibleBookViewArray = [[NSMutableArray alloc] init];
   
   BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int numReuse = isLandscape ? NUM_REUSE_BOOK_LANDSCAPE : NUM_REUSE_BOOK_PORTRAIT;
@@ -1391,7 +1385,12 @@ static int midYPortrait = 0;
 }
 
 - (void)addBookToScrollView:(int)index
-{  
+{
+  //Worst case senario: some bugs causing both array to be empty
+  if ([self.reuseBookViewArray count] <= 0 && [self.visibleBookViewArray count] <= 0)
+    [self setupReuseablePoolBookViews];
+  
+  //Buffer is full
   if (self.reuseBookViewArray.count <= 0)
     return;
   
@@ -1435,7 +1434,7 @@ static int midYPortrait = 0;
 - (void)updateBookScrollViewContentSize {
   int bookCount = [self getNumberOfBooks];
   CGRect lastFrame = [self getFrameForBookIndex:bookCount-1];
-  CGSize contentSize = CGSizeMake(CGRectGetMaxX(lastFrame) + CGRectGetWidth(self.bookScrollView.bounds)/2, 100);
+  CGSize contentSize = CGSizeMake(CGRectGetMaxX(lastFrame) + CGRectGetWidth(self.bookScrollView.bounds)/2, 250);
   self.bookScrollView.contentSize = contentSize;
 }
 
@@ -1568,32 +1567,32 @@ static int midYPortrait = 0;
 
 - (void)destroyPageScrollView
 {
-  if (self.reusePageViewArray == nil)
+  if (self.controlAngle >= 0 || self.isDetailView)
     return;
-  if (self.controlAngle >= 0)
-    return;
+    
+  self.pageScrollView.hidden = YES;
+    
+  [self.reusePageViewArray removeAllObjects];
+  self.reusePageViewArray = nil;
   
-  while (self.visiblePageViewArray.count > 0) {
+  while ([self.visiblePageViewArray count] > 0) {
     PPPageViewDetailWrapper *wrapper = [self.visiblePageViewArray objectAtIndex:0];
     [wrapper unloadContent];
     [wrapper removeFromSuperview];
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   self.visiblePageViewArray = nil;
-  
-  [self.reusePageViewArray removeAllObjects];
-  self.reusePageViewArray = nil;
-  
-  self.pageScrollView.hidden = YES;
 }
 
 - (void)setupReuseablePoolPageViews
 {
   //No need to re-setup
-  if (self.reusePageViewArray != nil || self.reusePageViewArray.count > 0)
+  if (self.reusePageViewArray != nil || [self.reusePageViewArray count] > 0)
     return;
   
-  self.reusePageViewArray = [[NSMutableArray alloc] init];
+  if (self.reusePageViewArray == nil)
+    self.reusePageViewArray = [[NSMutableArray alloc] init];
+  if (self.visiblePageViewArray == nil)
   self.visiblePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
@@ -1750,8 +1749,14 @@ static int midYPortrait = 0;
 
 - (void)addPageToScrollView:(int)index {
   
+  //Worst case senario: some bugs causing both array to be empty
+  if ([self.reusePageViewArray count] <= 0 && [self.visiblePageViewArray count] <= 0)
+    [self setupReuseablePoolPageViews];
+
+  //Buffer is full
   if (self.reusePageViewArray.count <= 0)
     return;
+  
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   if (index < 0 || index >= pageCount)
     return;
@@ -2249,7 +2254,7 @@ static int midYPortrait = 0;
 - (void)showFullscreenUsingTimer
 {
   self.isBookView = NO;
-  self.isDetailView = YES;
+  
   float diff = fabs(self.controlAngle - 0) / 45.0;
   
   //Populate detailed page scrollview & scroll to the correct position
@@ -2267,7 +2272,6 @@ static int midYPortrait = 0;
 - (void)showFullscreen:(BOOL)animated
 {
   self.isBookView = NO;
-  self.isDetailView = YES;
 
   //Populate detailed page scrollview
   [self setupPageScrollview];
@@ -2292,18 +2296,7 @@ static int midYPortrait = 0;
 - (void)showHalfOpenUsingTimer
 {
   self.isBookView = NO;
-  self.isDetailView = NO;
-    
-  //Re-setup book scrollview if we are coming out from fullscreen
-  //And also apply correct scaling for books
-  /*
-  if (self.reuseBookViewArray == nil) {
-    [self setupReuseablePoolBookViews];
-    [self reuseBookScrollView];
-    [self updateBookScrollViewBookScale];
-  }
-   */
-
+      
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
   float duration = diff * 1.3;
   if (duration < 0.2)     duration = 0.2;
@@ -2384,28 +2377,25 @@ static int midYPortrait = 0;
       subview.alpha = 1;
   
   if (!animated) {
-    [self destroyPeperView];
+    self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
+    [self destroyPeperView];
     return;
   }
-  
-  //Not perfect but good enough for fast animation
-  float animationDuration = self.animationSlowmoFactor*diff;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    [self destroyPeperView];
-    [self removeBookCoverFromFirstPage];
-    
-    //Notify the delegate
-    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
-      [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
-  });
   
   //This is where magic happens (animation)
   [self flattenAllPepperViews:diff];
   
-  //Flag
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, animationDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  //Not perfect but good enough for fast animation
+  float animationDuration = self.animationSlowmoFactor*diff;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     self.isBookView = YES;
+    [self removeBookCoverFromFirstPage];
+    [self destroyPeperView];
+    
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
+      [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
   });
 }
 
@@ -2584,13 +2574,13 @@ static int midYPortrait = 0;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
   
-  BOOL hasNoBookView = self.reuseBookViewArray == nil;
+  //BOOL hasNoBookView = self.reuseBookViewArray == nil;
   //BOOL hasNoPepperView = self.reusePepperWrapperArray == nil;
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && self.controlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
-  BOOL switchingToBookView = hasNoBookView && self.controlAngle < -THRESHOLD_HALF_ANGLE;
+  //BOOL switchingToBookView = hasNoBookView && self.controlAngle < -THRESHOLD_HALF_ANGLE;
   
   //Memory management & setup
   if (switchingFromPepperToFullscreen) {
@@ -2617,6 +2607,7 @@ static int midYPortrait = 0;
   
   //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
+  self.isDetailView = !self.pageScrollView.hidden;
   if (!self.isBookView && newControlAngle < 0)
     self.pepperView.hidden = NO;
   
@@ -2851,7 +2842,7 @@ static int midYPortrait = 0;
 {
   if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
     return;
-  
+    
   if (duration <= 0 || fabsf(self.controlAngle-angle) <= 0) {
     [self onControlAngleTimerFinish];
     return;
@@ -2898,8 +2889,8 @@ static int midYPortrait = 0;
   
   self.controlAngle = self.controlAngleTimerTarget;
   self.currenPageContentOffsetY = 0;
-  
-  //Not open fullscreen
+    
+  //Open fullscreen
   if (self.controlAngle >= 0) {
     
     //Notify the delegate
@@ -3045,9 +3036,8 @@ static int midYPortrait = 0;
     [self snapControlAngle];
   
   //Notify the delegate
-  if (scale > 1)
-    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didEndZoomingWithPageIndex:zoomScale:)])
-      [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didEndZoomingWithPageIndex:zoomScale:)])
+    [self.delegate ppPepperViewController:self didEndZoomingWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
 }
 
 - (void)didSnapPageScrollview
@@ -3109,10 +3099,16 @@ static int midYPortrait = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor grayColor];
-    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
-    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    myLabel.textAlignment = UITextAlignmentCenter;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
+                              | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    int fontSize = 12*deviceFactor;
+    if (fontSize <= 5)
+      fontSize = 5;
+    myLabel.font = [UIFont systemFontOfSize:fontSize];
+
     [myView addSubview:myLabel];
   }
   else {
@@ -3138,6 +3134,7 @@ static int midYPortrait = 0;
         myLabel = (UILabel*)subview; 
   
   //No-reuse, create it
+  
   if (myLabel == nil) {
     myView = [[UIView alloc] initWithFrame:frame];
     myView.backgroundColor = [UIColor clearColor];
@@ -3145,10 +3142,15 @@ static int midYPortrait = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor grayColor];
-    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
-    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
+                               | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    int fontSize = 12*deviceFactor;
+    if (fontSize <= 5)
+      fontSize = 5;
+    myLabel.font = [UIFont systemFontOfSize:fontSize];
+    
     [myView addSubview:myLabel];
   }
   else {
@@ -3181,10 +3183,15 @@ static int midYPortrait = 0;
     myLabel = [[UILabel alloc] initWithFrame:myView.bounds];
     myLabel.backgroundColor = [UIColor clearColor];
     myLabel.textColor = [UIColor blackColor];
-    myLabel.font = [UIFont systemFontOfSize:12*deviceFactor];
     myLabel.numberOfLines = 0;
     myLabel.textAlignment = UITextAlignmentCenter;
-    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    myLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
+                               | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    int fontSize = 12*deviceFactor;
+    if (fontSize <= 5)
+      fontSize = 5;
+    myLabel.font = [UIFont systemFontOfSize:fontSize];
+    
     [myView addSubview:myLabel];
   }
   else {
