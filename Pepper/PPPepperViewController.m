@@ -19,7 +19,7 @@
 #define ENABLE_BORDERLESS_GRAPHIC     NO          //combine with HIDE_FIRST_PAGE to create a 'stack of paper' application
 #define ENABLE_HIGH_SPEED_SCROLLING   YES         //in 3D mode only
 #define ENABLE_BOOK_SCALE             YES         //other book not in center will be smaller
-#define ENABLE_BOOK_SHADOW            NO          //dynamic shadow below books
+#define ENABLE_BOOK_SHADOW            YES         //dynamic shadow below books
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
 #define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
@@ -102,7 +102,7 @@ static UIImage *pageBackgroundImage = nil;
 
 //Book scrollview
 @property (nonatomic, assign) int currentBookIndex;
-@property (nonatomic, strong) UIView *theBookCover;
+@property (nonatomic, strong) PPPageViewContentWrapper *theBookCover;
 @property (nonatomic, strong) UIScrollView *bookScrollView;
 @property (nonatomic, strong) NSMutableArray *reuseBookViewArray;
 @property (nonatomic, strong) NSMutableArray *visibleBookViewArray;
@@ -1191,16 +1191,16 @@ static int midYPortrait = 0;
 //
 - (int)getFirstVisiblePepperPageIndex {
   
-  int firstPageIndex = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  int firstPageIndex = pageCount;
   
-  for (UIView *subview in self.visiblePepperWrapperArray)
+  for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray)
     if (subview.tag < firstPageIndex
-        && subview.tag%2 == 0
         && !subview.hidden
-        && [subview isKindOfClass:[PPPageViewContentWrapper class]])
+        && subview.tag%2 == 0)
       firstPageIndex = subview.tag;
   
-  if (firstPageIndex >= [self getNumberOfPagesForBookIndex:self.currentBookIndex])
+  if (firstPageIndex >= pageCount)
     firstPageIndex = self.hideFirstPage ? 1 : 0;
   
   return firstPageIndex;
@@ -1540,7 +1540,7 @@ static int midYPortrait = 0;
   //Clone the book cover and add to backside of first page
   if (!self.hideFirstPage)
   {
-    [self addBookCoverToFirstPage:YES];
+    [self addBookCoverToFirstPageThenRemove:YES];
   }
   //Hide the book cover immediately
   else
@@ -2371,7 +2371,7 @@ static int midYPortrait = 0;
   [self addBookToScrollView:self.currentBookIndex];
 
   //Replace 1st page by book cover, need to redo this due to pepper page reuse
-  [self addBookCoverToFirstPage:NO];
+  [self addBookCoverToFirstPageThenRemove:NO];
   
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
@@ -2460,32 +2460,27 @@ static int midYPortrait = 0;
   }
 }
 
-- (UIView*)getCurrentBookCover
-{ 
-  for (UIView *subview in self.visibleBookViewArray)
-    if (subview.tag == self.currentBookIndex)
-      return subview;
-  return nil;
-}
-
-- (void)addBookCoverToFirstPage:(BOOL)animated
+- (void)addBookCoverToFirstPageThenRemove:(BOOL)animated
 {
   if (self.theBookCover != nil)
     return;
-  self.theBookCover = [self getCurrentBookCover];
+  
+  self.theBookCover = [self getBookViewAtIndex:self.currentBookIndex];
   if (self.theBookCover == nil)
     return;
   
   //Find the first visible page view
+  //This is in case user open at non-zero page
   int firstPageIndex = [self getFirstVisiblePepperPageIndex];
-  UIView *firstPageView = [self getPepperPageAtIndex:firstPageIndex];
+  PPPageViewContentWrapper *firstPageView = [self getPepperPageAtIndex:firstPageIndex];
   if (firstPageView == nil)
     return;
 
   firstPageView.hidden = NO;
   [firstPageView addSubview:self.theBookCover];
   [firstPageView.superview bringSubviewToFront:firstPageView];
-  self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
+  firstPageView.shadowOpacity = 0;
+  self.theBookCover.layer.transform = CATransform3DIdentity;
   self.theBookCover.frame = firstPageView.bounds;
   self.theBookCover.hidden = NO;
   self.theBookCover.alpha = 1;
@@ -2493,9 +2488,9 @@ static int midYPortrait = 0;
   if (!animated)
     return;
     
-  //Remove layer later (not perfect but good enough for fast animation)
+  //Remove layer later (not the best implementation, but looks almost perfect even in slo-mo)
   float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
-  float removeCoverDuration = (90.0-THRESHOLD_HALF_ANGLE)/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;    //this is a wrong fomula, but I have no idea why it works
+  float removeCoverDuration = 90.0/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;
   
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     [self hideBookCoverFromFirstPage];
@@ -2527,7 +2522,7 @@ static int midYPortrait = 0;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
   
-  //De-reference, dealloc
+  //De-reference
   self.theBookCover = nil;
 }
 
