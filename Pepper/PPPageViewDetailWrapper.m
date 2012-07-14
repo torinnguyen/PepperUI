@@ -18,6 +18,9 @@ static UIImage *backgroundImageFlipped = nil;
 @property (nonatomic, strong) UIImageView *background;
 @property (nonatomic, assign) float aspectRatio;
 @property (nonatomic, assign) float edgePaddingHeightPercent;
+@property (nonatomic, assign) CGRect originalFrame;
+@property (nonatomic, assign) CGPoint contentOffsetBeforeZoomOut;
+@property (nonatomic, assign) float previousZoomScale;
 @end
 
 @implementation PPPageViewDetailWrapper
@@ -27,6 +30,12 @@ static UIImage *backgroundImageFlipped = nil;
 @synthesize background;
 @synthesize aspectRatio;
 @synthesize edgePaddingHeightPercent;
+@synthesize originalFrame;
+@synthesize contentOffsetBeforeZoomOut;
+@synthesize previousZoomScale;
+
+
+#pragma mark - Initialization
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -36,6 +45,7 @@ static UIImage *backgroundImageFlipped = nil;
     self.delegate = self;
     self.minimumZoomScale = 0.1f;                   //don't change this, needed for Pepper view operation
     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;     //user might change this
+    self.previousZoomScale = 1.0f;
     
     [self initBackgroundImage];
     
@@ -131,45 +141,12 @@ static UIImage *backgroundImageFlipped = nil;
 }
 
 - (void)layoutWithFrame:(CGRect)frame duration:(float)duration
-{    
-  //This is a bit complex
-  float ratio = self.aspectRatio;
-  ratio = [self adjustRatioForBiggerFrame:frame];
-  
-  float bgframeHeight = frame.size.width * ratio;
-  float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
-  
-  CGRect bgframe = [self getBackgroundFrameForWrapperFrame:frame];
-  
-  //Content size
-  self.contentOffset = CGPointZero;
-  self.contentSize = CGSizeMake(bgframe.size.width, bgframe.size.height - 2*margin);   
-
-  //Debug
-  /*
-  NSLog(@"index: %d   %.1f %.1f %.1f", self.tag, self.aspectRatio, ratio, margin);
-  NSLog(@"frame %.1f %.1f %.1f %.1f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
-  NSLog(@"bgframe %.1f %.1f %.1f %.1f", bgframe.origin.x, bgframe.origin.y, bgframe.size.width, bgframe.size.height);
-  NSLog(@"contentFrame %.1f %.1f %.1f %.1f", contentFrame.origin.x, contentFrame.origin.y, contentFrame.size.width, contentFrame.size.height);
-  self.background.backgroundColor = [UIColor redColor];
-  self.contentView.backgroundColor = [UIColor greenColor];
-  self.contentView.alpha = 0.75;
-   */
-  
-  if (duration <= 0) {
-    [self reset:NO];
-    self.background.frame = bgframe;
-    self.contentView.frame = self.background.bounds;
-    return;
-  }
-  
-  [self reset:YES];
-  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-    self.background.frame = bgframe;
-    self.contentView.frame = self.background.bounds;
-  } completion:^(BOOL finished) {
-    
-  }];
+{
+  self.originalFrame = frame;
+  self.previousZoomScale = 1.0f;
+  self.contentOffsetBeforeZoomOut = CGPointZero;
+   
+  [self reset:NO];
 }
 
 #pragma mark - Helpers
@@ -180,54 +157,60 @@ static UIImage *backgroundImageFlipped = nil;
   self.contentView = nil;
 }
 
+/*
+ * Reset everything. animated property is not used yet.
+ */
 - (void)reset:(BOOL)animated
 {
-  //Prevent unwanted delegate call;
+  [self resetWithoutOffset:animated];
+  
+  //Prevent unwanted delegate call
   id prevDelegate = self.delegate;
   self.delegate = nil;
 
+  self.previousZoomScale = 1.0f;
+  self.contentOffsetBeforeZoomOut = CGPointZero;
   self.contentOffset = CGPointZero;
+  self.delegate = prevDelegate;
+}
+
+/*
+ * Reset everything except contentOffset. animated property is not used yet.
+ */
+- (void)resetWithoutOffset:(BOOL)animated
+{
+  //Prevent unwanted delegate call
+  id prevDelegate = self.delegate;
+  self.delegate = nil;
+  
   self.zoomScale = 1.0f;
   
   //Kill 'em all
-  //if (!animated) {
   self.transform = CGAffineTransformIdentity;
   self.layer.transform = CATransform3DIdentity;
   self.background.transform = CGAffineTransformIdentity;
   self.background.layer.transform = CATransform3DIdentity;
 
   //Zooming causes the background.frame to drift
-  CGRect bgFrame = [self getBackgroundFrameForWrapperFrame:self.bounds];
+  CGRect bgFrame = [self getBackgroundFrameForWrapperFrame:self.originalFrame];
   self.background.frame = bgFrame;
   self.contentView.frame = self.background.bounds;
   
+  //This is a bit complex
+  float ratio = self.aspectRatio;
+  ratio = [self adjustRatioForBiggerFrame:self.originalFrame];
+  
+  float bgframeHeight = self.originalFrame.size.width * ratio;
+  float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
+  
+  //Content offset & size
+  self.contentOffset = self.contentOffsetBeforeZoomOut;
+  self.contentSize = CGSizeMake(bgFrame.size.width, bgFrame.size.height - 2*margin);
+    
   if (self.contentView != nil && [self.contentView respondsToSelector:@selector(reset)])
     [self.contentView performSelector:@selector(reset)];
   
   self.delegate = prevDelegate;
-  return;
-  //}
-  
-  return;
-  
-  //Doesn't seem to have any effect
-  [UIView animateWithDuration:0.4 delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-    self.transform = CGAffineTransformIdentity;
-    self.background.transform = CGAffineTransformIdentity;
-  } completion:^(BOOL finished) {
-    self.delegate = prevDelegate;
-  }];
-  
-  CABasicAnimation *theAnimation;
-  theAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
-  theAnimation.delegate = self;
-  theAnimation.duration = 0.4;
-  theAnimation.repeatCount = 0;
-  theAnimation.removedOnCompletion = YES;
-  theAnimation.fillMode = kCAFillModeBoth;
-  theAnimation.autoreverses = NO;
-  theAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
-  [self.background.layer addAnimation:theAnimation forKey:@"animateLayer"];
 }
 
 - (CGRect)getBackgroundFrameForWrapperFrame:(CGRect)frame
@@ -258,11 +241,16 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
-  
+  if (self.zoomScale == 1.0)
+    self.contentOffsetBeforeZoomOut = self.contentOffset;
 }
 
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView
 {
+  if (self.previousZoomScale >= 1 && self.zoomScale <= 1.0)
+    self.contentOffsetBeforeZoomOut = self.contentOffset;
+  self.previousZoomScale = self.zoomScale;
+  
   if ([self.customDelegate respondsToSelector:@selector(scrollViewDidZoom:)])
     [self.customDelegate scrollViewDidZoom:theScrollView];
 }

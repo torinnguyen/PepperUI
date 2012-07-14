@@ -1625,7 +1625,8 @@ static int midYPortrait = 0;
   //Reset pages UI
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     subview.hidden = NO;
-    [subview reset:NO];
+    if (subview.tag == self.currentPageIndex)     [subview resetWithoutOffset:NO];
+    else                                          [subview reset:NO];
   }
 
   [self updatePageScrollViewContentSize];
