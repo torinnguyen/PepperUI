@@ -240,6 +240,9 @@ static int midYPortrait = 0;
   if (deviceFactor == 0)
     deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
   
+  self.bookCoverImage = nil;
+  self.pageBackgroundImage = nil;
+  
   BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   self.m34 = isPad ? M34_IPAD : M34_IPHONE;
   self.pepperPageSpacing = PEPPER_PAGE_SPACING;
@@ -255,7 +258,7 @@ static int midYPortrait = 0;
   self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
-    
+  
   //Initial op flags
   self.zoomOnLeft = YES;
   self.isBookView = YES;
@@ -285,7 +288,7 @@ static int midYPortrait = 0;
   self.view.clipsToBounds = YES;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-  
+
   [self initializeBackgroundImagesAndRatios];
   [self updateFrameSizesForOrientation];
   
@@ -751,7 +754,9 @@ static int midYPortrait = 0;
     self.pageBackgroundImage = [UIImage imageNamed:self.enableBorderlessGraphic ? PAGE_BG_BORDERLESS_IMAGE : PAGE_BG_IMAGE];
   }
 
-  self.edgePaddingPercentage = EDGE_PADDING / self.bookCoverImage.size.height;
+  self.edgePaddingPercentage = (float)EDGE_PADDING / self.bookCoverImage.size.height;
+  if (self.bookCoverImage == nil || self.bookCoverImage.size.height <= 0)
+    NSLog(@"WARNING: Missing page_bg graphic needed for initialization");
   
   if (!graphicChanged)
     return;
@@ -777,9 +782,12 @@ static int midYPortrait = 0;
   float width = MIN(self.view.bounds.size.width, self.view.bounds.size.height);
   float contentHeight = MAX(self.view.bounds.size.width, self.view.bounds.size.height);
   
+  if (width <= 0 || contentHeight <= 0)
+    NSLog(@"WARNING: PepperUI is initialized too early");
+  
   //Custom aspect ratio for content
   if (FRAME_ASPECT_RATIO > 0)
-    contentHeight = width * FRAME_ASPECT_RATIO;
+    contentHeight = roundf(width * FRAME_ASPECT_RATIO);
   
   //Fit the aspect ratio to self when self.enableOneSideZoom is disabled
   if (!self.enableOneSideZoom && isLandscape) {
