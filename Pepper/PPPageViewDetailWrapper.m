@@ -110,7 +110,7 @@ static UIImage *backgroundImageFlipped = nil;
 //
 // If the frame is bigger than native background frame, scale it to frame
 //
-- (float)initSmallerFrame:(CGRect)frame
+- (float)adjustRatioForBiggerFrame:(CGRect)frame
 {
   //Calculate the content height with current ratio
   float ratio = self.aspectRatio;
@@ -134,26 +134,16 @@ static UIImage *backgroundImageFlipped = nil;
 {    
   //This is a bit complex
   float ratio = self.aspectRatio;
-  ratio = [self initSmallerFrame:frame];
+  ratio = [self adjustRatioForBiggerFrame:frame];
   
   float bgframeHeight = frame.size.width * ratio;
   float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
   
-  CGRect bgframe = CGRectZero;
-  bgframe.origin.x = 0;
-  bgframe.origin.y = -margin;
-  bgframe.size.width = frame.size.width;
-  bgframe.size.height = bgframeHeight;
-  
-  //Relative to background view, not self
-  CGRect contentFrame = CGRectZero;
-  contentFrame.origin.x = 0;
-  contentFrame.size.width = bgframe.size.width;
-  contentFrame.size.height = bgframe.size.height;
+  CGRect bgframe = [self getBackgroundFrameForWrapperFrame:frame];
   
   //Content size
   self.contentOffset = CGPointZero;
-  self.contentSize = CGSizeMake(contentFrame.size.width, contentFrame.size.height - 2*margin);   
+  self.contentSize = CGSizeMake(bgframe.size.width, bgframe.size.height - 2*margin);   
 
   //Debug
   /*
@@ -169,20 +159,20 @@ static UIImage *backgroundImageFlipped = nil;
   if (duration <= 0) {
     [self reset:NO];
     self.background.frame = bgframe;
-    self.contentView.frame = contentFrame;
+    self.contentView.frame = self.background.bounds;
     return;
   }
   
   [self reset:YES];
   [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.background.frame = bgframe;
-    self.contentView.frame = contentFrame;
+    self.contentView.frame = self.background.bounds;
   } completion:^(BOOL finished) {
     
   }];
 }
 
-#pragma mark - Memory management
+#pragma mark - Helpers
 
 - (void)unloadContent
 {
@@ -205,6 +195,11 @@ static UIImage *backgroundImageFlipped = nil;
   self.layer.transform = CATransform3DIdentity;
   self.background.transform = CGAffineTransformIdentity;
   self.background.layer.transform = CATransform3DIdentity;
+
+  //Zooming causes the background.frame to drift
+  CGRect bgFrame = [self getBackgroundFrameForWrapperFrame:self.bounds];
+  self.background.frame = bgFrame;
+  self.contentView.frame = self.background.bounds;
   
   if (self.contentView != nil && [self.contentView respondsToSelector:@selector(reset)])
     [self.contentView performSelector:@selector(reset)];
@@ -233,6 +228,24 @@ static UIImage *backgroundImageFlipped = nil;
   theAnimation.autoreverses = NO;
   theAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
   [self.background.layer addAnimation:theAnimation forKey:@"animateLayer"];
+}
+
+- (CGRect)getBackgroundFrameForWrapperFrame:(CGRect)frame
+{
+  //This is a bit complex
+  float ratio = self.aspectRatio;
+  ratio = [self adjustRatioForBiggerFrame:frame];
+  
+  float bgframeHeight = frame.size.width * ratio;
+  float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
+  
+  CGRect bgframe = CGRectZero;
+  bgframe.origin.x = 0;
+  bgframe.origin.y = -margin;
+  bgframe.size.width = frame.size.width;
+  bgframe.size.height = bgframeHeight;
+  
+  return bgframe;
 }
 
 

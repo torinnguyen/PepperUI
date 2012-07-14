@@ -2266,10 +2266,6 @@ static int midYPortrait = 0;
   self.isBookView = NO;
   
   float diff = fabs(self.controlAngle - 0) / 45.0;
-  
-  //Populate detailed page scrollview & scroll to the correct position
-  //[self setupPageScrollview];
-
   if (!self.enableOneSideZoom)    diff /= 1.3;
   else                            diff *= 1.3;
     
