@@ -255,12 +255,8 @@ static int midYPortrait = 0;
   self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
-  
-  //Initialize once
-  [self initializeBackgroundImagesAndRatios];
-  
+    
   //Initial op flags
-  [self updateFrameSizesForOrientation];
   self.zoomOnLeft = YES;
   self.isBookView = YES;
   self.isDetailView = NO;
@@ -290,6 +286,9 @@ static int midYPortrait = 0;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
   
+  [self initializeBackgroundImagesAndRatios];
+  [self updateFrameSizesForOrientation];
+  
   //Initialize big views, in their correct order
   
   if (self.bookScrollView == nil) {
@@ -313,7 +312,6 @@ static int midYPortrait = 0;
     self.pepperView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.pepperView.autoresizesSubviews = NO;
     self.pepperView.hidden = YES;
-//    self.pepperView.backgroundColor = [UIColor greenColor];
     [self.view addSubview:self.pepperView];
   }
   
