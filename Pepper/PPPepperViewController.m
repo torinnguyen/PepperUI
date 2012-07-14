@@ -32,7 +32,7 @@
 
 //Don't mess with these
 #define OPEN_BOOK_DURATION           0.5
-#define TIMER_INTERVAL               0.0111111    //90fps
+#define TIMER_INTERVAL               0.016666667  //60fps
 #define PEPPER_PAGE_SPACING          32.0f        //gap between edges of pages in 3D/Pepper mode
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
@@ -2791,43 +2791,7 @@ static int midYPortrait = 0;
   //because angle & angle2 are already half
   //The correct fomular should be THRESHOLD_HALF_ANGLE/2+0.5, but positionScale can't sync nicely with this
   float newAngleVariation = THRESHOLD_HALF_ANGLE * factor;
-    
-  for (int i=0; i <pageCount; i++)
-  {
-    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
-    if (page == nil)
-      continue;
-    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])
-      continue;
-    if (page.hidden)
-      continue;
-    
-    float scale = [self getPepperScaleForPageIndex:i];
-    float newAngle = i < self.controlIndex ? angle2 : angle;
-    
-    //Bend the angle backwards when switching to fullscreen mode
-    if (newControlAngle > -THRESHOLD_HALF_ANGLE)
-    {
-      if (i < self.controlIndex) {
-        newAngle -= newAngleVariation;
-        if (newAngle < -180)
-          newAngle = -180;
-      }
-      else {
-        newAngle += newAngleVariation;
-        if (newAngle > 0)
-          newAngle = 0;
-      }
-    }
-
-    CATransform3D transform = CATransform3DIdentity;
-    transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, newAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-    transform = CATransform3DScale(transform, scale,scale, 1.0);
-    page.layer.anchorPoint = CGPointMake(0, 0.5);
-    page.layer.transform = transform;
-  }
-  
+      
   //Other pages position & frame
   
   //This controls the pulling together of the pages when closing book
@@ -2857,7 +2821,35 @@ static int midYPortrait = 0;
     if (self.enableOneSideZoom || isPortrait)
       frameX += diffFromMidX;
     frame.origin.x = frameX;
+    
+    //This is very expensive
     page.frame = frame;
+    
+    float otherPageScale = [self getPepperScaleForPageIndex:i];
+    
+    //When closing: follow the 2 middle page
+    //When opening: bend the angle backwards
+    float newAngle = i < self.controlIndex ? angle2 : angle;
+    if (newControlAngle > -THRESHOLD_HALF_ANGLE)
+    {
+      if (i < self.controlIndex) {
+        newAngle -= newAngleVariation;
+        if (newAngle < -180)
+          newAngle = -180;
+      }
+      else {
+        newAngle += newAngleVariation;
+        if (newAngle > 0)
+          newAngle = 0;
+      }
+    }
+    
+    CATransform3D transform = CATransform3DIdentity;
+    transform.m34 = self.m34;
+    transform = CATransform3DRotate(transform, newAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DScale(transform, otherPageScale, otherPageScale, 1.0);
+    page.layer.anchorPoint = CGPointMake(0, 0.5);
+    page.layer.transform = transform;
   }
 }
 
