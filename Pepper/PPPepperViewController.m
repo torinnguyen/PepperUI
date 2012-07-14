@@ -1057,6 +1057,27 @@ static int midYPortrait = 0;
   }
 }
 
+- (void)reorderPepperViews {
+  
+  int totalPages = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  
+  //Reorder-Z for left pages
+  for (int i=0; i < (int)self.controlIndex; i++) {
+    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+    if (page == nil)
+      continue;
+    [page.superview bringSubviewToFront:page];    //expensive, need to be further optimized
+  }
+  
+  //Reorder-Z for right pages
+  for (int i=totalPages-1; i >= (int)self.controlIndex; i--) {
+    PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
+    if (page == nil)
+      continue;
+    [page.superview bringSubviewToFront:page];    //expensive, need to be further optimized
+  }
+}
+
 - (BOOL)hasPageInPepperView:(int)index
 {
   BOOL retValue = NO;
@@ -2597,6 +2618,7 @@ static int midYPortrait = 0;
   //Memory management & setup
   if (switchingFromPepperToFullscreen) {
     self.currenPageContentOffsetY = INVALID_NUMBER;
+    [self reorderPepperViews];
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenPageIndex:)])
@@ -2684,6 +2706,7 @@ static int midYPortrait = 0;
   float fullFrameY = 0;   //desired Y position of the fullsize page
   
   int frameY = [self getFrameY];  
+  int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
@@ -2725,6 +2748,7 @@ static int midYPortrait = 0;
   }
   self.theLeftView.frame = frame;
   self.theRightView.frame = frame;
+  int diffFromMidX = frame.origin.x - midX;
     
   //Notify the delegate
   if (self.controlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle <= 0) {
@@ -2756,38 +2780,18 @@ static int midYPortrait = 0;
       page.hidden = YES;
       continue;
     }
-
-    //If current left & right page already cover this page
-    if ((self.enableOneSideZoom || isPortrait) && self.controlAngle > -THRESHOLD_HALF_ANGLE) {
-      BOOL isCovered = CGRectGetMinX(self.theLeftView.frame) < CGRectGetMinX(page.frame) && CGRectGetMaxX(page.frame) < CGRectGetMaxX(self.theRightView.frame);
-      if (isCovered) {
-        page.hidden = YES;
-        continue;
-      }
-    }
-    
-    //Fallback hardcoded condition for above
-    if (self.enableOneSideZoom && scale > 1.15) {
-
-      if (i > self.controlIndex) {
-        if (self.zoomOnLeft) {
-          page.hidden = YES;
-          continue;
-        }
-      }
-      else {
-        if (!self.zoomOnLeft) {
-          page.hidden = YES;
-          continue;
-        }
-      }
-    }
-    
+ 
     page.hidden = NO;
   }
   
   //Other pages scale & transform
-  
+  float factor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
+
+  //degree, must not go beyond 0 to avoid wrong z-index
+  //because angle & angle2 are already half
+  //The correct fomular should be THRESHOLD_HALF_ANGLE/2+0.5, but positionScale can't sync nicely with this
+  float newAngleVariation = THRESHOLD_HALF_ANGLE * factor;
+    
   for (int i=0; i <pageCount; i++)
   {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
@@ -2799,39 +2803,44 @@ static int midYPortrait = 0;
       continue;
     
     float scale = [self getPepperScaleForPageIndex:i];
+    float newAngle = i < self.controlIndex ? angle2 : angle;
+    
+    //Bend the angle backwards when switching to fullscreen mode
+    if (newControlAngle > -THRESHOLD_HALF_ANGLE)
+    {
+      if (i < self.controlIndex) {
+        newAngle -= newAngleVariation;
+        if (newAngle < -180)
+          newAngle = -180;
+      }
+      else {
+        newAngle += newAngleVariation;
+        if (newAngle > 0)
+          newAngle = 0;
+      }
+    }
 
-    if (i < self.controlIndex) {
-      CALayer *layerLeft = page.layer;
-      CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = self.m34;
-      transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale, 1.0);
-      layerLeft.anchorPoint = CGPointMake(0, 0.5);
-      layerLeft.transform = transform;
-    }
-    else {
-      CALayer *layerRight = page.layer;
-      CATransform3D transform = CATransform3DIdentity;
-      transform.m34 = self.m34;
-      transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-      transform = CATransform3DScale(transform, scale,scale, 1.0);
-      layerRight.anchorPoint = CGPointMake(0, 0.5);
-      layerRight.transform = transform;
-    }
+    CATransform3D transform = CATransform3DIdentity;
+    transform.m34 = self.m34;
+    transform = CATransform3DRotate(transform, newAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DScale(transform, scale,scale, 1.0);
+    page.layer.anchorPoint = CGPointMake(0, 0.5);
+    page.layer.transform = transform;
   }
   
-  //Other pages position
+  //Other pages position & frame
   
   //This controls the pulling together of the pages when closing book
   float positionScale = 1.0f;
-  if (newControlAngle > -THRESHOLD_HALF_ANGLE)
-    positionScale = 0.5f + (newControlAngle / (-THRESHOLD_HALF_ANGLE))/2;
+  if (newControlAngle > -THRESHOLD_HALF_ANGLE) {
+    positionScale = 1.0f - 1.05f * factor;
+  }
   else {
     positionScale = 1.0f - fabs(newControlAngle-(-THRESHOLD_HALF_ANGLE)) / fabs(-MAXIMUM_ANGLE-(-THRESHOLD_HALF_ANGLE));
     positionScale = 0.07f + positionScale * 0.93f;
   }
-  if (positionScale < 0)
-    positionScale = 0;
+  if (positionScale <= 0.05)
+    positionScale = 0.05;
   
   for (int i=0; i <pageCount; i++)
   {
@@ -2843,10 +2852,12 @@ static int midYPortrait = 0;
     if (page.hidden)
       continue;
         
-    //Smooth transition of position
-    float frameY = [self getFrameY];
+    //Simply follow the frame calculated above, because we want all the pages to zoom too
     float frameX = [self getPepperFrameXForPageIndex:i gapScale:(float)positionScale];
-    page.frame = CGRectMake(frameX, frameY, self.frameWidth, self.frameHeight);
+    if (self.enableOneSideZoom || isPortrait)
+      frameX += diffFromMidX;
+    frame.origin.x = frameX;
+    page.frame = frame;
   }
 }
 
