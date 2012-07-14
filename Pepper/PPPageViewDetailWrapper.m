@@ -46,6 +46,8 @@ static UIImage *backgroundImageFlipped = nil;
     self.minimumZoomScale = 0.1f;                   //don't change this, needed for Pepper view operation
     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;     //user might change this
     self.previousZoomScale = 1.0f;
+    self.bouncesZoom = NO;
+    self.bounces = NO;
     
     [self initBackgroundImage];
     
@@ -246,7 +248,7 @@ static UIImage *backgroundImageFlipped = nil;
 }
 
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView
-{
+{  
   if (self.previousZoomScale >= 1 && self.zoomScale <= 1.0)
     self.contentOffsetBeforeZoomOut = self.contentOffset;
   self.previousZoomScale = self.zoomScale;
