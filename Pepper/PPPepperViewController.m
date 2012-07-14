@@ -205,7 +205,7 @@ static int midYPortrait = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.3.5";
+  return @"1.3.6";
 }
 
 - (id)dataSource {
