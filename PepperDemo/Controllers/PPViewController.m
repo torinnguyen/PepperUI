@@ -375,6 +375,14 @@
 }
 
 /*
+ * This is called when a fullscreen page is tapped
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnFullscreenPageIndex:(int)pageIndex
+{
+  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnFullscreenPageIndex:%d", pageIndex]);
+}
+
+/*
  * This is called when the 3D view is being flipped
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didFlippedWithIndex:(float)index

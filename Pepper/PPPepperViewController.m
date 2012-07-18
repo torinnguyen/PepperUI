@@ -585,6 +585,15 @@ static int midYPortrait = 0;
   [self openPageIndex:tag];
 }
 
+- (void)PPPageViewDetailWrapper:(PPPageViewDetailWrapper*)thePage viewDidTap:(int)tag
+{
+  BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnFullscreenPageIndex:)];
+  if (hasDelegate) {
+    [self.delegate ppPepperViewController:self didTapOnFullscreenPageIndex:tag];
+    return;
+  }
+}
+
 
 #pragma mark - Gestures
 

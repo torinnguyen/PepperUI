@@ -49,7 +49,7 @@
     [self.tapGestureRecognizer setNumberOfTapsRequired:1];
     [self.tapGestureRecognizer setNumberOfTouchesRequired:1];
     [self addGestureRecognizer:self.tapGestureRecognizer];
-
+    
     // Background image
     self.background = [[UIImageView alloc] init];
     self.background.image = nil;

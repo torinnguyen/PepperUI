@@ -14,13 +14,14 @@ static UIImage *backgroundImageFlipped = nil;
 
 #define MAXIMUM_ZOOM_SCALE  4.0f
 
-@interface PPPageViewDetailWrapper() <UIScrollViewDelegate>
+@interface PPPageViewDetailWrapper() <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) UIImageView *background;
 @property (nonatomic, assign) float aspectRatio;
 @property (nonatomic, assign) float edgePaddingHeightPercent;
 @property (nonatomic, assign) CGRect originalFrame;
 @property (nonatomic, assign) CGPoint contentOffsetBeforeZoomOut;
 @property (nonatomic, assign) float previousZoomScale;
+@property (nonatomic, retain) UITapGestureRecognizer *tapGestureRecognizer;
 @end
 
 @implementation PPPageViewDetailWrapper
@@ -33,7 +34,7 @@ static UIImage *backgroundImageFlipped = nil;
 @synthesize originalFrame;
 @synthesize contentOffsetBeforeZoomOut;
 @synthesize previousZoomScale;
-
+@synthesize tapGestureRecognizer;
 
 #pragma mark - Initialization
 
@@ -48,7 +49,7 @@ static UIImage *backgroundImageFlipped = nil;
     self.previousZoomScale = 1.0f;
     self.bouncesZoom = NO;
     self.bounces = NO;
-    
+        
     [self initBackgroundImage];
     
     //Don't care about the frame & contentSize, we will relayout later
@@ -58,6 +59,13 @@ static UIImage *backgroundImageFlipped = nil;
     self.background.contentMode = UIViewContentModeScaleToFill;
     self.background.autoresizesSubviews = YES;
     [self addSubview:self.background];
+    
+    // Create gesture recognizer
+    self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onOneFingerTap)];
+    [self.tapGestureRecognizer setNumberOfTapsRequired:1];
+    [self.tapGestureRecognizer setNumberOfTouchesRequired:1];
+    self.tapGestureRecognizer.delegate = self;
+    [self addGestureRecognizer:self.tapGestureRecognizer];
   }
   return self;
 }
@@ -266,5 +274,23 @@ static UIImage *backgroundImageFlipped = nil;
     [self.customDelegate scrollViewDidEndZooming:theScrollView withView:view atScale:scale];
 }
 
+
+#pragma mark - Gesture
+
+- (void)onOneFingerTap
+{
+  if (self.customDelegate != nil && [self.customDelegate respondsToSelector:@selector(PPPageViewDetailWrapper:viewDidTap:)])
+    [self.customDelegate PPPageViewDetailWrapper:self viewDidTap:self.tag];
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+{
+  return YES;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+{
+  return YES;
+}
 
 @end
