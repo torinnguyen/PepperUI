@@ -11,6 +11,8 @@
 #import "PPPepperViewController.h"
 #import "PPPageViewContentWrapper.h"
 #import "PPPageViewDetailWrapper.h"
+#include <sys/types.h>
+#include <sys/sysctl.h>
 
 //Used to be public contants
 //These are only default values at compile time, can be changed on-the-fly at runtime
@@ -195,6 +197,7 @@
 static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
 static float deviceFactor = 0;
+static BOOL isLowEndDevice = NO;
 
 //Optimize for performance
 static int midXLandscape = 0;
@@ -237,6 +240,8 @@ static int midYPortrait = 0;
   self.delegate = self;
   self.dataSource = self;
   
+  //Device constants
+  isLowEndDevice = [self checkLowEndDevice];
   if (deviceFactor == 0)
     deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
   
@@ -508,6 +513,30 @@ static int midYPortrait = 0;
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
   self.pageScrollView.hidden = YES;
+}
+
+- (NSString *)rawPlatformString {
+  size_t size;
+  sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+  char *machine = malloc(size);
+  sysctlbyname("hw.machine", machine, &size, NULL, 0);
+  NSString *platform = [NSString stringWithUTF8String:machine];
+  free(machine);
+  return platform;
+}
+
+- (BOOL)checkLowEndDevice {
+  
+  NSString *platform = [self rawPlatformString];
+  if ([platform isEqualToString:@"iPad1,1"] ||          //iPad 1
+      [platform isEqualToString:@"iPhone1,1"] ||        //iPhone 1G
+      [platform isEqualToString:@"iPhone2,1"] ||        //iPhone 3G
+      [platform isEqualToString:@"iPod1,1"] ||          //iPod Touch 1G
+      [platform isEqualToString:@"iPod2,1"]             //iPod Touch 2G
+      )
+    return YES;
+  
+  return NO;
 }
 
 
@@ -1509,16 +1538,16 @@ static int midYPortrait = 0;
     subview.layer.transform = transform;
     
     PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
-    if (self.enableBookScale && self.enableBookShadow) {
+    if (!isLowEndDevice && self.enableBookScale && self.enableBookShadow) {
       float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
       wrapper.shadowOffset = isPad ? CGSizeMake(0, 5 + 5*shadowScale) : CGSizeMake(0, 2 + 2*shadowScale);
       wrapper.shadowRadius = isPad ? 10 + 8 * shadowScale : 5 + 4 * shadowScale;
-      wrapper.shadowOpacity = 0.35;
+      [wrapper updateShadow];
     }
     else if (self.enableBookShadow) {
       wrapper.shadowOffset = isPad ? CGSizeMake(0, 5) : CGSizeMake(0, 2);
       wrapper.shadowRadius = isPad ? 12 : 6;
-      wrapper.shadowOpacity = 0.35;
+      [wrapper updateShadow];
     }
     else {
       wrapper.shadowOpacity = 0;
@@ -2659,7 +2688,7 @@ static int midYPortrait = 0;
   [self updateLeftRightPointers];
   [self updateFlipPointers];
     
-  //Fade in the other books
+  //Alpha factor
   CGFloat alpha = 0;
   if (self.controlAngle > -THRESHOLD_HALF_ANGLE-40) {
     alpha = 0;
@@ -2669,7 +2698,7 @@ static int midYPortrait = 0;
     if (alpha > 1)
       alpha = 1;
   }
-  
+    
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
   UIView *bookCover = [self getBookViewAtIndex:self.currentBookIndex];
@@ -2679,48 +2708,28 @@ static int midYPortrait = 0;
   if (self.controlAngle < -THRESHOLD_HALF_ANGLE)
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
       [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
-    
-  CALayer *layerLeft = self.theLeftView.layer;
-  CATransform3D transform = CATransform3DIdentity;
-  transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.enableOneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale,scale, 1.0);
-  layerLeft.anchorPoint = CGPointMake(0, 0.5);
-  layerLeft.transform = transform;
-  self.theLeftView.hidden = [self.theLeftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
-  
-  CALayer *layerRight = self.theRightView.layer;
-  transform = CATransform3DIdentity;
-  transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.enableOneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale,scale, 1.0);
-  layerRight.anchorPoint = CGPointMake(0, 0.5);
-  layerRight.transform = transform;
-  self.theRightView.hidden = NO;
   
   //Default bias to left page
   self.currentPageIndex = self.controlIndex - 0.5;
   
-  float fullFrameY = 0;   //desired Y position of the fullsize page
-  
-  int frameY = [self getFrameY];  
+  int frameY = [self getFrameY];
   int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midPositionX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  CGRect leftFrameOriginal = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
-  float aspectRatio = (float)self.frameWidth / (float)self.frameHeight;
-  float fullHeight = self.view.bounds.size.width / aspectRatio;
-  CGRect frame;
+  float frameAspectRatio = (float)self.frameWidth / (float)self.frameHeight;
+  float fullHeight = self.view.bounds.size.width / frameAspectRatio;
+
+  CGRect originalFrame = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
+  CGRect zoomedFrame;
+  float fullFrameY = 0;   //desired Y position of the fullsize page
   
   //Zoom in on 1 side
   BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
   if (self.enableOneSideZoom || isPortrait)
   {
-    frame.origin.x = leftFrameOriginal.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - leftFrameOriginal.origin.x) * frameScale;
-    frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width - leftFrameOriginal.size.width) * frameScale;
-    frame.size.height = frame.size.width / aspectRatio;
+    zoomedFrame.origin.x = originalFrame.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - originalFrame.origin.x) * frameScale;
+    zoomedFrame.size.width = originalFrame.size.width + (self.view.bounds.size.width - originalFrame.size.width) * frameScale;
+    zoomedFrame.size.height = zoomedFrame.size.width / frameAspectRatio;
 
     //Reset content offset upon opening
     if (self.currenPageContentOffsetY == INVALID_NUMBER)
@@ -2733,22 +2742,54 @@ static int midYPortrait = 0;
     if (hasNoPageScrollView && self.enableOneSideMiddleZoom)
       fullFrameY = midY - fullHeight/2;
     
-    float fullDy = leftFrameOriginal.origin.y - fullFrameY;
-    frame.origin.y = leftFrameOriginal.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;
+    float fullDy = originalFrame.origin.y - fullFrameY;
+    zoomedFrame.origin.y = originalFrame.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
   //Zoom both side
   else
   {
-    frame.origin.x = leftFrameOriginal.origin.x;
-    frame.size.width = leftFrameOriginal.size.width + (self.view.bounds.size.width/2 - leftFrameOriginal.size.width) * frameScale;
-    frame.size.height = frame.size.width / aspectRatio;
-    frame.origin.y = CGRectGetMidY(leftFrameOriginal) - frame.size.height/2;    //vertically centered
+    zoomedFrame.origin.x = originalFrame.origin.x;
+    zoomedFrame.size.width = originalFrame.size.width + (self.view.bounds.size.width/2 - originalFrame.size.width) * frameScale;
+    zoomedFrame.size.height = zoomedFrame.size.width / frameAspectRatio;
+    zoomedFrame.origin.y = CGRectGetMidY(originalFrame) - zoomedFrame.size.height/2;    //vertically centered
   }
-  self.theLeftView.frame = frame;
-  self.theRightView.frame = frame;
-  int diffFromMidX = frame.origin.x - midX;
+  
+  //This is very expensive because the frame changes & invalidate the rasterization cache
+  //self.theLeftView.frame = zoomedFrame;
+  //self.theRightView.frame = zoomedFrame;
+  
+  //So we keep the frame size the same, vary only origin.x & scale the layer with frameZoomScaleX/Y
+  self.theLeftView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
+  self.theRightView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
+  float frameZoomScaleX = zoomedFrame.size.width / originalFrame.size.width;
+  float frameZoomScaleY = zoomedFrame.size.height / originalFrame.size.height;
+  
+  CALayer *layerLeft = self.theLeftView.layer;
+  CATransform3D transform = CATransform3DIdentity;
+  transform.m34 = self.m34;
+  transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  if (!self.enableOneSideZoom || isClosing)
+    transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
+  layerLeft.anchorPoint = CGPointMake(0, 0.5);
+  layerLeft.transform = transform;
+  self.theLeftView.hidden = [self.theLeftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
+  
+  CALayer *layerRight = self.theRightView.layer;
+  transform = CATransform3DIdentity;
+  transform.m34 = self.m34;
+  transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  if (!self.enableOneSideZoom || isClosing)
+    transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
+  layerRight.anchorPoint = CGPointMake(0, 0.5);
+  layerRight.transform = transform;
+  self.theRightView.hidden = NO;
+
+  //------------------
+  
+  //This is for shifting the entire animation to one side upon zooming in on 1 side
+  int diffFromMidX = zoomedFrame.origin.x - midX;
     
   //Notify the delegate
   if (self.controlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle <= 0) {
@@ -2784,20 +2825,20 @@ static int midYPortrait = 0;
     page.hidden = NO;
   }
   
-  //Other pages scale & transform
-  float factor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
-
+  //Angle factor
+  float angleZoomInFactor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
+  
   //degree, must not go beyond 0 to avoid wrong z-index
   //because angle & angle2 are already half
   //The correct fomular should be THRESHOLD_HALF_ANGLE/2+0.5, but positionScale can't sync nicely with this
-  float newAngleVariation = THRESHOLD_HALF_ANGLE * factor;
+  float newAngleVariation = THRESHOLD_HALF_ANGLE * angleZoomInFactor;
       
   //Other pages position & frame
   
   //This controls the pulling together of the pages when closing book
   float positionScale = 1.0f;
   if (newControlAngle > -THRESHOLD_HALF_ANGLE) {
-    positionScale = 1.0f - 1.05f * factor;
+    positionScale = 1.0f - 1.05f * angleZoomInFactor;
   }
   else {
     positionScale = 1.0f - fabs(newControlAngle-(-THRESHOLD_HALF_ANGLE)) / fabs(-MAXIMUM_ANGLE-(-THRESHOLD_HALF_ANGLE));
@@ -2816,14 +2857,13 @@ static int midYPortrait = 0;
     if (page.hidden)
       continue;
         
-    //Simply follow the frame calculated above, because we want all the pages to zoom too
+    //New position of frame
     float frameX = [self getPepperFrameXForPageIndex:i gapScale:(float)positionScale];
     if (self.enableOneSideZoom || isPortrait)
       frameX += diffFromMidX;
-    frame.origin.x = frameX;
     
-    //This is very expensive
-    page.frame = frame;
+    //We keep the frame size the same, vary only origin.x & scale the layer with additionalScale
+    page.frame = CGRectMake(frameX, frameY, self.frameWidth, self.frameHeight);
     
     float otherPageScale = [self getPepperScaleForPageIndex:i];
     
@@ -2843,11 +2883,11 @@ static int midYPortrait = 0;
           newAngle = 0;
       }
     }
-    
+        
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
     transform = CATransform3DRotate(transform, newAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-    transform = CATransform3DScale(transform, otherPageScale, otherPageScale, 1.0);
+    transform = CATransform3DScale(transform, otherPageScale*frameZoomScaleX, otherPageScale*frameZoomScaleY, 1.0);
     page.layer.anchorPoint = CGPointMake(0, 0.5);
     page.layer.transform = transform;
   }

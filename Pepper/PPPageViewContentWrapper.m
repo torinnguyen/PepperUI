@@ -10,7 +10,8 @@
 #import "PPPepperContants.h"
 #import "PPPageViewContentWrapper.h"
 
-#define EDGE_ALPHA            0.1
+#define EDGE_ALPHA                0.1f
+#define DEFAULT_SHADOW_ALPHA      0.35f
 
 @interface PPPageViewContentWrapper()
 @property (nonatomic, retain) UIImageView *shadow;
@@ -116,18 +117,19 @@
 {
   _shadowOffset = newValue;
   [self setupShadow];
-  [self updateShadow];
 }
 
 - (void)setShadowOpacity:(float)newValue
 {
   _shadowOpacity = newValue;
+  
   if (newValue == 0) {
     [self.shadow removeFromSuperview];
     self.shadow = nil;
     return;
   }
   
+  [self setupShadow];
   self.shadow.alpha = newValue;
 }
 
@@ -135,7 +137,6 @@
 {
   _shadowRadius = newValue;
   [self setupShadow];
-  [self updateShadow];
 }
 
 - (void)setupShadow
@@ -143,25 +144,41 @@
   if (self.shadow != nil)
     return;
   
-  self.shadow = [[UIImageView alloc] init];
+  self.shadow = [[UIImageView alloc] initWithFrame:self.bounds];
   self.shadow.image = [UIImage imageNamed:@"page_bg_shadow"];
   self.shadow.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   self.shadow.backgroundColor = [UIColor clearColor];
+  self.shadow.alpha = DEFAULT_SHADOW_ALPHA;
+  self.shadow.layer.shouldRasterize = YES;
+  self.shadow.layer.rasterizationScale = [UIScreen mainScreen].scale;
+  self.shadow.layer.anchorPoint = CGPointMake(0.5, 0.5);
   [self insertSubview:self.shadow belowSubview:self.background];
   [self updateShadow];
 }
 
+- (void)removeShadow
+{
+  if (self.shadow == nil)
+    return;
+
+  [self.shadow removeFromSuperview];
+  self.shadow = nil;
+}
+
+/*
+ * This needs to be call manually for performance reason
+ */
 - (void)updateShadow
 {
-  CGRect frame = self.bounds;
-  frame.size.width += 2 * self.shadowRadius;
-  frame.size.height += 2 * self.shadowRadius;
-  frame.origin.x -= self.shadowRadius;
-  frame.origin.y -= self.shadowRadius;
+  //We scale the layer here, don't change the frame size
+  CGRect originalFrame = self.bounds;
+  float scaleX = (originalFrame.size.width+2*self.shadowRadius) / originalFrame.size.width;
+  float scaleY = (originalFrame.size.height+2*self.shadowRadius) / originalFrame.size.height;
   
-  frame.origin.x += self.shadowOffset.width;
-  frame.origin.y += self.shadowOffset.height;
-  self.shadow.frame = frame;
+  CATransform3D transform = CATransform3DMakeScale(scaleX, scaleY, 1.0);
+  transform = CATransform3DTranslate(transform, self.shadowOffset.width, self.shadowOffset.height, 0);
+  
+  self.shadow.layer.transform = transform;
 }
 
 @end
