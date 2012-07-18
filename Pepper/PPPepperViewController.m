@@ -2707,6 +2707,9 @@ static int midYPortrait = 0;
     if (alpha > 1)
       alpha = 1;
   }
+  
+  //Angle factor
+  float angleZoomInFactor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
     
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
@@ -2730,12 +2733,11 @@ static int midYPortrait = 0;
 
   CGRect originalFrame = CGRectMake(midPositionX, frameY, self.frameWidth, self.frameHeight);
   CGRect zoomedFrame;
-  float fullFrameY = 0;   //desired Y position of the fullsize page
   
   //Zoom in on 1 side
   BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
   if (self.enableOneSideZoom || isPortrait)
-  {
+  {    
     zoomedFrame.origin.x = originalFrame.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - originalFrame.origin.x) * frameScale;
     zoomedFrame.size.width = originalFrame.size.width + (self.view.bounds.size.width - originalFrame.size.width) * frameScale;
     zoomedFrame.size.height = zoomedFrame.size.width / frameAspectRatio;
@@ -2745,14 +2747,18 @@ static int midYPortrait = 0;
       self.currenPageContentOffsetY = 0;
 
     //Intermediate zoom OUT (normal case)
-    fullFrameY = - self.currenPageContentOffsetY;
+    float fullFrameY = - self.currenPageContentOffsetY;
     
     //Zoom INTO middle of page
-    if (hasNoPageScrollView && self.enableOneSideMiddleZoom)
+    if (hasNoPageScrollView && self.enableOneSideMiddleZoom) {
       fullFrameY = midY - fullHeight/2;
+    }
     
-    float fullDy = originalFrame.origin.y - fullFrameY;
+    float fullDy = frameY - fullFrameY;
     zoomedFrame.origin.y = originalFrame.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;
+
+    if (hasNoPageScrollView && !self.enableOneSideMiddleZoom)
+      frameY = (1.0f - angleZoomInFactor) * frameY + (zoomedFrame.size.height/2 - self.frameHeight/2);
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
@@ -2779,8 +2785,7 @@ static int midYPortrait = 0;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.enableOneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
+  transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
   self.theLeftView.hidden = [self.theLeftView isEqual:[self getPepperPageAtIndex:0]] && self.hideFirstPage ? YES : NO;
@@ -2789,8 +2794,7 @@ static int midYPortrait = 0;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
   transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
-  if (!self.enableOneSideZoom || isClosing)
-    transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
+  transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
   self.theRightView.hidden = NO;
@@ -2834,9 +2838,6 @@ static int midYPortrait = 0;
     page.hidden = NO;
   }
   
-  //Angle factor
-  float angleZoomInFactor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
-  
   //degree, must not go beyond 0 to avoid wrong z-index
   //because angle & angle2 are already half
   //The correct fomular should be THRESHOLD_HALF_ANGLE/2+0.5, but positionScale can't sync nicely with this
@@ -2861,7 +2862,7 @@ static int midYPortrait = 0;
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
       continue;
-    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])      //always centered
+    if ([page isEqual:self.theLeftView] || [page isEqual:self.theRightView])
       continue;
     if (page.hidden)
       continue;
