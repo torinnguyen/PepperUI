@@ -561,7 +561,8 @@ static int midYPortrait = 0;
   if (!self.isBookView && self.controlAngle == 0)
     return;
     
-  if (thePage.isBook) {
+  if (thePage.isBook)
+  {
     if (self.currentBookIndex != tag) {
       [self scrollToBook:tag animated:YES];
       return;
@@ -672,7 +673,7 @@ static int midYPortrait = 0;
 - (void)onPanning:(UIPanGestureRecognizer *)recognizer
 {
   //in case gestureRecognizerShouldBegin does not work properly
-  if ([self isFullscreen])
+  if (self.isDetailView || self.isBookView)
     return;
     
   //Remember initial value to calculate based on delta later
@@ -709,7 +710,7 @@ static int midYPortrait = 0;
 
     float diff = fabs(snapTo - newControlIndex);
     float duration = diff / 2.5f;
-    if (ENABLE_HIGH_SPEED_SCROLLING)
+    if (ENABLE_HIGH_SPEED_SCROLLING && normalizedVelocityX != 0)
       duration /= normalizedVelocityX;
     if (diff <= 0)
       return;
@@ -1060,6 +1061,7 @@ static int midYPortrait = 0;
     box.delegate = self;
     box.alpha = 1;
     box.tag = -1;
+    box.hidden = YES;
     [self.reusePepperWrapperArray addObject:box];
   }
 }
@@ -1387,9 +1389,19 @@ static int midYPortrait = 0;
 }
 
 - (void)scrollToBook:(int)bookIndex animated:(BOOL)animated {
+  
   int x = bookIndex * (self.frameWidth + self.bookSpacing);
+  if (animated)
+    self.bookScrollView.userInteractionEnabled = NO;
+  
   [self.bookScrollView setContentOffset:CGPointMake(x, 0) animated:animated];
   self.currentBookIndex = bookIndex;
+  
+  if (animated) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+      self.bookScrollView.userInteractionEnabled = YES;
+    });    
+  }
 }
 
 - (void)scrollToBook:(int)bookIndex duration:(float)duration {
@@ -1760,17 +1772,17 @@ static int midYPortrait = 0;
 {  
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
-  
+    
   //Populate page scrollview
   [self reusePageScrollview];
-  
+    
   //Reset pages UI
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     subview.hidden = NO;
     if (subview.tag == self.currentPageIndex)     [subview resetWithoutOffset:NO];
     else                                          [subview reset:NO];
   }
-
+  
   [self updatePageScrollViewContentSize];
   [self scrollToPage:self.currentPageIndex duration:0];
   
@@ -1781,7 +1793,7 @@ static int midYPortrait = 0;
   PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:self.currentPageIndex];
   if (wrapper == nil)
     return;
-  
+    
   CGSize contentSize = wrapper.contentSize;
   int offsetX = 0;
   int offsetY = contentSize.height/2 - wrapper.bounds.size.height/2;
@@ -1806,7 +1818,7 @@ static int midYPortrait = 0;
   for (int i=0; i<pageCount; i++)
     if (i < startIndex || i > endIndex)
       [self removePageFromScrollView:i];
-  
+    
   //Add new views
   for (int i=startIndex; i<=endIndex; i++)
     [self addPageToScrollView:i];
@@ -1919,12 +1931,12 @@ static int midYPortrait = 0;
   if ([self hasPageInPageScrollView:index])
     return;
   
-  CGRect pageFrame = [self getFrameForPageIndex:index];
   PPPageViewDetailWrapper *pageDetailView = [self.reusePageViewArray objectAtIndex:0];
   [self.reusePageViewArray removeObjectAtIndex:0];
   if (pageDetailView == nil)
     return;
-  
+
+  CGRect pageFrame = [self getFrameForPageIndex:index];
   pageDetailView.tag = index; 
   pageDetailView.frame = pageFrame;
   pageDetailView.alpha = 1;
@@ -1932,11 +1944,11 @@ static int midYPortrait = 0;
   BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
   [pageDetailView setBackgroundImage:(useBookCoverImage ? self.bookCoverImage : self.pageBackgroundImage)];
    
-  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:detailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
   else
     [pageDetailView unloadContent];
-
+  
   [pageDetailView layoutWithFrame:pageFrame duration:0];
 
   pageDetailView.customDelegate = self;
@@ -2523,8 +2535,10 @@ static int midYPortrait = 0;
   //Should be already visible, just for sure
   self.bookScrollView.alpha = 1;
   for (UIView *subview in self.visibleBookViewArray)
-    if (subview.tag != self.currentBookIndex)
+    if (subview.tag != self.currentBookIndex) {
       subview.alpha = 1;
+      subview.hidden = NO;
+    }
   
   if (!animated) {
     self.isBookView = YES;
@@ -2534,6 +2548,8 @@ static int midYPortrait = 0;
     return;
   }
   
+  self.view.userInteractionEnabled = NO;
+  
   //This is where magic happens (animation)
   [self flattenAllPepperViews:diff];
   
@@ -2541,13 +2557,18 @@ static int midYPortrait = 0;
   float animationDuration = self.animationSlowmoFactor*diff;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     self.isBookView = YES;
-    [self removeBookCoverFromFirstPage];
-    [self destroyPepperView:NO];
-    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
-    
+   
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
       [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
+  });
+
+  //Memory management
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.3) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    [self removeBookCoverFromFirstPage];
+    [self destroyPepperView:NO];
+    self.view.userInteractionEnabled = YES;
+    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
   });
 }
 
@@ -2750,14 +2771,13 @@ static int midYPortrait = 0;
   }
   else if (switchingToPepper)
   {
-
     //For intermediate zoom OUT
     PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
     self.currenPageContentOffsetY = detailView.contentOffset.y;
     
-    self.pepperView.hidden = YES;
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
+    self.pepperView.hidden = NO;
   }
   else if (switchingToBookView)
   {
@@ -2772,8 +2792,8 @@ static int midYPortrait = 0;
   //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
   self.isDetailView = !self.pageScrollView.hidden;
-  //if (!self.isBookView && newControlAngle < 0)
-  //  self.pepperView.hidden = NO;
+  if (!self.isBookView && newControlAngle < 0)
+    self.pepperView.hidden = NO;
   
   //General scale for all frames
   float scale = [self getPepperScaleForPageIndex:self.controlIndex];
@@ -2989,9 +3009,6 @@ static int midYPortrait = 0;
     page.layer.anchorPoint = CGPointMake(0, 0.5);
     page.layer.transform = transform;
   }
-  
-  if (switchingToPepper)
-    self.pepperView.hidden = NO;
 }
 
 - (void)animateControlAngleTo:(float)angle duration:(float)duration

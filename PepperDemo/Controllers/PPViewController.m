@@ -263,7 +263,7 @@
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
-  
+    
   MyPageViewDetail *view = nil;
   if (contentView == nil || ![contentView isKindOfClass:[MyPageViewDetail class]])
     view = [[MyPageViewDetail alloc] initWithFrame:frame];

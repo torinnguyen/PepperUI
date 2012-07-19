@@ -60,7 +60,7 @@ static UIImage *backgroundImageFlipped = nil;
     self.background.contentMode = UIViewContentModeScaleToFill;
     self.background.autoresizesSubviews = YES;
     [self addSubview:self.background];
-    
+        
     // Create gesture recognizer
     self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onOneFingerTap)];
     [self.tapGestureRecognizer setNumberOfTapsRequired:1];
@@ -77,15 +77,15 @@ static UIImage *backgroundImageFlipped = nil;
 }
 
 - (void)setContentView:(UIView *)theContentView
-{
+{ 
   [self reset:NO];
-  
+    
   [_myContentView removeFromSuperview];
   _myContentView = nil;
   _myContentView = theContentView;
   
   if (theContentView == nil) {
-    self.contentSize = CGSizeZero;
+    self.contentSize = CGSizeMake(10,10);
     return;
   }
     
@@ -102,8 +102,8 @@ static UIImage *backgroundImageFlipped = nil;
   backgroundImageFlipped = nil;
   backgroundImage = image;
   [self initBackgroundImage];
-  
-  if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;
+      
+  if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;   //This causes 'singular matrix' error
   else                  self.background.image = backgroundImage;
 }
 
@@ -119,7 +119,6 @@ static UIImage *backgroundImageFlipped = nil;
     backgroundImageFlipped = [UIImage imageWithCGImage:backgroundImage.CGImage 
                                                  scale:1.0
                                            orientation:UIImageOrientationUpMirrored];
-  
   if (FRAME_ASPECT_RATIO > 0)
     self.aspectRatio = FRAME_ASPECT_RATIO;
   else
@@ -210,23 +209,25 @@ static UIImage *backgroundImageFlipped = nil;
   self.layer.transform = CATransform3DIdentity;
   self.background.transform = CGAffineTransformIdentity;
   self.background.layer.transform = CATransform3DIdentity;
-
+  
   //Zooming causes the background.frame to drift
   CGRect bgFrame = [self getBackgroundFrameForWrapperFrame:self.originalFrame];
-  self.background.frame = bgFrame;
+  if (bgFrame.size.width > 0 && bgFrame.size.height > 0)
+    self.background.frame = bgFrame;
   self.contentView.frame = self.background.bounds;
-  
+   
   //This is a bit complex
   float ratio = self.aspectRatio;
   ratio = [self adjustRatioForBiggerFrame:self.originalFrame];
-  
+      
   float bgframeHeight = self.originalFrame.size.width * ratio;
   float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
   
   //Content offset & size
   self.contentOffset = self.contentOffsetBeforeZoomOut;
-  self.contentSize = CGSizeMake(bgFrame.size.width, bgFrame.size.height - 2*margin);
-    
+  if (bgFrame.size.width > 0 && bgFrame.size.height > 2*margin)
+    self.contentSize = CGSizeMake(bgFrame.size.width, bgFrame.size.height - 2*margin);
+  
   if (self.contentView != nil && [self.contentView respondsToSelector:@selector(reset)])
     [self.contentView performSelector:@selector(reset)];
   
