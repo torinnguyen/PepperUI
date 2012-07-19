@@ -49,6 +49,7 @@ static UIImage *backgroundImageFlipped = nil;
     self.previousZoomScale = 1.0f;
     self.bouncesZoom = NO;
     self.bounces = NO;
+    self.directionalLockEnabled = YES;
         
     [self initBackgroundImage];
     
@@ -158,6 +159,15 @@ static UIImage *backgroundImageFlipped = nil;
    
   [self reset:NO];
 }
+
+- (void)setEnableScrollingZooming:(BOOL)enable
+{
+  self.scrollEnabled = NO;
+  if (enable)     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;
+  else            self.maximumZoomScale = 1;
+}
+
+
 
 #pragma mark - Helpers
 
@@ -290,7 +300,7 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
-  return YES;
+  return NO;
 }
 
 @end

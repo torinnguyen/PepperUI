@@ -2645,13 +2645,16 @@ static int midYPortrait = 0;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
   
-  //BOOL hasNoBookView = self.reuseBookViewArray == nil;
-  //BOOL hasNoPepperView = self.reusePepperWrapperArray == nil;
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
-  BOOL switchingToPepper = previousControlAngle >= 0 && self.controlAngle < 0;
-  BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && self.controlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
-  //BOOL switchingToBookView = hasNoBookView && self.controlAngle < -THRESHOLD_HALF_ANGLE;
+  BOOL switchingToPepper = previousControlAngle >= 0 && newControlAngle < 0;
+  BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && newControlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
+  BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
+  BOOL zoomingOneSide = self.enableOneSideZoom || isPortrait;
+  
+  if (switchingToFullscreen)
+    for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
+      [subview setEnableScrollingZooming:zoomingOneSide];   
   
   //Memory management & setup
   if (switchingFromPepperToFullscreen) {
@@ -2683,34 +2686,34 @@ static int midYPortrait = 0;
   if (!self.isBookView && newControlAngle < 0)
     self.pepperView.hidden = NO;
   
-  float scale = 1;
-  BOOL isClosing = (newControlAngle < -THRESHOLD_HALF_ANGLE);
-  scale = [self getPepperScaleForPageIndex:self.controlIndex];
+  //General scale for all frames
+  float scale = [self getPepperScaleForPageIndex:self.controlIndex];
   
+  //Frame scale factor
   float frameScale = 0;
   if (newControlAngle > -THRESHOLD_HALF_ANGLE)
     frameScale = 1.0 - (newControlAngle/(-THRESHOLD_HALF_ANGLE));       //0 to 1
   
-  float angle = newControlAngle;
-  float angle2 = -180.0 - angle;
-  
-  [self updateLeftRightPointers];
-  [self updateFlipPointers];
-    
   //Alpha factor
   CGFloat alpha = 0;
-  if (self.controlAngle > -THRESHOLD_HALF_ANGLE-40) {
+  if (newControlAngle > -THRESHOLD_HALF_ANGLE-40) {
     alpha = 0;
   }
   else {
-    alpha = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE-40)) / 20;
+    alpha = fabs(newControlAngle - (-THRESHOLD_HALF_ANGLE-40)) / 20;
     if (alpha > 1)
       alpha = 1;
   }
   
   //Angle factor
   float angleZoomInFactor = 1.0f - fabsf(newControlAngle/THRESHOLD_HALF_ANGLE);
-    
+  
+  float angle = newControlAngle;
+  float angle2 = -180.0 - angle;
+  
+  [self updateLeftRightPointers];
+  [self updateFlipPointers];
+        
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
   UIView *bookCover = [self getBookViewAtIndex:self.currentBookIndex];
@@ -2721,9 +2724,7 @@ static int midYPortrait = 0;
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:closingBookWithAlpha:)])
       [self.delegate ppPepperViewController:self closingBookWithAlpha:alpha];
   
-  //Default bias to left page
-  self.currentPageIndex = self.controlIndex - 0.5;
-  
+  //Calculate zoomFrame for all pages, all pages share mostly the same frame
   int frameY = [self getFrameY];
   int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   int midY = [self getMidYForOrientation:[UIApplication sharedApplication].statusBarOrientation];
@@ -2735,8 +2736,7 @@ static int midYPortrait = 0;
   CGRect zoomedFrame;
   
   //Zoom in on 1 side
-  BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
-  if (self.enableOneSideZoom || isPortrait)
+  if (zoomingOneSide)
   {    
     zoomedFrame.origin.x = originalFrame.origin.x + ((self.zoomOnLeft ? self.view.bounds.size.width : 0) - originalFrame.origin.x) * frameScale;
     zoomedFrame.size.width = originalFrame.size.width + (self.view.bounds.size.width - originalFrame.size.width) * frameScale;
@@ -2746,19 +2746,14 @@ static int midYPortrait = 0;
     if (self.currenPageContentOffsetY == INVALID_NUMBER)
       self.currenPageContentOffsetY = 0;
 
-    //Intermediate zoom OUT (normal case)
-    float fullFrameY = - self.currenPageContentOffsetY;
-    
     //Zoom INTO middle of page
-    if (hasNoPageScrollView && self.enableOneSideMiddleZoom) {
-      fullFrameY = midY - fullHeight/2;
-    }
+    float fullFrameY = 0;
+    if (hasNoPageScrollView && self.enableOneSideMiddleZoom)      fullFrameY = midY - fullHeight/2;
+    //Intermediate zoom OUT (normal case)
+    else                                                          fullFrameY = - self.currenPageContentOffsetY;
     
     float fullDy = frameY - fullFrameY;
     zoomedFrame.origin.y = originalFrame.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;
-
-    if (hasNoPageScrollView && !self.enableOneSideMiddleZoom)
-      frameY = (1.0f - angleZoomInFactor) * frameY + (zoomedFrame.size.height/2 - self.frameHeight/2);
     
     self.currentPageIndex = self.zoomOnLeft ? self.controlIndex - 0.5 : self.controlIndex + 0.5;
   }
@@ -2769,13 +2764,17 @@ static int midYPortrait = 0;
     zoomedFrame.size.width = originalFrame.size.width + (self.view.bounds.size.width/2 - originalFrame.size.width) * frameScale;
     zoomedFrame.size.height = zoomedFrame.size.width / frameAspectRatio;
     zoomedFrame.origin.y = CGRectGetMidY(originalFrame) - zoomedFrame.size.height/2;    //vertically centered
+    
+    self.currentPageIndex = self.controlIndex - 0.5;
   }
-  
+
   //This is very expensive because the frame changes & invalidate the rasterization cache
   //self.theLeftView.frame = zoomedFrame;
   //self.theRightView.frame = zoomedFrame;
-  
+    
   //So we keep the frame size the same, vary only origin.x & scale the layer with frameZoomScaleX/Y
+  float newMidYFullDy = CGRectGetMidY(zoomedFrame) - CGRectGetMidY(originalFrame);
+  frameY = originalFrame.origin.y + (newMidYFullDy * frameScale);
   self.theLeftView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
   self.theRightView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
   float frameZoomScaleX = zoomedFrame.size.width / originalFrame.size.width;
@@ -2803,7 +2802,7 @@ static int midYPortrait = 0;
   
   //This is for shifting the entire animation to one side upon zooming in on 1 side
   int diffFromMidX = zoomedFrame.origin.x - midX;
-    
+      
   //Notify the delegate
   if (self.controlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle <= 0) {
     float scale = 1.0 + self.controlAngle / fabs(THRESHOLD_HALF_ANGLE);
@@ -2953,7 +2952,6 @@ static int midYPortrait = 0;
   self.controlAngleTimer = nil;
   
   self.controlAngle = self.controlAngleTimerTarget;
-  self.currenPageContentOffsetY = 0;
     
   //Open fullscreen
   if (self.controlAngle >= 0) {
@@ -3069,11 +3067,15 @@ static int midYPortrait = 0;
 //
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
   if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
-  {    
+  {   
     if (theScrollView.zoomScale > 1.0) {
       self.controlAngle = 1.0;
-      self.pageScrollView.hidden = NO;
-      self.pepperView.hidden = NO;
+      
+      if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)) {
+        theScrollView.zoomScale = 1;
+        theScrollView.contentOffset = CGPointZero;
+        return;
+      }
       
       //Notify the delegate
       if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
@@ -3082,8 +3084,6 @@ static int midYPortrait = 0;
     }
     
     float scale = theScrollView.zoomScale;      //1.0 and smaller
-    //theScrollView.hidden = (scale < 1.0) ? YES : NO;
-    //self.pepperView.hidden = !theScrollView.hidden;
 
     //Memory warning kills Pepper view
     /*

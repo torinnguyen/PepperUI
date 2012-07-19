@@ -26,7 +26,7 @@
     self.backgroundColor = [UIColor clearColor];
     
     //We are given the entire frame including EDGE_PADDING space, so we need to compensate for it
-    int margin = 8;
+    int margin = 0;
     CGRect imageFrame = CGRectMake(margin, margin+EDGE_PADDING, frame.size.width-2*margin, frame.size.height-2*EDGE_PADDING-2*margin);
     
     self.imageView = [[UIImageView alloc] initWithFrame:imageFrame];
