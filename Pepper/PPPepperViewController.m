@@ -284,6 +284,13 @@ static int midYPortrait = 0;
   return self;
 }
 
+- (void)dealloc
+{
+  [self destroyBookScrollView:YES];
+  [self destroyPepperView:YES];
+  [self destroyPageScrollView:YES];
+}
+
 - (void)viewDidLoad
 {
   [super viewDidLoad];
@@ -355,9 +362,10 @@ static int midYPortrait = 0;
   [super didReceiveMemoryWarning];
   
   //The functions will check if the view can be destroyed
-  [self destroyBookScrollView:NO];
-  [self destroyPepperView:NO];
-  [self destroyPageScrollView:NO];
+  [self unloadBookScrollView:NO];
+  if (self.isBookView)    [self destroyPepperView:NO];
+  else                    [self unloadPepperView:NO];
+  [self unloadPageScrollView:NO];
 }
 
 - (void)viewDidUnload
@@ -498,9 +506,12 @@ static int midYPortrait = 0;
   self.isDetailView = NO;
   
   //Initialize books scrollview
-  [self destroyBookScrollView:YES];
-  [self destroyPepperView:YES];
-  [self destroyPageScrollView:YES];
+  //[self destroyBookScrollView:YES];
+  //[self destroyPepperView:YES];
+  //[self destroyPageScrollView:YES];
+  [self unloadBookScrollView:YES];
+  [self unloadPepperView:YES];
+  [self unloadPageScrollView:YES];
 
   //Initialize books scrollview
   [self setupReuseablePoolBookViews];
@@ -988,6 +999,27 @@ static int midYPortrait = 0;
 //
 // Hide & reuse all page in Pepper UI
 //
+- (void)unloadPepperView:(BOOL)force
+{
+  if (!force)
+    if (!self.isDetailView && !self.isBookView)
+      return;
+  
+  self.pepperView.hidden = YES;
+  
+  while ([self.visiblePepperWrapperArray count] > 0) {
+    PPPageViewContentWrapper *subview = [self.visiblePepperWrapperArray objectAtIndex:0];
+    subview.tag = -1;
+    subview.hidden = YES;
+    [subview unloadContent];
+    [self.reusePepperWrapperArray addObject:subview];
+    [self.visiblePepperWrapperArray removeObjectAtIndex:0];
+  }
+}
+
+//
+// Dealloc pepper views
+//
 - (void)destroyPepperView:(BOOL)force
 {  
   if (!force)
@@ -1000,7 +1032,9 @@ static int midYPortrait = 0;
   self.reusePepperWrapperArray = nil;
   
   while ([self.visiblePepperWrapperArray count] > 0) {
-    [[self.visiblePepperWrapperArray objectAtIndex:0] removeFromSuperview];
+    PPPageViewContentWrapper *subview = [self.visiblePepperWrapperArray objectAtIndex:0];
+    [subview unloadContent];
+    [subview removeFromSuperview];
     [self.visiblePepperWrapperArray removeObjectAtIndex:0];
   }
   self.visiblePepperWrapperArray = nil;
@@ -1172,7 +1206,7 @@ static int midYPortrait = 0;
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:thumbnailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
     pageView.contentView = [self.dataSource ppPepperViewController:self thumbnailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageView.bounds reusableView:pageView.contentView];
   else
-    pageView.contentView = nil;
+    [pageView unloadContent];
   
   [self.pepperView addSubview:pageView];
   [self.visiblePepperWrapperArray addObject:pageView];
@@ -1220,6 +1254,7 @@ static int midYPortrait = 0;
     if (subview.tag != index)
       continue;
     subview.tag = -1;
+    [subview unloadContent];
     [self.reusePepperWrapperArray addObject:subview];
     [self.visiblePepperWrapperArray removeObject:subview];
     
@@ -1289,6 +1324,27 @@ static int midYPortrait = 0;
 
 #pragma mark - UI Helper functions (Book)
 
+//
+// Hide & reuse all page in book scrollview
+//
+- (void)unloadBookScrollView:(BOOL)force
+{
+  if (!force)
+    if (self.isBookView)
+      return;
+  
+  self.bookScrollView.hidden = YES;
+  
+  while ([self.visibleBookViewArray count] > 0) {
+    PPPageViewContentWrapper *subview = [self.visibleBookViewArray objectAtIndex:0];
+    subview.tag = -1;
+    subview.hidden = YES;
+    [subview unloadContent];
+    [self.reuseBookViewArray addObject:subview];   
+    [self.visibleBookViewArray removeObjectAtIndex:0];
+  }
+}
+
 - (void)destroyBookScrollView:(BOOL)force
 {
   if (!force)
@@ -1301,14 +1357,18 @@ static int midYPortrait = 0;
   self.reuseBookViewArray = nil;
   
   while ([self.visibleBookViewArray count] > 0) {
-    [[self.visibleBookViewArray objectAtIndex:0] removeFromSuperview];
+    PPPageViewContentWrapper *subview = [self.visibleBookViewArray objectAtIndex:0];
+    [subview unloadContent];
+    [subview removeFromSuperview];
     [self.visibleBookViewArray removeObjectAtIndex:0];
   }
   self.visibleBookViewArray = nil;
 }
 
 - (void)setupReuseablePoolBookViews
-{  
+{
+  self.bookScrollView.hidden = NO;
+  
   //No need to re-setup
   if (self.reuseBookViewArray != nil || [self.reuseBookViewArray count] > 0)
     return;
@@ -1324,8 +1384,6 @@ static int midYPortrait = 0;
   //Reuseable views pool
   for (int i=0; i<numReuse; i++)
     [self.reuseBookViewArray addObject:[[PPPageViewContentWrapper alloc] init]];
-  
-  self.bookScrollView.hidden = NO;
 }
 
 - (void)scrollToBook:(int)bookIndex animated:(BOOL)animated {
@@ -1423,7 +1481,8 @@ static int midYPortrait = 0;
   PPPageViewContentWrapper *subview = [self getBookViewAtIndex:index];
   if (subview == nil)
     return;
-  
+  subview.tag = -1;
+  [subview unloadContent];
   [self.reuseBookViewArray addObject:subview];
   [self.visibleBookViewArray removeObject:subview];
   
@@ -1497,7 +1556,7 @@ static int midYPortrait = 0;
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
     coverPage.contentView = [self.dataSource ppPepperViewController:self viewForBookIndex:index withFrame:coverPage.bounds reusableView:coverPage.contentView];
   else
-    coverPage.contentView = nil;
+    [coverPage unloadContent];
 
   coverPage.hidden = NO;
   [self.bookScrollView addSubview:coverPage];
@@ -1639,6 +1698,24 @@ static int midYPortrait = 0;
   return self.currentPageIndex;
 }
 
+- (void)unloadPageScrollView:(BOOL)force
+{
+  if (!force)
+    if (self.controlAngle >= 0 || self.isDetailView)
+      return;
+  
+  self.pageScrollView.hidden = YES;
+  
+  while ([self.visiblePageViewArray count] > 0) {
+    PPPageViewDetailWrapper *subview = [self.visiblePageViewArray objectAtIndex:0];
+    subview.tag = -1;
+    subview.hidden = YES;
+    [subview unloadContent];
+    [self.reusePageViewArray addObject:subview];   
+    [self.visiblePageViewArray removeObjectAtIndex:0];
+  }
+}
+
 - (void)destroyPageScrollView:(BOOL)force
 {
   if (!force)
@@ -1651,9 +1728,9 @@ static int midYPortrait = 0;
   self.reusePageViewArray = nil;
   
   while ([self.visiblePageViewArray count] > 0) {
-    PPPageViewDetailWrapper *wrapper = [self.visiblePageViewArray objectAtIndex:0];
-    [wrapper unloadContent];
-    [wrapper removeFromSuperview];
+    PPPageViewDetailWrapper *subview = [self.visiblePageViewArray objectAtIndex:0];
+    [subview unloadContent];
+    [subview removeFromSuperview];
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   self.visiblePageViewArray = nil;
@@ -1789,6 +1866,7 @@ static int midYPortrait = 0;
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     if (subview.tag != index)
       continue;
+    subview.tag = -1;
     [subview unloadContent];
     [self.reusePageViewArray addObject:subview];
     [self.visiblePageViewArray removeObject:subview];
@@ -1857,7 +1935,7 @@ static int midYPortrait = 0;
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:viewForBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
   else
-    pageDetailView.contentView = nil;
+    [pageDetailView unloadContent];
 
   [pageDetailView layoutWithFrame:pageFrame duration:0];
 
@@ -1926,7 +2004,8 @@ static int midYPortrait = 0;
   self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
   
-  [self destroyBookScrollView:NO];
+  //[self destroyBookScrollView:NO];
+  [self unloadBookScrollView:NO];
   [self showFullscreenUsingTimer];
 }
 
@@ -1992,17 +2071,6 @@ static int midYPortrait = 0;
   float min = -(180+max+angleDiff);
   float newControlFlipAngle = max - normalizedGroupControlIndex * fabs(max-min);
   self.controlFlipAngle = newControlFlipAngle;
-       
-  //Experimental shadow
-  /*
-  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
-  for (int i=0; i < totalPages; i++) {
-    PPPageViewContentWrapper *wrapper = [self getPepperPageAtIndex:i];
-    wrapper.shadowOffset = isPad ? CGSizeMake(0, 6) : CGSizeMake(0, 2);
-    wrapper.shadowRadius = isPad ? 12 : 3;
-    wrapper.shadowOpacity = 0.35;
-  }
-   */
 }
 
 - (void)setControlFlipAngle:(float)angle
@@ -2339,7 +2407,8 @@ static int midYPortrait = 0;
   
   //Worst case senario
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    [self destroyPepperView:NO];
+    //[self destroyPepperView:NO];
+    [self unloadPepperView:NO];
   });
 }
 
@@ -2380,7 +2449,8 @@ static int midYPortrait = 0;
 
   //Worst case senario
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    [self destroyPageScrollView:NO];
+    //[self destroyPageScrollView:NO];
+    [self unloadPageScrollView:NO];
   });
 }
 
@@ -2393,8 +2463,8 @@ static int midYPortrait = 0;
   self.isBookView = NO;
   self.isDetailView = NO;
   
-  //Hide other view
-  [self destroyPageScrollView:NO];
+  //[self destroyPageScrollView:NO];
+  [self unloadPageScrollView:NO];
   
   //Re-setup book scrollview if we are coming out from fullscreen
   //And also apply correct scaling for books
@@ -2435,13 +2505,17 @@ static int midYPortrait = 0;
   if (diff < 0.4)
     diff = 0.4;
   
-  //Dealloc fullscreen view
-  [self destroyPageScrollView:NO];
+  //Unload fullscreen view
+  //[self destroyPageScrollView:NO];
+  [self unloadPageScrollView:NO];
   
   //Re-setup book scrollview if needed
   [self setupReuseablePoolBookViews];
   [self reuseBookScrollView];
   [self addBookToScrollView:self.currentBookIndex];
+  
+  //Reapply scaling to book views
+  [self scrollViewDidScroll:self.bookScrollView];
 
   //Replace 1st page by book cover, need to redo this due to pepper page reuse
   [self addBookCoverToFirstPageThenRemove:NO];
@@ -2456,6 +2530,7 @@ static int midYPortrait = 0;
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
     [self destroyPepperView:NO];
+    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
     return;
   }
   
@@ -2468,6 +2543,7 @@ static int midYPortrait = 0;
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
     [self destroyPepperView:NO];
+    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
@@ -2646,6 +2722,7 @@ static int midYPortrait = 0;
   _controlAngle = newControlAngle;
   
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
+  BOOL switchingToBookView = previousControlAngle > -THRESHOLD_HALF_ANGLE-30 && newControlAngle <= -THRESHOLD_HALF_ANGLE-30;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && newControlAngle < 0;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && newControlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
@@ -2656,8 +2733,9 @@ static int midYPortrait = 0;
     for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
       [subview setEnableScrollingZooming:zoomingOneSide];   
   
-  //Memory management & setup
-  if (switchingFromPepperToFullscreen) {
+  //Memory management
+  if (switchingFromPepperToFullscreen)
+  {
     self.currenPageContentOffsetY = INVALID_NUMBER;
     [self reorderPepperViews];
     
@@ -2665,26 +2743,37 @@ static int midYPortrait = 0;
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenPageIndex:)])
       [self.delegate ppPepperViewController:self willOpenPageIndex:self.currentPageIndex];
   }
-  else if (switchingToFullscreen) {
+  else if (switchingToFullscreen)
+  {
     [self setupPageScrollview];
     self.pepperView.hidden = YES;
   }
-  else if (switchingToPepper) {
+  else if (switchingToPepper)
+  {
 
     //For intermediate zoom OUT
     PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
     self.currenPageContentOffsetY = detailView.contentOffset.y;
     
+    self.pepperView.hidden = YES;
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
-    self.pepperView.hidden = NO;
   }
+  else if (switchingToBookView)
+  {
+    [self setupReuseablePoolBookViews];
+    [self reuseBookScrollView];   
+    //Reapply scaling to book views
+    [self scrollViewDidScroll:self.bookScrollView];
+  }
+  
+  //--------------------
   
   //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
   self.isDetailView = !self.pageScrollView.hidden;
-  if (!self.isBookView && newControlAngle < 0)
-    self.pepperView.hidden = NO;
+  //if (!self.isBookView && newControlAngle < 0)
+  //  self.pepperView.hidden = NO;
   
   //General scale for all frames
   float scale = [self getPepperScaleForPageIndex:self.controlIndex];
@@ -2797,7 +2886,7 @@ static int midYPortrait = 0;
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
   self.theRightView.hidden = NO;
-
+  
   //------------------
   
   //This is for shifting the entire animation to one side upon zooming in on 1 side
@@ -2900,6 +2989,9 @@ static int midYPortrait = 0;
     page.layer.anchorPoint = CGPointMake(0, 0.5);
     page.layer.transform = transform;
   }
+  
+  if (switchingToPepper)
+    self.pepperView.hidden = NO;
 }
 
 - (void)animateControlAngleTo:(float)angle duration:(float)duration
@@ -2963,7 +3055,8 @@ static int midYPortrait = 0;
   }
 
   //Destroy page view
-  [self destroyPageScrollView:NO];
+  //[self destroyPageScrollView:NO];
+  [self unloadPageScrollView:NO];
 
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didClosePageIndex:)])

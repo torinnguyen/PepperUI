@@ -72,6 +72,12 @@
   self.background.image = image;
 }
 
+- (void)unloadContent
+{
+  [self.contentView removeFromSuperview];
+  self.contentView = nil;
+}
+
 - (void)onOneFingerTap
 {
   if (self.delegate != nil && [self.delegate respondsToSelector:@selector(PPPageViewWrapper:viewDidTap:)])

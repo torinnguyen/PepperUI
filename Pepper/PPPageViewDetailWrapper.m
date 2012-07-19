@@ -162,7 +162,7 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)setEnableScrollingZooming:(BOOL)enable
 {
-  self.scrollEnabled = NO;
+  self.scrollEnabled = enable;
   if (enable)     self.maximumZoomScale = MAXIMUM_ZOOM_SCALE;
   else            self.maximumZoomScale = 1;
 }
