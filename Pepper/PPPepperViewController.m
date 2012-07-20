@@ -53,9 +53,11 @@
 #define SCALE_ATTENUATION            0.03
 #define SCALE_INDEX_DIFF             2.5
 #define CONTROL_INDEX_USE_TIMER      YES
-#define M34_IPAD                     (-1.0 / 1300.0)  //0:flat, more negative: more perspective
-#define M34_IPHONE                   (-1.0 / 600.0)   //0:flat, more negative: more perspective
+#define M34_IPAD                     (-1.0 / 1300.0)    //0:flat, more negative: more perspective
+#define M34_IPHONE                   (-1.0 / 600.0)     //0:flat, more negative: more perspective
 #define INVALID_NUMBER               999999
+#define PI_DIV_BY_180                0.01745329251994   // M_PI / 180.0f  conversion from degree to radian
+
 
 @interface PPPepperViewController()
 <
@@ -685,7 +687,7 @@ static int midYPortrait = 0;
   CGPoint velocity = [recognizer velocityInView:self.pepperView];
   float normalizedVelocityX = fabsf(velocity.x / self.pepperView.bounds.size.width / 2);
   
-  float direction = velocity.x / fabs(velocity.x);
+  float direction = (velocity.x >= 0) ? 1 : -1;
   float rawNormalizedVelocityX = normalizedVelocityX;
   
   if (rawNormalizedVelocityX < 1)           rawNormalizedVelocityX = rawNormalizedVelocityX * 0.8;       //expansion
@@ -851,7 +853,9 @@ static int midYPortrait = 0;
   self.frameWidth = orientationFactor * width * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
   self.frameHeight = orientationFactor * height * (isPad ? FRAME_SCALE_IPAD : FRAME_SCALE_IPHONE);
 
-  self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 3.2 * orientationFactor * deviceFactor;
+  self.bookSpacing = (self.frameWidth * MAX_BOOK_SCALE) / 3.2;
+  if (orientationFactor != 0)     self.bookSpacing *= orientationFactor;
+  if (deviceFactor != 0)          self.bookSpacing *= deviceFactor;
   
   //Frame size changes on rotation, these needs to be recalculated
   if (self.scaleOnDeviceRotation) {
@@ -1589,6 +1593,8 @@ static int midYPortrait = 0;
   
   //Scale & rotate the book views
   int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
+  if (edgeWidth == 0)   edgeWidth = 1;
+  
   for (UIView *subview in self.visibleBookViewArray) {
     float subviewMidX = CGRectGetMidX(subview.frame) - fabs(self.bookScrollView.contentOffset.x);
     
@@ -1600,7 +1606,7 @@ static int midYPortrait = 0;
     
     if (scaleForAngle < 0)        scaleForAngle = 0;
     else if (scaleForAngle > 1)   scaleForAngle = 1;
-    float angle = ((1.0-scaleForAngle) * MAX_BOOK_ROTATE)/180.0*M_PI;
+    float angle = ((1.0-scaleForAngle) * MAX_BOOK_ROTATE) * PI_DIV_BY_180;
     if (subviewMidX < edgeWidth)
       angle *= -1;
     
@@ -1619,14 +1625,16 @@ static int midYPortrait = 0;
     
     PPPageViewContentWrapper *wrapper = (PPPageViewContentWrapper*)subview;
     if (!isLowEndDevice && self.enableBookScale && self.enableBookShadow) {
-      float shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
+      float shadowScale = 1;
+      if (MAX_BOOK_SCALE-MIN_BOOK_SCALE != 0)
+        shadowScale = (scale-MIN_BOOK_SCALE) / (MAX_BOOK_SCALE-MIN_BOOK_SCALE);
       wrapper.shadowOffset = isPad ? CGSizeMake(0, 5 + 5*shadowScale) : CGSizeMake(0, 2 + 2*shadowScale);
-      wrapper.shadowRadius = isPad ? 10 + 8 * shadowScale : 5 + 4 * shadowScale;
+      wrapper.shadowRadius = isPad ? (10 + 8 * shadowScale) : (5 + 4 * shadowScale);
       [wrapper updateShadow];
     }
     else if (self.enableBookShadow) {
-      wrapper.shadowOffset = isPad ? CGSizeMake(0, 5) : CGSizeMake(0, 2);
-      wrapper.shadowRadius = isPad ? 12 : 6;
+      wrapper.shadowOffset = isPad ? CGSizeMake(0, 5) : CGSizeMake(0, 4);
+      wrapper.shadowRadius = isPad ? 18 : 9;
       [wrapper updateShadow];
     }
     else {
@@ -2111,7 +2119,7 @@ static int midYPortrait = 0;
     CALayer *layer2 = self.theView2.layer;
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, (max/2+min/2) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DRotate(transform, (max/2+min/2) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
     layer23WidthAtMid = layer2.frame.size.width;
@@ -2120,7 +2128,7 @@ static int midYPortrait = 0;
     CALayer *layer2 = self.theView2.layer;
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, (-90-angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DRotate(transform, (-90-angleDiff) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
     layer2WidthAt90 = layer2.frame.size.width;
@@ -2130,7 +2138,7 @@ static int midYPortrait = 0;
   CALayer *layer1 = self.theView1.layer;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, (min+angleDiff) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale1,scale1, 1.0);
   layer1.anchorPoint = CGPointMake(0, 0.5);
   layer1.transform = transform;
@@ -2138,21 +2146,21 @@ static int midYPortrait = 0;
   CALayer *layer2 = self.theView2.layer;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, angle * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   layer2.anchorPoint = CGPointMake(0, 0.5);
   layer2.transform = transform;
   
   CALayer *layer3 = self.theView3.layer;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, angle2 * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   layer3.anchorPoint = CGPointMake(0, 0.5);
   layer3.transform = transform;
   
   CALayer *layer4 = self.theView4.layer;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, max * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale4,scale4, 1.0);
   layer4.anchorPoint = CGPointMake(0, 0.5);
   layer4.transform = transform;
@@ -2227,7 +2235,7 @@ static int midYPortrait = 0;
       CALayer *layerLeft = page.layer;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = self.m34;
-      transform = CATransform3DRotate(transform, (min+angleDiff) * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+      transform = CATransform3DRotate(transform, (min+angleDiff) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerLeft.anchorPoint = CGPointMake(0, 0.5);
       layerLeft.transform = transform;
@@ -2236,7 +2244,7 @@ static int midYPortrait = 0;
       CALayer *layerRight = page.layer;
       CATransform3D transform = CATransform3DIdentity;
       transform.m34 = self.m34;
-      transform = CATransform3DRotate(transform, max * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+      transform = CATransform3DRotate(transform, max * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
       transform = CATransform3DScale(transform, scale,scale, 1.0);
       layerRight.anchorPoint = CGPointMake(0, 0.5);
       layerRight.transform = transform;
@@ -2270,6 +2278,8 @@ static int midYPortrait = 0;
   
   [self onSpecialControlIndexChanged];
   
+  NSLog(@"theSpecialIndex: %.2f", theSpecialIndex);
+    
   self.theView1 = nil;
   self.theView2 = nil;
   self.theView3 = nil;
@@ -2320,6 +2330,10 @@ static int midYPortrait = 0;
       }
     }
   }
+    
+  if (self.theView2 == nil)
+    NSLog(@"nil nil nil");
+  
 }
 
 - (void)onSpecialControlIndexChanged {
@@ -2598,7 +2612,7 @@ static int midYPortrait = 0;
     layer.anchorPoint = CGPointMake(0, 0.5);
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, flatAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DRotate(transform, flatAngle * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     transform = CATransform3DScale(transform, scale,scale, 1.0);
     
     if (animationDuration <= 0) {
@@ -2888,7 +2902,7 @@ static int midYPortrait = 0;
   CALayer *layerLeft = self.theLeftView.layer;
   CATransform3D transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle2 * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, angle2 * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
   layerLeft.anchorPoint = CGPointMake(0, 0.5);
   layerLeft.transform = transform;
@@ -2897,7 +2911,7 @@ static int midYPortrait = 0;
   CALayer *layerRight = self.theRightView.layer;
   transform = CATransform3DIdentity;
   transform.m34 = self.m34;
-  transform = CATransform3DRotate(transform, angle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+  transform = CATransform3DRotate(transform, angle * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
   transform = CATransform3DScale(transform, scale*frameZoomScaleX, scale*frameZoomScaleY, 1.0);
   layerRight.anchorPoint = CGPointMake(0, 0.5);
   layerRight.transform = transform;
@@ -3000,7 +3014,7 @@ static int midYPortrait = 0;
         
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
-    transform = CATransform3DRotate(transform, newAngle * M_PI / 180.0f, 0.0f, 1.0f, 0.0f);
+    transform = CATransform3DRotate(transform, newAngle * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     transform = CATransform3DScale(transform, otherPageScale*frameZoomScaleX, otherPageScale*frameZoomScaleY, 1.0);
     page.layer.anchorPoint = CGPointMake(0, 0.5);
     page.layer.transform = transform;
