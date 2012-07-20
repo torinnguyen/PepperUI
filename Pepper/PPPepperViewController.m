@@ -1057,10 +1057,8 @@ static int midYPortrait = 0;
     self.visiblePepperWrapperArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  int total = pageCount == 0 ? NUM_REUSE_3D_VIEW : MIN(NUM_REUSE_3D_VIEW, pageCount);
   CGRect pageFrame = CGRectMake(3000, 0, self.frameWidth, self.frameHeight);
-  for (int i=0; i<total; i++) {
+  for (int i=0; i<NUM_REUSE_3D_VIEW; i++) {
     PPPageViewContentWrapper *box = [[PPPageViewContentWrapper alloc] initWithFrame:pageFrame];
     box.delegate = self;
     box.alpha = 1;
