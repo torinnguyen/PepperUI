@@ -217,8 +217,7 @@ static UIImage *backgroundImageFlipped = nil;
   self.contentView.frame = self.background.bounds;
    
   //This is a bit complex
-  float ratio = self.aspectRatio;
-  ratio = [self adjustRatioForBiggerFrame:self.originalFrame];
+  float ratio = [self adjustRatioForBiggerFrame:self.originalFrame];
       
   float bgframeHeight = self.originalFrame.size.width * ratio;
   float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
@@ -237,8 +236,7 @@ static UIImage *backgroundImageFlipped = nil;
 - (CGRect)getBackgroundFrameForWrapperFrame:(CGRect)frame
 {
   //This is a bit complex
-  float ratio = self.aspectRatio;
-  ratio = [self adjustRatioForBiggerFrame:frame];
+  float ratio = [self adjustRatioForBiggerFrame:frame];
   
   float bgframeHeight = frame.size.width * ratio;
   float margin = round( self.edgePaddingHeightPercent * bgframeHeight );
