@@ -2278,8 +2278,6 @@ static int midYPortrait = 0;
   
   [self onSpecialControlIndexChanged];
   
-  NSLog(@"theSpecialIndex: %.2f", theSpecialIndex);
-    
   self.theView1 = nil;
   self.theView2 = nil;
   self.theView3 = nil;
@@ -2330,10 +2328,6 @@ static int midYPortrait = 0;
       }
     }
   }
-    
-  if (self.theView2 == nil)
-    NSLog(@"nil nil nil");
-  
 }
 
 - (void)onSpecialControlIndexChanged {
