@@ -1964,12 +1964,8 @@ static int midYPortrait = 0;
 
 - (void)updatePageScrollViewContentSizeForOrientation:(UIInterfaceOrientation)orientation
 {
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
-  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex]; 
   int _pageCount = self.hideFirstPage ? pageCount-1 : pageCount;
-  if (!self.enableOneSideZoom && isLandscape)
-    _pageCount = ceil(numPages / 2.0f);
     
   CGRect onePageFrame = [self getFrameForPageIndex:0 forOrientation:orientation];
   CGSize contentSize = CGSizeMake(_pageCount * CGRectGetWidth(onePageFrame), 20);

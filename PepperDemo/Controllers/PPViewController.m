@@ -199,8 +199,7 @@
     myBook.pages = [[NSMutableArray alloc] init];
     randomBookID += arc4random() % 123456;
     
-    int randomNumPages = DEMO_NUM_PAGES;
-    for (int j=0; j<randomNumPages; j++) {
+    for (int j=0; j<DEMO_NUM_PAGES; j++) {
       Page *myPage = [[Page alloc] init];
       myPage.pageID = randomPageID;
       myPage.halfsizeURL = [imageArray objectAtIndex:(i+j) % imageCount];
