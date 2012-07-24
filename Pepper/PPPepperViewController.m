@@ -210,7 +210,7 @@ static int midYPortrait = 0;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.3.6";
+  return @"1.3.7";
 }
 
 - (id)dataSource {
@@ -1656,7 +1656,7 @@ static int midYPortrait = 0;
   
   self.currentBookIndex = bookIndex;
   self.numPages = -1;
-  self.previousSpecialControlIndex = -100;
+  self.previousSpecialControlIndex = INVALID_NUMBER;
   
   [self updatePageScrollViewContentSize];
   int pageCount = [self getNumberOfPagesForBookIndex:bookIndex];
@@ -2017,8 +2017,8 @@ static int midYPortrait = 0;
   
   self.currentPageIndex = pageIndex;
   self.zoomOnLeft = pageIndex%2==0;
+  self.previousSpecialControlIndex = INVALID_NUMBER;
   
-  //[self destroyBookScrollView:NO];
   [self unloadBookScrollView:NO];
   [self showFullscreenUsingTimer];
 }
@@ -2261,7 +2261,7 @@ static int midYPortrait = 0;
   BOOL specialIndexChanged = NO;
   
   //Detect change of page flipping index for cell reuse purpose
-  if (self.previousSpecialControlIndex < -5) {
+  if (self.previousSpecialControlIndex == INVALID_NUMBER) {
     self.previousSpecialControlIndex = theSpecialIndex;
     specialIndexChanged = YES;
   }
@@ -2780,6 +2780,7 @@ static int midYPortrait = 0;
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
+    self.previousSpecialControlIndex = INVALID_NUMBER;
   }
   else if (switchingToBookView)
   {
@@ -2823,7 +2824,7 @@ static int midYPortrait = 0;
   float angle2 = -180.0 - angle;
   
   [self updateLeftRightPointers];
-  [self updateFlipPointers];
+  //[self updateFlipPointers];
         
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;
