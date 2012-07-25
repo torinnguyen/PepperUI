@@ -21,7 +21,7 @@
   self.view.backgroundColor = [UIColor greenColor];
 
   self.button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-  self.button.center = CGPointMake(200, 200);
+  self.button.frame = CGRectMake(300, 300, 100, 32);
   [self.view addSubview:self.button];
 }
 

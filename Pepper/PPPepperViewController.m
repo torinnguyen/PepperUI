@@ -357,19 +357,16 @@ static int midYPortrait = 0;
     self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
                                                               navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
                                                                             options:nil];    
+    self.pageViewController.delegate = self;
+    self.pageViewController.dataSource = self;
+    
     [self addChildViewController:self.pageViewController];
     [self.view addSubview:self.pageViewController.view];
     self.pageViewController.view.frame = self.view.bounds;
     self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.pageViewController.view.backgroundColor = [UIColor redColor];
-    self.pageViewController.delegate = self;
-    
-    PPPageViewDetailController *startingViewController = [self viewControllerAtIndex:0];
-    NSArray *viewControllers = [NSArray arrayWithObject:startingViewController];
-    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
-    
-    self.pageViewController.dataSource = self;
+        
     [self.pageViewController didMoveToParentViewController:self];
+    self.pageViewController.view.hidden = YES;
     
     //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
     //  [self.view addGestureRecognizer:recognizer];
@@ -400,6 +397,11 @@ static int midYPortrait = 0;
 - (void)viewDidUnload
 {
   [super viewDidUnload];
+}
+
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+  [self.pageViewController willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
@@ -553,6 +555,7 @@ static int midYPortrait = 0;
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
   self.pageScrollView.hidden = YES;
+  self.pageViewController.view.hidden = YES;
 }
 
 - (NSString *)rawPlatformString {
@@ -1750,6 +1753,7 @@ static int midYPortrait = 0;
       return;
   
   self.pageScrollView.hidden = YES;
+  self.pageViewController.view.hidden = YES;
   
   while ([self.visiblePageViewArray count] > 0) {
     PPPageViewDetailWrapper *subview = [self.visiblePageViewArray objectAtIndex:0];
@@ -1768,6 +1772,7 @@ static int midYPortrait = 0;
       return;
     
   self.pageScrollView.hidden = YES;
+  self.pageViewController.view.hidden = YES;
     
   [self.reusePageViewArray removeAllObjects];
   self.reusePageViewArray = nil;
@@ -1818,6 +1823,14 @@ static int midYPortrait = 0;
   
   [self updatePageScrollViewContentSize];
   [self scrollToPage:self.currentPageIndex duration:0];
+  
+  if ([self.pageViewController.viewControllers count] <= 0) {
+    PPPageViewDetailController *startingViewController = [self viewControllerAtIndex:0];
+    if (startingViewController != nil) {
+      NSArray *viewControllers = [NSArray arrayWithObject:startingViewController];
+      [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+    }
+  }
   
   if (!self.enableOneSideMiddleZoom)
     return;
@@ -2075,7 +2088,9 @@ static int midYPortrait = 0;
 
 - (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
 {
-  
+  if (completed) {
+    
+  }
 }
 
 - (UIPageViewControllerSpineLocation)pageViewController:(UIPageViewController *)pageViewController
@@ -2092,52 +2107,47 @@ static int midYPortrait = 0;
     [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
     
     self.pageViewController.doubleSided = NO;
-    return midSpine;
+    return UIPageViewControllerSpineLocationMin;
   }
 
   // In landscape orientation: Set set the spine location to "mid" and the page view controller's view controllers array to contain two view controllers.
   // If the current page is even, set it to contain the current and next view controllers; if it is odd, set the array to contain the previous and current view controllers.
-  else 
-  {    
-    PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
-    NSArray *viewControllers = nil;
-    
-    NSUInteger indexOfCurrentViewController = [self indexOfViewController:currentViewController];
-    if (indexOfCurrentViewController == 0 || indexOfCurrentViewController % 2 == 0) {
-      UIViewController *nextViewController = [self pageViewController:self.pageViewController viewControllerAfterViewController:currentViewController];
-      viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
-    } else {
-      UIViewController *previousViewController = [self pageViewController:self.pageViewController viewControllerBeforeViewController:currentViewController];
-      viewControllers = [NSArray arrayWithObjects:previousViewController, currentViewController, nil];
-    }
-    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
-  }
   
-  return midSpine ? UIPageViewControllerSpineLocationMid : UIPageViewControllerSpineLocationMin;
+  PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+  NSArray *viewControllers = nil;
+  
+  NSUInteger indexOfCurrentViewController = [self indexOfViewController:currentViewController];
+  if (indexOfCurrentViewController % 2 == 0) {
+    UIViewController *nextViewController = [self.pageViewController.dataSource pageViewController:self.pageViewController
+                                                                viewControllerAfterViewController:currentViewController];
+    viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
+  } else {
+    UIViewController *previousViewController = [self.pageViewController.dataSource pageViewController:self.pageViewController 
+                                                                   viewControllerBeforeViewController:currentViewController];
+    viewControllers = [NSArray arrayWithObjects:previousViewController, currentViewController, nil];
+  }
+  [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
+  
+  return UIPageViewControllerSpineLocationMid;
 }
 
 #pragma mark - Page View Controller Data Source
 
-- (PPPageViewDetailController *)viewControllerAtIndex:(NSUInteger)index
-{   
-  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-  NSArray *pageData = [[dateFormatter monthSymbols] copy];
-  
-  // Return the data view controller for the given index.
-  if (([pageData count] == 0) || (index >= [pageData count])) {
-    return nil;
-  }
-  
-  // Create a new view controller and pass suitable data
-  PPPageViewDetailController *dataViewController = [[PPPageViewDetailController alloc] init];
-  dataViewController.view.bounds = self.view.bounds;
-  dataViewController.view.tag = index;
-  return dataViewController;
-}
-
 - (NSUInteger)indexOfViewController:(PPPageViewDetailController *)viewController
 {   
   return viewController.view.tag;
+}
+
+- (PPPageViewDetailController *)viewControllerAtIndex:(NSUInteger)index
+{   
+  int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  if (pageCount <= 0 || index >= pageCount)
+    return nil;
+  
+  PPPageViewDetailController *dataViewController = [[PPPageViewDetailController alloc] init];
+  dataViewController.view = [self getDetailViewAtIndex:index];
+  dataViewController.view.tag = index;
+  return dataViewController;
 }
 
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerBeforeViewController:(UIViewController *)viewController
@@ -2562,6 +2572,7 @@ static int midYPortrait = 0;
   if (!animated) {
     self.controlAngle = 0;
     self.pageScrollView.hidden = NO;
+    self.pageViewController.view.hidden = NO;
     return;
   }
   
@@ -2573,6 +2584,7 @@ static int midYPortrait = 0;
     self.controlAngle = 0;
   } completion:^(BOOL finished) {
     self.pageScrollView.hidden = NO;
+    self.pageViewController.view.hidden = NO;
   }];
 }
 
@@ -2920,6 +2932,7 @@ static int midYPortrait = 0;
   
   //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
+  self.pageViewController.view.hidden = (newControlAngle < 0);
   self.isDetailView = !self.pageScrollView.hidden;
   if (!self.isBookView && newControlAngle < 0)
     self.pepperView.hidden = NO;
