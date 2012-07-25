@@ -1825,7 +1825,7 @@ static int midYPortrait = 0;
   [self scrollToPage:self.currentPageIndex duration:0];
   
   if ([self.pageViewController.viewControllers count] <= 0) {
-    PPPageViewDetailController *startingViewController = [self viewControllerAtIndex:0];
+    PPPageViewDetailController *startingViewController = [self viewControllerAtIndex:self.currentPageIndex];
     if (startingViewController != nil) {
       NSArray *viewControllers = [NSArray arrayWithObject:startingViewController];
       [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
@@ -2088,9 +2088,25 @@ static int midYPortrait = 0;
 
 - (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
 {
-  if (completed) {
-    
-  }
+  //Flip to the same page
+  if (!completed)
+    return;
+  
+  PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+  int index = [self indexOfViewController:currentViewController];
+  self.currentPageIndex = index;
+  
+  self.pepperView.hidden = YES;
+  self.pageScrollView.userInteractionEnabled = YES;
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  self.controlAngle = 0;
+  
+  [self reusePageScrollview];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
+    [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
 }
 
 - (UIPageViewControllerSpineLocation)pageViewController:(UIPageViewController *)pageViewController
@@ -2145,8 +2161,9 @@ static int midYPortrait = 0;
     return nil;
   
   PPPageViewDetailController *dataViewController = [[PPPageViewDetailController alloc] init];
-  dataViewController.view = [self getDetailViewAtIndex:index];
-  dataViewController.view.tag = index;
+  PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:index];
+  dataViewController.view = wrapper;
+  [wrapper removeFromSuperview];
   return dataViewController;
 }
 
