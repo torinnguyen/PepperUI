@@ -13,6 +13,7 @@
 #import "PPPageViewDetailWrapper.h"
 #include <sys/types.h>
 #include <sys/sysctl.h>
+#import "PPPageViewDetailController.h"
 
 //Used to be public contants
 //These are only default values at compile time, can be changed on-the-fly at runtime
@@ -63,7 +64,9 @@
 <
  UIGestureRecognizerDelegate,
  UIScrollViewDelegate,
- PPPageViewWrapperDelegate
+ PPPageViewWrapperDelegate,
+ UIPageViewControllerDelegate,
+ UIPageViewControllerDataSource
 >
 
 //Op flags
@@ -123,6 +126,7 @@
 //Page scrollview
 @property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
+@property (nonatomic, strong) UIPageViewController *pageViewController;     //iOS5.0 and above
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 @property (nonatomic, strong) NSMutableArray *visiblePageViewArray;
 
@@ -192,6 +196,7 @@
 //Page
 @synthesize currentPageIndex = _currentPageIndex;
 @synthesize pageScrollView;
+@synthesize pageViewController;
 @synthesize reusePageViewArray;
 @synthesize visiblePageViewArray;
 
@@ -346,6 +351,28 @@ static int midYPortrait = 0;
     self.pageScrollView.hidden = YES;
     self.pageScrollView.pagingEnabled = YES;
     [self.view addSubview:self.pageScrollView];
+  }
+  
+  if (self.pageViewController == nil) {
+    self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
+                                                              navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
+                                                                            options:nil];    
+    [self addChildViewController:self.pageViewController];
+    [self.view addSubview:self.pageViewController.view];
+    self.pageViewController.view.frame = self.view.bounds;
+    self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.pageViewController.view.backgroundColor = [UIColor redColor];
+    self.pageViewController.delegate = self;
+    
+    PPPageViewDetailController *startingViewController = [self viewControllerAtIndex:0];
+    NSArray *viewControllers = [NSArray arrayWithObject:startingViewController];
+    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+    
+    self.pageViewController.dataSource = self;
+    [self.pageViewController didMoveToParentViewController:self];
+    
+    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
+    //  [self.view addGestureRecognizer:recognizer];
   }
 }
 
@@ -2041,6 +2068,105 @@ static int midYPortrait = 0;
   
   [self showHalfOpen:NO];
 }
+
+
+
+#pragma mark - UI Helper functions (Page flip effect)
+
+- (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
+{
+  
+}
+
+- (UIPageViewControllerSpineLocation)pageViewController:(UIPageViewController *)pageViewController
+                   spineLocationForInterfaceOrientation:(UIInterfaceOrientation)orientation
+{
+  BOOL midSpine = !self.enableOneSideZoom && UIInterfaceOrientationIsLandscape(orientation);
+
+  // Set the spine position to "min" and the page view controller's view controllers array to contain just one view controller.
+  // Setting the spine position to 'UIPageViewControllerSpineLocationMid' in landscape orientation sets the doubleSided property to YES, so set it to NO here.
+  if (!midSpine) {
+    
+    UIViewController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+    NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
+    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
+    
+    self.pageViewController.doubleSided = NO;
+    return midSpine;
+  }
+
+  // In landscape orientation: Set set the spine location to "mid" and the page view controller's view controllers array to contain two view controllers.
+  // If the current page is even, set it to contain the current and next view controllers; if it is odd, set the array to contain the previous and current view controllers.
+  else 
+  {    
+    PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+    NSArray *viewControllers = nil;
+    
+    NSUInteger indexOfCurrentViewController = [self indexOfViewController:currentViewController];
+    if (indexOfCurrentViewController == 0 || indexOfCurrentViewController % 2 == 0) {
+      UIViewController *nextViewController = [self pageViewController:self.pageViewController viewControllerAfterViewController:currentViewController];
+      viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
+    } else {
+      UIViewController *previousViewController = [self pageViewController:self.pageViewController viewControllerBeforeViewController:currentViewController];
+      viewControllers = [NSArray arrayWithObjects:previousViewController, currentViewController, nil];
+    }
+    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
+  }
+  
+  return midSpine ? UIPageViewControllerSpineLocationMid : UIPageViewControllerSpineLocationMin;
+}
+
+#pragma mark - Page View Controller Data Source
+
+- (PPPageViewDetailController *)viewControllerAtIndex:(NSUInteger)index
+{   
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  NSArray *pageData = [[dateFormatter monthSymbols] copy];
+  
+  // Return the data view controller for the given index.
+  if (([pageData count] == 0) || (index >= [pageData count])) {
+    return nil;
+  }
+  
+  // Create a new view controller and pass suitable data
+  PPPageViewDetailController *dataViewController = [[PPPageViewDetailController alloc] init];
+  dataViewController.view.bounds = self.view.bounds;
+  dataViewController.view.tag = index;
+  return dataViewController;
+}
+
+- (NSUInteger)indexOfViewController:(PPPageViewDetailController *)viewController
+{   
+  return viewController.view.tag;
+}
+
+- (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerBeforeViewController:(UIViewController *)viewController
+{
+  NSUInteger index = [self indexOfViewController:(PPPageViewDetailController *)viewController];
+  if ((index == 0) || (index == NSNotFound)) {
+    return nil;
+  }
+  
+  index--;
+  return [self viewControllerAtIndex:index];
+}
+
+- (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerAfterViewController:(UIViewController *)viewController
+{
+  NSUInteger index = [self indexOfViewController:(PPPageViewDetailController *)viewController];
+  if (index == NSNotFound)
+    return nil;
+  index++;
+  
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  NSArray *pageData = [[dateFormatter monthSymbols] copy];
+  
+  if (index == [pageData count])
+    return nil;
+  return [self viewControllerAtIndex:index];
+}
+
+
 
 
 #pragma mark - Flipping implementation

@@ -22,6 +22,7 @@
 		42523BE9157934BF000323EE /* PPPageViewContentWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BE3157934BF000323EE /* PPPageViewContentWrapper.m */; };
 		42523BEA157934BF000323EE /* PPPepperViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42523BE5157934BF000323EE /* PPPepperViewController.m */; };
 		42523BEC157934EB000323EE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BEB157934EA000323EE /* QuartzCore.framework */; };
+		426C349215BF1E0600117F3F /* PPPageViewDetailController.m in Sources */ = {isa = PBXBuildFile; fileRef = 426C348F15BF1E0600117F3F /* PPPageViewDetailController.m */; };
 		4276D0E3157A8EC500C27FFB /* Book.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E0157A8EC500C27FFB /* Book.m */; };
 		4276D0E4157A8EC500C27FFB /* Page.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0E2157A8EC500C27FFB /* Page.m */; };
 		4276D0F3157A8F1600C27FFB /* MyBookOrPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4276D0F0157A8F1600C27FFB /* MyBookOrPageView.m */; };
@@ -65,6 +66,8 @@
 		42523BE4157934BF000323EE /* PPPepperViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = PPPepperViewController.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		42523BE5157934BF000323EE /* PPPepperViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = PPPepperViewController.m; sourceTree = "<group>"; tabWidth = 2; };
 		42523BEB157934EA000323EE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		426C348E15BF1E0600117F3F /* PPPageViewDetailController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetailController.h; sourceTree = "<group>"; };
+		426C348F15BF1E0600117F3F /* PPPageViewDetailController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetailController.m; sourceTree = "<group>"; };
 		4276D0DF157A8EC500C27FFB /* Book.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Book.h; sourceTree = "<group>"; };
 		4276D0E0157A8EC500C27FFB /* Book.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Book.m; sourceTree = "<group>"; };
 		4276D0E1157A8EC500C27FFB /* Page.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Page.h; sourceTree = "<group>"; };
@@ -177,6 +180,8 @@
 				42B639B8159384B700B42A2D /* page_bg@2x.png */,
 				42B639B31593839D00B42A2D /* page_bg@2x~ipad.png */,
 				42B639B41593839D00B42A2D /* page_bg~ipad.png */,
+				426C348E15BF1E0600117F3F /* PPPageViewDetailController.h */,
+				426C348F15BF1E0600117F3F /* PPPageViewDetailController.m */,
 				421C04A5157949C700A5698B /* PPPageViewDetailWrapper.h */,
 				421C04A6157949C700A5698B /* PPPageViewDetailWrapper.m */,
 				42523BE2157934BF000323EE /* PPPageViewContentWrapper.h */,
@@ -313,6 +318,7 @@
 				4276D0F8157A8F5F00C27FFB /* PPViewController.m in Sources */,
 				4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */,
 				42B1252815891BF8004AF341 /* MyImageCache.m in Sources */,
+				426C349215BF1E0600117F3F /* PPPageViewDetailController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
