@@ -22,6 +22,7 @@ static UIImage *backgroundImageFlipped = nil;
 @property (nonatomic, assign) CGPoint contentOffsetBeforeZoomOut;
 @property (nonatomic, assign) float previousZoomScale;
 @property (nonatomic, retain) UITapGestureRecognizer *tapGestureRecognizer;
+@property (nonatomic, retain) UITapGestureRecognizer *doubleTapGestureRecognizer;
 @end
 
 @implementation PPPageViewDetailWrapper
@@ -35,6 +36,7 @@ static UIImage *backgroundImageFlipped = nil;
 @synthesize contentOffsetBeforeZoomOut;
 @synthesize previousZoomScale;
 @synthesize tapGestureRecognizer;
+@synthesize doubleTapGestureRecognizer;
 
 #pragma mark - Initialization
 
@@ -62,11 +64,19 @@ static UIImage *backgroundImageFlipped = nil;
     [self addSubview:self.background];
         
     // Create gesture recognizer
-    self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onOneFingerTap)];
+    self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onOneFingerTap:)];
     [self.tapGestureRecognizer setNumberOfTapsRequired:1];
     [self.tapGestureRecognizer setNumberOfTouchesRequired:1];
     self.tapGestureRecognizer.delegate = self;
     [self addGestureRecognizer:self.tapGestureRecognizer];
+    
+    self.doubleTapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onDoubleTap:)];
+    [self.doubleTapGestureRecognizer setNumberOfTapsRequired:2];
+    [self.doubleTapGestureRecognizer setNumberOfTouchesRequired:1];
+    self.doubleTapGestureRecognizer.delegate = self;
+    [self addGestureRecognizer:self.doubleTapGestureRecognizer];
+    
+  	[self.tapGestureRecognizer requireGestureRecognizerToFail:self.doubleTapGestureRecognizer];
   }
   return self;
 }
@@ -286,10 +296,23 @@ static UIImage *backgroundImageFlipped = nil;
 
 #pragma mark - Gesture
 
-- (void)onOneFingerTap
+- (void)onOneFingerTap:(UITapGestureRecognizer *)recognizer
 {
   if (self.customDelegate != nil && [self.customDelegate respondsToSelector:@selector(PPPageViewDetailWrapper:viewDidTap:)])
     [self.customDelegate PPPageViewDetailWrapper:self viewDidTap:self.tag];
+}
+
+- (void)onDoubleTap:(UITapGestureRecognizer *)recognizer
+{
+  float newZoomScale = self.zoomScale;
+  if (newZoomScale < MAXIMUM_ZOOM_SCALE/2)    newZoomScale = MAXIMUM_ZOOM_SCALE;
+  else                                        newZoomScale = 1.0f;
+  
+  CGPoint tapPoint = [recognizer locationInView:self];
+	[self zoomToScale:newZoomScale atPoint:tapPoint animated:YES];
+  
+  if (self.customDelegate != nil && [self.customDelegate respondsToSelector:@selector(PPPageViewDetailWrapper:viewDidDoubleTap:)])
+    [self.customDelegate PPPageViewDetailWrapper:self viewDidDoubleTap:self.tag];
 }
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
@@ -300,6 +323,27 @@ static UIImage *backgroundImageFlipped = nil;
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
   return NO;
+}
+
+- (void)zoomToScale:(float)newScale atPoint:(CGPoint)point animated:(BOOL)animated
+{  
+  float currentZoomScale = self.zoomScale;
+  [self setZoomScale:newScale animated:animated];
+  
+  if (newScale >= MAXIMUM_ZOOM_SCALE/2)
+  {
+    [self setContentOffset:CGPointMake(point.x*newScale - self.bounds.size.width/2, 
+                                       point.y*newScale - self.bounds.size.height/2)];
+    return;
+  }
+
+  float calculatedPointY = (point.y*1/currentZoomScale - self.bounds.size.height/2);
+  float pointY = (calculatedPointY < 0) ? 0 : calculatedPointY;
+  
+  float upBoundPointY = self.contentSize.height - self.bounds.size.height;
+  pointY = pointY > upBoundPointY ? upBoundPointY : pointY;
+  
+  [self setContentOffset:CGPointMake(0, pointY)];
 }
 
 @end
