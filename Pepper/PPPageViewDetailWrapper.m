@@ -162,6 +162,12 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)layoutWithFrame:(CGRect)frame duration:(float)duration
 {
+  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
+  if (isLandscape && FRAME_ASPECT_RATIO_LANDSCAPE > 0)
+    self.aspectRatio = FRAME_ASPECT_RATIO_LANDSCAPE;
+  else if (!isLandscape && FRAME_ASPECT_RATIO > 0)
+    self.aspectRatio = FRAME_ASPECT_RATIO;
+  
   self.originalFrame = frame;
   self.previousZoomScale = 1.0f;
   self.contentOffsetBeforeZoomOut = CGPointZero;

@@ -401,7 +401,8 @@ static int midYPortrait = 0;
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
 {
-  [self.pageViewController willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
+  if (self.isDetailView)
+    [self.pageViewController willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
@@ -868,7 +869,9 @@ static int midYPortrait = 0;
     NSLog(@"WARNING: PepperUI is initialized too early");
   
   //Custom aspect ratio for content
-  if (FRAME_ASPECT_RATIO > 0)
+  if (isLandscape && FRAME_ASPECT_RATIO_LANDSCAPE > 0)
+    contentHeight = roundf(width * FRAME_ASPECT_RATIO_LANDSCAPE);
+  else if (!isLandscape && FRAME_ASPECT_RATIO > 0)
     contentHeight = roundf(width * FRAME_ASPECT_RATIO);
   
   //Fit the aspect ratio to self when self.enableOneSideZoom is disabled
@@ -2118,9 +2121,11 @@ static int midYPortrait = 0;
   // Setting the spine position to 'UIPageViewControllerSpineLocationMid' in landscape orientation sets the doubleSided property to YES, so set it to NO here.
   if (!midSpine) {
     
-    UIViewController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
-    NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
-    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
+    if ([self.pageViewController.viewControllers count] > 0) {
+      UIViewController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+      NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
+      [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
+    }
     
     self.pageViewController.doubleSided = NO;
     return UIPageViewControllerSpineLocationMin;
