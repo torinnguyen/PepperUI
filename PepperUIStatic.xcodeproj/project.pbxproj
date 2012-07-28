@@ -19,6 +19,8 @@
 		42ED4C73158FA0E00055BAE7 /* PPPepperViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42ED4C6C158FA0E00055BAE7 /* PPPepperViewController.m */; };
 		42ED4C79158FA1180055BAE7 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C78158FA1180055BAE7 /* CoreGraphics.framework */; };
 		42ED4C7B158FA11D0055BAE7 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C7A158FA11D0055BAE7 /* UIKit.framework */; };
+		42EE6D0615C464FF004C8B97 /* PPPageViewDetailController.h in Headers */ = {isa = PBXBuildFile; fileRef = 42EE6D0415C464FF004C8B97 /* PPPageViewDetailController.h */; };
+		42EE6D0715C464FF004C8B97 /* PPPageViewDetailController.m in Sources */ = {isa = PBXBuildFile; fileRef = 42EE6D0515C464FF004C8B97 /* PPPageViewDetailController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,8 @@
 		42ED4C6C158FA0E00055BAE7 /* PPPepperViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPepperViewController.m; sourceTree = "<group>"; };
 		42ED4C78158FA1180055BAE7 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		42ED4C7A158FA11D0055BAE7 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		42EE6D0415C464FF004C8B97 /* PPPageViewDetailController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageViewDetailController.h; sourceTree = "<group>"; };
+		42EE6D0515C464FF004C8B97 /* PPPageViewDetailController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageViewDetailController.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +96,8 @@
 		42ED4C60158FA0E00055BAE7 /* Pepper */ = {
 			isa = PBXGroup;
 			children = (
+				42EE6D0415C464FF004C8B97 /* PPPageViewDetailController.h */,
+				42EE6D0515C464FF004C8B97 /* PPPageViewDetailController.m */,
 				42ED4C66158FA0E00055BAE7 /* PPPageViewContentWrapper.h */,
 				42ED4C67158FA0E00055BAE7 /* PPPageViewContentWrapper.m */,
 				42ED4C68158FA0E00055BAE7 /* PPPageViewDetailWrapper.h */,
@@ -115,6 +121,7 @@
 				42ED4C71158FA0E00055BAE7 /* PPPepperContants.h in Headers */,
 				42ED4C72158FA0E00055BAE7 /* PPPepperViewController.h in Headers */,
 				423E5CE315A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch in Headers */,
+				42EE6D0615C464FF004C8B97 /* PPPageViewDetailController.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,6 +179,7 @@
 				42ED4C6E158FA0E00055BAE7 /* PPPageViewContentWrapper.m in Sources */,
 				42ED4C70158FA0E00055BAE7 /* PPPageViewDetailWrapper.m in Sources */,
 				42ED4C73158FA0E00055BAE7 /* PPPepperViewController.m in Sources */,
+				42EE6D0715C464FF004C8B97 /* PPPageViewDetailController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,7 +205,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -214,7 +222,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
