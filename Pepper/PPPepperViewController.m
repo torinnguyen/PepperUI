@@ -365,24 +365,6 @@ static BOOL iOS5AndAbove = NO;
     self.pageScrollView.pagingEnabled = YES;
     [self.view addSubview:self.pageScrollView];
   }
-  
-  if (self.pageViewController == nil && iOS5AndAbove) {
-    self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
-                                                              navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
-                                                                            options:nil];    
-    //self.pageViewController.delegate = self;      //set later
-    //self.pageViewController.dataSource = self;    //set later
-    
-    [self addChildViewController:self.pageViewController];
-    [self.view addSubview:self.pageViewController.view];
-    self.pageViewController.view.frame = self.view.bounds;
-    self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        
-    [self.pageViewController didMoveToParentViewController:self];
-    
-    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
-    //  [self.view addGestureRecognizer:recognizer];
-  }
 }
 
 - (void)didReceiveMemoryWarning
@@ -1760,10 +1742,14 @@ static BOOL iOS5AndAbove = NO;
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   
+  //Destroy it
   self.pageViewController.view.hidden = YES;
   self.pageViewController.delegate = nil;
   self.pageViewController.dataSource = nil;
   [self.pageViewController setViewControllers:nil direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+  [self.pageViewController removeFromParentViewController];
+  [self.pageViewController.view removeFromSuperview];
+  self.pageViewController = nil;
 }
 
 - (void)destroyPageScrollView:(BOOL)force
@@ -1847,25 +1833,66 @@ static BOOL iOS5AndAbove = NO;
 {
   if (!iOS5AndAbove)
     return;
+    
+  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
+  if (currentViewController == nil)
+    return;
+
+  BOOL resetup = NO;
+  int requiredNumVC = 1;
+  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
+  
+  //Resetup if spine location is not right
+  if (zoomingOneSide) {
+    requiredNumVC = 1;
+    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMin;
+    if (resetup) {
+      [self.pageViewController removeFromParentViewController];
+      [[self.pageViewController view] removeFromSuperview];
+      self.pageViewController = nil;
+      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
+                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
+                                                                              options:nil];
+    }
+  }
+  else {
+    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:UIPageViewControllerSpineLocationMid] forKey:UIPageViewControllerOptionSpineLocationKey];
+    requiredNumVC = 2;
+    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMid;
+    if (resetup) {
+      [self.pageViewController removeFromParentViewController];
+      [[self.pageViewController view] removeFromSuperview];
+      self.pageViewController = nil;
+      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
+                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
+                                                                              options:options];
+    }
+  }
+      
+  //First time, almost everytime
+  if (resetup) {
+    [self addChildViewController:self.pageViewController];
+    [self.view addSubview:self.pageViewController.view];
+    self.pageViewController.view.frame = self.view.bounds;
+    self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.pageViewController didMoveToParentViewController:self]; 
+    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
+    //  [self.view addGestureRecognizer:recognizer];
+  }
   
   self.pageViewController.delegate = self;
   self.pageViewController.dataSource = self;
   self.pageViewController.view.hidden = NO;
   
-  if ([self.pageViewController.viewControllers count] > 0)
-    return;
-  
-  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
-  if (currentViewController == nil)
-    return;
-  
-  //One page only
-  if (self.enableOneSideZoom || [self isPortrait]) {
+  //One side only
+  if (zoomingOneSide) {
     NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
+    [self.pageViewController setDoubleSided:NO];
     [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
     return;
   }
   
+  //Side-by-side
   NSArray *viewControllers = nil;
   if ((int)self.currentPageIndex % 2 == 0) {
     PPPageViewDetailController *nextViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex+1];
@@ -1876,6 +1903,7 @@ static BOOL iOS5AndAbove = NO;
     PPPageViewDetailController *prevViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex-1];
     viewControllers = [NSArray arrayWithObjects:prevViewController, currentViewController, nil];    
   }
+  [self.pageViewController setDoubleSided:YES];
   [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
 }
 
