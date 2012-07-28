@@ -13,7 +13,7 @@
 
 //Look & feel
 #define FRAME_ASPECT_RATIO            0.0f             //Heigth/Width - Change to non-zero for custom aspect ratio, default is (1.3333 or 4:3). Should be >= 1.0f
-#define FRAME_ASPECT_RATIO_LANDSCAPE  1.60f            //Same functionality as above, for Landscape orientation
+#define FRAME_ASPECT_RATIO_LANDSCAPE  0.0f             //Same functionality as above, for Landscape orientation
 
 #define FRAME_SCALE_IPAD              0.4f
 #define FRAME_SCALE_IPHONE            0.47f

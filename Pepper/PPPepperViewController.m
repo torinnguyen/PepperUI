@@ -26,6 +26,7 @@
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
 #define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
+#define ENABLE_PAGE_URL               YES         //iOS5 page curl effect
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
 //Graphics
@@ -84,53 +85,52 @@
 @property (nonatomic, strong) UIImage *bookCoverImage;
 @property (nonatomic, strong) UIImage *pageBackgroundImage;
 
+@property (nonatomic, assign) BOOL zoomOnLeft;
+@property (nonatomic, assign) BOOL isBookView;
+@property (nonatomic, assign) BOOL isDetailView;
+@property (nonatomic, assign) int currentBookIndex;
+@property (nonatomic, assign) float currentPageIndex;
+
 //Control
 @property (nonatomic, assign) float controlAngle;
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
 @property (nonatomic, assign) float touchDownControlIndex;
 @property (nonatomic, assign) float previousSpecialControlIndex;
-@property (nonatomic, assign) BOOL zoomOnLeft;
-@property (nonatomic, assign) BOOL isBookView;
-@property (nonatomic, assign) BOOL isDetailView;
 
 //Timers
 @property (nonatomic, assign) float controlIndexTimerTarget;
 @property (nonatomic, assign) float controlIndexTimerDx;
 @property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
 @property (nonatomic, strong) NSTimer *controlIndexTimer;
-
 @property (nonatomic, assign) float controlAngleTimerTarget;
 @property (nonatomic, assign) float controlAngleTimerDx;
 @property (nonatomic, strong) NSDate *controlAngleTimerLastTime;
 @property (nonatomic, strong) NSTimer *controlAngleTimer;
 
 //Book scrollview
-@property (nonatomic, assign) int currentBookIndex;
-@property (nonatomic, strong) PPPageViewContentWrapper *theBookCover;
 @property (nonatomic, strong) UIScrollView *bookScrollView;
 @property (nonatomic, strong) NSMutableArray *reuseBookViewArray;
 @property (nonatomic, strong) NSMutableArray *visibleBookViewArray;
+@property (nonatomic, strong) PPPageViewContentWrapper *theBookCover;
 
 //Pepper views
 @property (nonatomic, strong) UIView *pepperView;
+@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
+@property (nonatomic, retain) NSMutableArray *visiblePepperWrapperArray;
 @property (nonatomic, strong) UIView *theLeftView;
 @property (nonatomic, strong) UIView *theRightView;
 @property (nonatomic, strong) UIView *theView1;
 @property (nonatomic, strong) UIView *theView2;
 @property (nonatomic, strong) UIView *theView3;
 @property (nonatomic, strong) UIView *theView4;
-@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
-@property (nonatomic, retain) NSMutableArray *visiblePepperWrapperArray;
 
 //Page scrollview
-@property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 @property (nonatomic, strong) NSMutableArray *visiblePageViewArray;
 
 //Page view controller //iOS5.0 and above
-@property (nonatomic, assign) BOOL iOS5AndAbove;
 @property (nonatomic, strong) UIPageViewController *pageViewController;
 @property (nonatomic, strong) NSMutableArray *reusePageViewDetailControllerArray;
 @property (nonatomic, strong) NSMutableArray *visiblePageViewDetailControllerArray;
@@ -153,60 +153,57 @@
 @synthesize enableHighSpeedScrolling;
 @synthesize scaleOnDeviceRotation;
 
-//readonly public properties
-@synthesize isBookView;
-@synthesize isDetailView;
-
 @synthesize delegate;
 @synthesize dataSource = _dataSource;
 
+//Op flags
+@synthesize frameWidth, frameHeight;
+@synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
+@synthesize bookSpacing, pepperPageSpacing, m34;
+@synthesize numBooks, numPages;
+@synthesize currenPageContentOffsetY;
+@synthesize bookCoverImage, pageBackgroundImage;
+
+@synthesize zoomOnLeft;
+@synthesize isBookView, isDetailView;
+@synthesize currentBookIndex = _currentBookIndex;
+@synthesize currentPageIndex = _currentPageIndex;
+
 //Control
+@synthesize controlAngle = _controlAngle;
+@synthesize controlFlipAngle = _controlFlipAngle;
+@synthesize touchDownControlAngle;
+@synthesize touchDownControlIndex;
+@synthesize previousSpecialControlIndex;
+
+//Timers
 @synthesize controlAngleTimerTarget;
 @synthesize controlAngleTimerDx;
 @synthesize controlAngleTimerLastTime;
 @synthesize controlAngleTimer;
 @synthesize controlIndex = _controlIndex;
 @synthesize controlIndexTimer;
-
-@synthesize controlAngle = _controlAngle;
-@synthesize controlFlipAngle = _controlFlipAngle;
-@synthesize touchDownControlAngle;
-@synthesize touchDownControlIndex;
-@synthesize previousSpecialControlIndex;
 @synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
-@synthesize zoomOnLeft;
-
-//Op flags
-@synthesize bookSpacing, m34;
-@synthesize pepperPageSpacing;
-@synthesize frameWidth, frameHeight;
-@synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
-@synthesize numBooks, numPages;
-@synthesize currenPageContentOffsetY;
-@synthesize bookCoverImage, pageBackgroundImage;
 
 //Book
-@synthesize currentBookIndex = _currentBookIndex;
 @synthesize bookScrollView;
-@synthesize theBookCover;
 @synthesize reuseBookViewArray;
 @synthesize visibleBookViewArray;
+@synthesize theBookCover;
 
 //Pepper
 @synthesize pepperView;
-@synthesize theLeftView, theRightView;
-@synthesize theView1, theView2, theView3, theView4;
 @synthesize reusePepperWrapperArray;
 @synthesize visiblePepperWrapperArray;
+@synthesize theLeftView, theRightView;
+@synthesize theView1, theView2, theView3, theView4;
 
 //Page scrollview
-@synthesize currentPageIndex = _currentPageIndex;
 @synthesize pageScrollView;
 @synthesize reusePageViewArray;
 @synthesize visiblePageViewArray;
 
 //Page view controller
-@synthesize iOS5AndAbove;
 @synthesize pageViewController;
 @synthesize reusePageViewDetailControllerArray;
 @synthesize visiblePageViewDetailControllerArray;
@@ -214,14 +211,16 @@
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
-static float deviceFactor = 0;
-static BOOL isLowEndDevice = NO;
 
 //Optimize for performance
 static int midXLandscape = 0;
 static int midXPortrait = 0;
 static int midYLandscape = 0;
 static int midYPortrait = 0;
+static float deviceFactor = 0;
+static BOOL isLowEndDevice = NO;
+static BOOL isPad = NO;
+static BOOL iOS5AndAbove = NO;
 
 #pragma mark - View life cycle
 
@@ -258,15 +257,17 @@ static int midYPortrait = 0;
   self.delegate = self;
   self.dataSource = self;
   
-  //Device constants
+  //Convert iPad numbers to iPhone
   isLowEndDevice = [self checkLowEndDevice];
   if (deviceFactor == 0)
     deviceFactor = MAX([UIScreen mainScreen].bounds.size.width,[UIScreen mainScreen].bounds.size.height) / 1024.0;
   
+  //Device constants
+  isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
+  iOS5AndAbove = ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] != NSOrderedAscending);
+  
   self.bookCoverImage = nil;
   self.pageBackgroundImage = nil;
-  
-  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   self.m34 = isPad ? M34_IPAD : M34_IPHONE;
   self.pepperPageSpacing = PEPPER_PAGE_SPACING;
   
@@ -279,6 +280,7 @@ static int midYPortrait = 0;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.enableOneSideZoom = ENABLE_ONE_SIDE_ZOOM;
   self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
+  self.enablePageCurlEffect = ENABLE_PAGE_URL;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
   
@@ -289,7 +291,6 @@ static int midYPortrait = 0;
   _controlIndex = MIN_CONTROL_INDEX;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
-  self.iOS5AndAbove = ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] != NSOrderedAscending);
   
   //Gesture recognizers
   UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
@@ -365,7 +366,7 @@ static int midYPortrait = 0;
     [self.view addSubview:self.pageScrollView];
   }
   
-  if (self.pageViewController == nil && self.iOS5AndAbove) {
+  if (self.pageViewController == nil && iOS5AndAbove) {
     self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
                                                               navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
                                                                             options:nil];    
@@ -488,9 +489,8 @@ static int midYPortrait = 0;
     self.pepperView.hidden = YES;
   
   //Increase number of reusable views for landscape
-  BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int totalViews = self.reuseBookViewArray.count + self.visibleBookViewArray.count;
-  if (isLandscape) {
+  if ([self isLandscape]) {
     for (int i=totalViews; i<NUM_REUSE_BOOK_LANDSCAPE; i++)
       [self.reuseBookViewArray addObject:[[PPPageViewContentWrapper alloc] init]];
     [self reuseBookScrollView];
@@ -634,8 +634,7 @@ static int midYPortrait = 0;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  BOOL isPortrait = UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
-  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || isPortrait);
+  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || [self isPortrait]);
   
   if (self.isBookView || noGestureInDetailView)
     return NO;
@@ -844,7 +843,6 @@ static int midYPortrait = 0;
 
 - (void)updateFrameSizesForOrientation:(UIInterfaceOrientation)orientation
 {
-  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
   BOOL isLandscape = UIInterfaceOrientationIsLandscape(orientation);
   
   float orientationFactor = isLandscape ? 1.0f : FRAME_SCALE_PORTRAIT;
@@ -885,6 +883,16 @@ static int midYPortrait = 0;
     layer23WidthAtMid = 0;
     layer2WidthAt90 = 0;
   }
+}
+
+- (BOOL)isPortrait
+{
+  return UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
+}
+
+- (BOOL)isLandscape
+{
+  return UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
 }
 
 - (int)getFrameY
@@ -1405,8 +1413,7 @@ static int midYPortrait = 0;
   if (self.visibleBookViewArray == nil)
     self.visibleBookViewArray = [[NSMutableArray alloc] init];
   
-  BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
-  int numReuse = isLandscape ? NUM_REUSE_BOOK_LANDSCAPE : NUM_REUSE_BOOK_PORTRAIT;
+  int numReuse = [self isLandscape] ? NUM_REUSE_BOOK_LANDSCAPE : NUM_REUSE_BOOK_PORTRAIT;
   
   //Reuseable views pool
   for (int i=0; i<numReuse; i++)
@@ -1455,11 +1462,10 @@ static int midYPortrait = 0;
 
 - (void)reuseBookScrollView {
   
-  BOOL isLandscape = (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation));
   int bookCount = [self getNumberOfBooks];
   
   //Visible indexes
-  int range = isLandscape ? floor(NUM_REUSE_BOOK_LANDSCAPE/2.0) : floor(NUM_REUSE_BOOK_PORTRAIT/2.0);
+  int range = [self isLandscape] ? floor(NUM_REUSE_BOOK_LANDSCAPE/2.0) : floor(NUM_REUSE_BOOK_PORTRAIT/2.0);
   int currentIndex = [self getCurrentBookIndex];
   int startIndex = currentIndex - range;
   if (startIndex < 0)
@@ -1609,9 +1615,7 @@ static int midYPortrait = 0;
 }
 
 - (void)updateBookScrollViewBookScale
-{
-  BOOL isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
-  
+{  
   //Scale & rotate the book views
   int edgeWidth = CGRectGetWidth(self.bookScrollView.bounds)/2.5;
   if (edgeWidth == 0)   edgeWidth = 1;
@@ -1820,7 +1824,7 @@ static int midYPortrait = 0;
   [self scrollToPage:self.currentPageIndex duration:0];
   
   //Setup page flip effect
-  if (self.enablePageCurlEffect && [self.pageViewController.viewControllers count] <= 0)
+  if (iOS5AndAbove && self.enablePageCurlEffect && [self.pageViewController.viewControllers count] <= 0)
     [self setupPageViewController];
   
   if (!self.enableOneSideMiddleZoom)
@@ -1839,7 +1843,7 @@ static int midYPortrait = 0;
 
 - (void)setupPageViewController
 {
-  if (!self.iOS5AndAbove)
+  if (!iOS5AndAbove)
     return;
   
   PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
@@ -1847,8 +1851,7 @@ static int midYPortrait = 0;
     return;
   
   //One page only
-  BOOL isPortrait = UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
-  if (self.enableOneSideZoom || isPortrait) {
+  if (self.enableOneSideZoom || [self isPortrait]) {
     NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
     [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
     return;
@@ -2072,8 +2075,7 @@ static int midYPortrait = 0;
   }
   
   //In landscape, with enableOneSideZoom disabled, need to set to even pageIndex
-  BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
-  if (!self.enableOneSideZoom && isLandscape)
+  if (!self.enableOneSideZoom && [self isLandscape])
     if (pageIndex % 2 != 0)
       pageIndex -= 1;
   
@@ -2930,8 +2932,7 @@ static int midYPortrait = 0;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
   BOOL switchingToPepper = previousControlAngle >= 0 && newControlAngle < 0;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && newControlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
-  BOOL isPortrait = UIDeviceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation);
-  BOOL zoomingOneSide = self.enableOneSideZoom || isPortrait;
+  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
   
   if (switchingToFullscreen)
     for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)

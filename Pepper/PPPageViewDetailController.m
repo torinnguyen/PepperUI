@@ -7,15 +7,13 @@
 
 #import "PPPageViewDetailController.h"
 
-@interface PPPageViewDetailController ()
-
-@end
-
 @implementation PPPageViewDetailController
 
 - (void)viewDidLoad
 {
   [super viewDidLoad];
+  
+  /*
   self.view.backgroundColor = [UIColor redColor];
 
   UIButton *button1 = [UIButton buttonWithType:UIButtonTypeRoundedRect];
@@ -37,20 +35,18 @@
   button4.frame = CGRectMake(self.view.bounds.size.width-100, self.view.bounds.size.height-32, 100, 32);
   button4.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin;
   [self.view addSubview:button4];
-}
-
-- (void)viewDidUnload
-{
-  [super viewDidUnload];
+   */
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
   [super viewWillAppear:animated];
   
+  /*
   for (UIButton *button in self.view.subviews)
     if ([button isKindOfClass:[UIButton class]])
       [button setTitle:[NSString stringWithFormat:@"%d", self.view.tag] forState:UIControlStateNormal];
+   */
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
