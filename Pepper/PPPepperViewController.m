@@ -370,8 +370,8 @@ static BOOL iOS5AndAbove = NO;
     self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
                                                               navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
                                                                             options:nil];    
-    self.pageViewController.delegate = self;
-    self.pageViewController.dataSource = self;
+    //self.pageViewController.delegate = self;      //set later
+    //self.pageViewController.dataSource = self;    //set later
     
     [self addChildViewController:self.pageViewController];
     [self.view addSubview:self.pageViewController.view];
@@ -1750,7 +1750,6 @@ static BOOL iOS5AndAbove = NO;
       return;
   
   self.pageScrollView.hidden = YES;
-  self.pageViewController.view.hidden = YES;
   
   while ([self.visiblePageViewArray count] > 0) {
     PPPageViewDetailWrapper *subview = [self.visiblePageViewArray objectAtIndex:0];
@@ -1761,6 +1760,9 @@ static BOOL iOS5AndAbove = NO;
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   
+  self.pageViewController.view.hidden = YES;
+  self.pageViewController.delegate = nil;
+  self.pageViewController.dataSource = nil;
   [self.pageViewController setViewControllers:nil direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
 }
 
@@ -1824,7 +1826,7 @@ static BOOL iOS5AndAbove = NO;
   [self scrollToPage:self.currentPageIndex duration:0];
   
   //Setup page flip effect
-  if (iOS5AndAbove && self.enablePageCurlEffect && [self.pageViewController.viewControllers count] <= 0)
+  if (iOS5AndAbove && self.enablePageCurlEffect)
     [self setupPageViewController];
   
   if (!self.enableOneSideMiddleZoom)
@@ -1844,6 +1846,13 @@ static BOOL iOS5AndAbove = NO;
 - (void)setupPageViewController
 {
   if (!iOS5AndAbove)
+    return;
+  
+  self.pageViewController.delegate = self;
+  self.pageViewController.dataSource = self;
+  self.pageViewController.view.hidden = NO;
+  
+  if ([self.pageViewController.viewControllers count] > 0)
     return;
   
   PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
@@ -1868,7 +1877,6 @@ static BOOL iOS5AndAbove = NO;
     viewControllers = [NSArray arrayWithObjects:prevViewController, currentViewController, nil];    
   }
   [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
-  self.pageViewController.view.hidden = NO;
 }
 
 - (void)reusePageScrollview {
@@ -2145,20 +2153,20 @@ static BOOL iOS5AndAbove = NO;
     currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
   currentViewController.view.hidden = NO;
   
-  // Set the spine position to "min" and the page view controller's view controllers array to contain just one view controller.
-  // Setting the spine position to 'UIPageViewControllerSpineLocationMid' in landscape orientation sets the doubleSided property to YES, so set it to NO here.
+  //One side
+  if (currentViewController == nil)
+    return UIPageViewControllerSpineLocationNone;
+  
   if (!midSpine) {
     [self.pageViewController setViewControllers:[NSArray arrayWithObject:currentViewController]
                                       direction:UIPageViewControllerNavigationDirectionForward 
-                                       animated:YES 
+                                       animated:NO 
                                      completion:NULL];    
-    self.pageViewController.doubleSided = NO;
+    [self.pageViewController setDoubleSided:NO];
     return UIPageViewControllerSpineLocationMin;
   }
 
-  // In landscape orientation: Set set the spine location to "mid" and the page view controller's view controllers array to contain two view controllers.
-  // If the current page is even, set it to contain the current and next view controllers; if it is odd, set the array to contain the previous and current view controllers.
-
+  //Side-by-side
   NSArray *viewControllers = nil;
   if ((int)self.currentPageIndex % 2 == 0) {
     UIViewController *nextViewController = [self.pageViewController.dataSource pageViewController:self.pageViewController
@@ -2171,8 +2179,12 @@ static BOOL iOS5AndAbove = NO;
     previousViewController.view.hidden = NO;
     viewControllers = [NSArray arrayWithObjects:previousViewController, currentViewController, nil];
   }
-  [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:YES completion:NULL];
   
+  [self.pageViewController setViewControllers:viewControllers
+                                    direction:UIPageViewControllerNavigationDirectionForward
+                                     animated:NO 
+                                   completion:NULL];
+  [self.pageViewController setDoubleSided:YES];
   return UIPageViewControllerSpineLocationMid;
 }
 
@@ -2193,6 +2205,7 @@ static BOOL iOS5AndAbove = NO;
   PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:index];
   dataViewController.view = wrapper;
   dataViewController.view.tag = index;
+  dataViewController.view.hidden = NO;
   [wrapper removeFromSuperview];
   return dataViewController;
 }
@@ -3163,7 +3176,7 @@ static BOOL iOS5AndAbove = NO;
         
     //New position of frame
     float frameX = [self getPepperFrameXForPageIndex:i gapScale:(float)positionScale];
-    if (self.enableOneSideZoom || isPortrait)
+    if (self.enableOneSideZoom || [self isPortrait])
       frameX += diffFromMidX;
     
     //We keep the frame size the same, vary only origin.x & scale the layer with additionalScale
