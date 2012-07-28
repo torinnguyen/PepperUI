@@ -528,7 +528,6 @@ static BOOL iOS5AndAbove = NO;
   self.bookScrollView.hidden = NO;
   self.pepperView.hidden = YES;
   self.pageScrollView.hidden = YES;
-  self.pageViewController.view.hidden = YES;
 }
 
 - (NSString *)rawPlatformString {
@@ -1742,14 +1741,20 @@ static BOOL iOS5AndAbove = NO;
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   
-  //Destroy it
-  self.pageViewController.view.hidden = YES;
+  [self destroyPageViewController];
+}
+
+- (void)destroyPageViewController
+{
+  if (!iOS5AndAbove || self.pageViewController == nil)
+    return;
+  
   self.pageViewController.delegate = nil;
   self.pageViewController.dataSource = nil;
-  [self.pageViewController setViewControllers:nil direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
-  [self.pageViewController removeFromParentViewController];
+  self.pageViewController.view.hidden = YES;
   [self.pageViewController.view removeFromSuperview];
-  self.pageViewController = nil;
+  [self.pageViewController removeFromParentViewController];
+  self.pageViewController = nil;    
 }
 
 - (void)destroyPageScrollView:(BOOL)force
@@ -1758,9 +1763,7 @@ static BOOL iOS5AndAbove = NO;
     if (self.controlAngle >= 0 || self.isDetailView)
       return;
     
-  self.pageScrollView.hidden = YES;
-  self.pageViewController.view.hidden = YES;
-    
+  self.pageScrollView.hidden = YES;    
   [self.reusePageViewArray removeAllObjects];
   self.reusePageViewArray = nil;
   
@@ -1771,6 +1774,8 @@ static BOOL iOS5AndAbove = NO;
     [self.visiblePageViewArray removeObjectAtIndex:0];
   }
   self.visiblePageViewArray = nil;
+  
+  [self destroyPageViewController];
 }
 
 - (void)setupReuseablePoolPageViews
@@ -1856,7 +1861,8 @@ static BOOL iOS5AndAbove = NO;
     }
   }
   else {
-    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:UIPageViewControllerSpineLocationMid] forKey:UIPageViewControllerOptionSpineLocationKey];
+    static NSString *key = @"UIPageViewControllerOptionSpineLocationKey";   //hack for iOS4.3 bypass
+    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:UIPageViewControllerSpineLocationMid] forKey:key];
     requiredNumVC = 2;
     resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMid;
     if (resetup) {
@@ -2658,7 +2664,8 @@ static BOOL iOS5AndAbove = NO;
   if (!animated) {
     self.controlAngle = 0;
     self.pageScrollView.hidden = NO;
-    self.pageViewController.view.hidden = NO;
+    if (iOS5AndAbove)
+      self.pageViewController.view.hidden = NO;
     return;
   }
   
@@ -2670,7 +2677,8 @@ static BOOL iOS5AndAbove = NO;
     self.controlAngle = 0;
   } completion:^(BOOL finished) {
     self.pageScrollView.hidden = NO;
-    self.pageViewController.view.hidden = NO;
+    if (iOS5AndAbove)
+      self.pageViewController.view.hidden = NO;
   }];
 }
 
@@ -3017,7 +3025,8 @@ static BOOL iOS5AndAbove = NO;
   
   //Show/hide Pepper & Page scrollview accordingly
   self.pageScrollView.hidden = (newControlAngle < 0);
-  self.pageViewController.view.hidden = (newControlAngle < 0);
+  if (iOS5AndAbove)
+    self.pageViewController.view.hidden = (newControlAngle < 0);
   self.isDetailView = !self.pageScrollView.hidden;
   if (!self.isBookView && newControlAngle < 0)
     self.pepperView.hidden = NO;

@@ -22,9 +22,9 @@
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
 @property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
 
-
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
 @property (nonatomic, strong) NSMutableArray *bookDataArray;
+@property (nonatomic, assign) BOOL iOS5AndAbove;
 @end
 
 @implementation PPViewController
@@ -38,6 +38,7 @@
 
 @synthesize pepperViewController;
 @synthesize bookDataArray;
+@synthesize iOS5AndAbove;
 
 - (void)viewDidLoad
 {
@@ -49,10 +50,11 @@
   [self.view addSubview:self.pepperViewController.view];
   
   //iOS5
-  if ([self respondsToSelector:@selector(addChildViewController:)])
+  self.iOS5AndAbove = ([[[UIDevice currentDevice] systemVersion] compare:@"5.0" options:NSNumericSearch] != NSOrderedAscending);
+  if (self.iOS5AndAbove) {
     [self addChildViewController:self.pepperViewController];
-  if ([self.pepperViewController respondsToSelector:@selector(didMoveToParentViewController:)])
-    [self.pepperViewController didMoveToParentViewController:self];
+    [self.pepperViewController didMoveToParentViewController:self];   
+  }
 
   //Supply it with your own data/model
   self.pepperViewController.delegate = self;        //we are simply printing out all delegate events in this demo
@@ -85,7 +87,7 @@
   [super viewWillAppear:animated];
   
   //iOS4
-  if (![self respondsToSelector:@selector(addChildViewController:)])
+  if (!self.iOS5AndAbove)
     [self.pepperViewController viewWillAppear:animated];
 }
 
@@ -94,7 +96,7 @@
   [super viewDidAppear:animated];
 
   //iOS4
-  if (![self respondsToSelector:@selector(addChildViewController:)])
+  if (!self.iOS5AndAbove)
     [self.pepperViewController viewDidAppear:animated];
   
   [self onContentChange:self.contentSegmented];
@@ -116,7 +118,7 @@
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation 
                                 duration:(NSTimeInterval)duration {
   //iOS4
-  if (![self respondsToSelector:@selector(addChildViewController:)])
+  if (!self.iOS5AndAbove)
     [self.pepperViewController willRotateToInterfaceOrientation:toInterfaceOrientation
                                                        duration:duration];
 }
@@ -124,7 +126,7 @@
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation 
                                          duration:(NSTimeInterval)duration {
   //iOS4
-  if (![self respondsToSelector:@selector(addChildViewController:)])
+  if (!self.iOS5AndAbove)
     [self.pepperViewController willAnimateRotationToInterfaceOrientation:toInterfaceOrientation
                                                                 duration:duration];
 }
@@ -132,7 +134,7 @@
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
   
   //iOS4
-  if (![self respondsToSelector:@selector(addChildViewController:)])
+  if (!self.iOS5AndAbove)
     [self.pepperViewController didRotateFromInterfaceOrientation:fromInterfaceOrientation];
 }
 
