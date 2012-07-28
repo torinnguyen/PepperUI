@@ -9,6 +9,4 @@
 
 @interface PPPageViewDetailController : UIViewController
 
-@property (strong, nonatomic) IBOutlet UIButton *button;
-
 @end
