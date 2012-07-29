@@ -1040,7 +1040,7 @@ static BOOL iOS5AndAbove = NO;
 - (void)destroyPepperView:(BOOL)force
 {  
   if (!force)
-    if (!self.isDetailView && !self.isBookView)
+    if (!self.isDetailView && !self.isBookView && self.theBookCover != nil)
       return;
   
   self.pepperView.hidden = YES;
@@ -2762,7 +2762,7 @@ static BOOL iOS5AndAbove = NO;
   
   //Reapply scaling to book views
   [self scrollViewDidScroll:self.bookScrollView];
-
+  
   //Replace 1st page by book cover, need to redo this due to pepper page reuse
   [self addBookCoverToFirstPageThenRemove:NO];
   
@@ -2791,7 +2791,7 @@ static BOOL iOS5AndAbove = NO;
   float animationDuration = self.animationSlowmoFactor*diff;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
     self.isBookView = YES;
-   
+    
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
       [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
