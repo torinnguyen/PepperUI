@@ -79,8 +79,7 @@
 @property (nonatomic, assign) float bookSpacing;
 @property (nonatomic, assign) float pepperPageSpacing;
 @property (nonatomic, assign) float m34;
-@property (nonatomic, assign) int numBooks;
-@property (nonatomic, assign) int numPages;
+@property (nonatomic, assign) int numBooks, numPages, numDetailPages;
 @property (nonatomic, assign) float currenPageContentOffsetY;
 @property (nonatomic, strong) UIImage *bookCoverImage;
 @property (nonatomic, strong) UIImage *pageBackgroundImage;
@@ -160,7 +159,7 @@
 @synthesize frameWidth, frameHeight;
 @synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
 @synthesize bookSpacing, pepperPageSpacing, m34;
-@synthesize numBooks, numPages;
+@synthesize numBooks, numPages, numDetailPages;
 @synthesize currenPageContentOffsetY;
 @synthesize bookCoverImage, pageBackgroundImage;
 
@@ -493,6 +492,7 @@ static BOOL iOS5AndAbove = NO;
   
   self.numBooks = -1;
   self.numPages = -1;
+  self.numDetailPages = -1;
   
   //Graphic
   self.bookCoverImage = nil;
@@ -573,6 +573,7 @@ static BOOL iOS5AndAbove = NO;
     }
     
     self.numPages = -1;
+    self.numDetailPages = -1;
     
     //Optional: Delegate can decide to show or not
     BOOL hasDelegate = [self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnBookIndex:)];
@@ -764,13 +765,26 @@ static BOOL iOS5AndAbove = NO;
 {
   if (self.numPages >= 0)
     return self.numPages;
-
+  
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfPagesForBookIndex:)]) {
     self.numPages = [self.dataSource ppPepperViewController:self numberOfPagesForBookIndex:bookIndex];
     return self.numPages;
   }
   
   return 0;
+}
+
+- (int)getNumberOfDetailPagesForBookIndex:(int)bookIndex
+{
+  if (self.numDetailPages >= 0)
+    return self.numDetailPages;
+  
+  if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfDetailPagesForBookIndex:)])
+    self.numDetailPages = [self.dataSource ppPepperViewController:self numberOfDetailPagesForBookIndex:bookIndex];    
+  else
+    self.numDetailPages = self.numPages;
+  
+  return numDetailPages;
 }
 
 
@@ -1664,6 +1678,7 @@ static BOOL iOS5AndAbove = NO;
   
   self.currentBookIndex = bookIndex;
   self.numPages = -1;
+  self.numDetailPages = -1;
   self.previousSpecialControlIndex = INVALID_NUMBER;
   
   [self updatePageScrollViewContentSize];

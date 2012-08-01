@@ -30,6 +30,12 @@
 - (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfPagesForBookIndex:(int)bookIndex;
 
 /*
+ * Delegate to return the number of detail/fullscreen pages in the given book index
+ * This allows the last page in fullscreen mode to be unreachable
+ */
+- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfDetailPagesForBookIndex:(int)bookIndex;
+
+/*
  * Delegate to return the book cover views
  */
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList viewForBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView;
