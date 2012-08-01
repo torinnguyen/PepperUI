@@ -334,22 +334,30 @@ static UIImage *backgroundImageFlipped = nil;
 - (void)zoomToScale:(float)newScale atPoint:(CGPoint)point animated:(BOOL)animated
 {  
   float currentZoomScale = self.zoomScale;
+  float x,y;
   [self setZoomScale:newScale animated:animated];
   
+  //Currently zoomed out, now perform zoom in
   if (newScale >= MAXIMUM_ZOOM_SCALE/2)
   {
-    [self setContentOffset:CGPointMake(point.x*newScale - self.bounds.size.width/2, 
-                                       point.y*newScale - self.bounds.size.height/2)];
-    return;
+    x = point.x*newScale - self.bounds.size.width/2;
+    y = point.y*newScale - self.bounds.size.height/2;
+  }
+  else
+  {
+    x = 0;
+    y = (point.y*1/currentZoomScale - self.bounds.size.height/2);
   }
 
-  float calculatedPointY = (point.y*1/currentZoomScale - self.bounds.size.height/2);
-  float pointY = (calculatedPointY < 0) ? 0 : calculatedPointY;
+  //Limit to content bounds
+  if (x < 0)   x = 0;
+  if (y < 0)   y = 0;
+  if (x > self.contentSize.width - self.bounds.size.width)
+    x = self.contentSize.width - self.bounds.size.width;
+  if (y > self.contentSize.height - self.bounds.size.height)
+    y = self.contentSize.height - self.bounds.size.height;
   
-  float upBoundPointY = self.contentSize.height - self.bounds.size.height;
-  pointY = pointY > upBoundPointY ? upBoundPointY : pointY;
-  
-  [self setContentOffset:CGPointMake(0, pointY)];
+  [self setContentOffset:CGPointMake(x, y) animated:NO];
 }
 
 @end
