@@ -308,6 +308,7 @@ static BOOL iOS5AndAbove = NO;
   [self destroyBookScrollView:YES];
   [self destroyPepperView:YES];
   [self destroyPageScrollView:YES];
+  [self destroyPageViewController];
 }
 
 - (void)viewDidLoad
@@ -1774,12 +1775,7 @@ static BOOL iOS5AndAbove = NO;
     vc.view = nil;
   [self.reusePageViewDetailControllerArray removeAllObjects];
   
-  self.pageViewController.delegate = nil;
-  self.pageViewController.dataSource = nil;
   self.pageViewController.view.hidden = YES;
-  [self.pageViewController.view removeFromSuperview];
-  [self.pageViewController removeFromParentViewController];
-  self.pageViewController = nil;
 }
 
 - (void)destroyPageScrollView:(BOOL)force
@@ -2282,7 +2278,7 @@ static BOOL iOS5AndAbove = NO;
 - (void)setupReuseablePoolPageViewDetailController
 {
   //No need to re-setup
-  if (self.reusePageViewDetailControllerArray != nil || [self.reusePageViewDetailControllerArray count] > 0)
+  if ([self.reusePageViewDetailControllerArray count] > 0)
     return;
   
   if (self.reusePageViewDetailControllerArray == nil)
