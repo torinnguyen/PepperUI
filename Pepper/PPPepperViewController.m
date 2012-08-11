@@ -84,47 +84,47 @@
 @property (nonatomic, strong) UIImage *bookCoverImage;
 @property (nonatomic, strong) UIImage *pageBackgroundImage;
 
-@property (nonatomic, assign) BOOL zoomOnLeft;
-@property (nonatomic, assign) BOOL isBookView;
-@property (nonatomic, assign) BOOL isDetailView;
-@property (nonatomic, assign) int currentBookIndex;
-@property (nonatomic, assign) float currentPageIndex;
-
 //Control
 @property (nonatomic, assign) float controlAngle;
 @property (nonatomic, assign) float controlFlipAngle;
 @property (nonatomic, assign) float touchDownControlAngle;
 @property (nonatomic, assign) float touchDownControlIndex;
 @property (nonatomic, assign) float previousSpecialControlIndex;
+@property (nonatomic, assign) BOOL zoomOnLeft;
+@property (nonatomic, assign) BOOL isBookView;
+@property (nonatomic, assign) BOOL isDetailView;
 
 //Timers
 @property (nonatomic, assign) float controlIndexTimerTarget;
 @property (nonatomic, assign) float controlIndexTimerDx;
 @property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
 @property (nonatomic, strong) NSTimer *controlIndexTimer;
+
 @property (nonatomic, assign) float controlAngleTimerTarget;
 @property (nonatomic, assign) float controlAngleTimerDx;
 @property (nonatomic, strong) NSDate *controlAngleTimerLastTime;
 @property (nonatomic, strong) NSTimer *controlAngleTimer;
 
 //Book scrollview
+@property (nonatomic, assign) int currentBookIndex;
+@property (nonatomic, strong) PPPageViewContentWrapper *theBookCover;
 @property (nonatomic, strong) UIScrollView *bookScrollView;
 @property (nonatomic, strong) NSMutableArray *reuseBookViewArray;
 @property (nonatomic, strong) NSMutableArray *visibleBookViewArray;
-@property (nonatomic, strong) PPPageViewContentWrapper *theBookCover;
 
 //Pepper views
 @property (nonatomic, strong) UIView *pepperView;
-@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
-@property (nonatomic, retain) NSMutableArray *visiblePepperWrapperArray;
 @property (nonatomic, strong) UIView *theLeftView;
 @property (nonatomic, strong) UIView *theRightView;
 @property (nonatomic, strong) UIView *theView1;
 @property (nonatomic, strong) UIView *theView2;
 @property (nonatomic, strong) UIView *theView3;
 @property (nonatomic, strong) UIView *theView4;
+@property (nonatomic, retain) NSMutableArray *reusePepperWrapperArray;
+@property (nonatomic, retain) NSMutableArray *visiblePepperWrapperArray;
 
 //Page scrollview
+@property (nonatomic, assign) float currentPageIndex;
 @property (nonatomic, strong) UIScrollView *pageScrollView;
 @property (nonatomic, strong) NSMutableArray *reusePageViewArray;
 @property (nonatomic, strong) NSMutableArray *visiblePageViewArray;
@@ -524,10 +524,15 @@ static BOOL iOS5AndAbove = NO;
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
   [self updateBookScrollViewBookScale];
-   
+  
   self.bookScrollView.hidden = NO;
+  self.bookScrollView.alpha = 1;
   self.pepperView.hidden = YES;
   self.pageScrollView.hidden = YES;
+}
+
+- (BOOL)isBusy {
+  return [self.controlAngleTimer isValid] || [self.controlIndexTimer isValid];
 }
 
 - (NSString *)rawPlatformString {
@@ -2760,6 +2765,9 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)closeCurrentBook:(BOOL)animated
 {
+  if ([self isBusy])
+    return;
+  
   self.isDetailView = NO;
   
   float diff = fabs(self.controlAngle - (-MAXIMUM_ANGLE)) / 90.0 / 1.3;
@@ -3501,6 +3509,10 @@ static BOOL iOS5AndAbove = NO;
   return DEMO_NUM_BOOKS;
 }
 - (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfPagesForBookIndex:(int)bookIndex
+{
+  return DEMO_NUM_PAGES;
+}
+- (int)ppPepperViewController:(PPPepperViewController*)scrollList numberOfDetailPagesForBookIndex:(int)bookIndex
 {
   return DEMO_NUM_PAGES;
 }
