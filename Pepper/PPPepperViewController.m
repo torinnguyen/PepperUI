@@ -2362,9 +2362,10 @@ static BOOL iOS5AndAbove = NO;
     return nil;  
   index--;
   
+  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation
   //self.pageViewController.view.userInteractionEnabled = NO;
-  self.pageCurlBusy = YES;
   
+  self.pageCurlBusy = YES;
   return [self getPageViewDetailControllerWithIndex:index];
 }
 
@@ -2379,9 +2380,10 @@ static BOOL iOS5AndAbove = NO;
   if (index >= pageCount)
     return nil;
 
+  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation
   //self.pageViewController.view.userInteractionEnabled = NO;
+
   self.pageCurlBusy = YES;
-  
   return [self getPageViewDetailControllerWithIndex:index];
 }
 
