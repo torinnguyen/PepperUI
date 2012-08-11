@@ -9,4 +9,6 @@
 
 @interface PPPageViewDetailController : UIViewController
 
+@property (nonatomic, assign) int tag;
+
 @end

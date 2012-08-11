@@ -132,7 +132,7 @@
 //Page view controller //iOS5.0 and above
 @property (nonatomic, strong) UIPageViewController *pageViewController;
 @property (nonatomic, strong) NSMutableArray *reusePageViewDetailControllerArray;
-@property (nonatomic, strong) NSMutableArray *visiblePageViewDetailControllerArray;
+@property (nonatomic, assign) BOOL pageCurlBusy;
 
 @end
 
@@ -205,7 +205,7 @@
 //Page view controller
 @synthesize pageViewController;
 @synthesize reusePageViewDetailControllerArray;
-@synthesize visiblePageViewDetailControllerArray;
+@synthesize pageCurlBusy;
 
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
@@ -224,7 +224,7 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.0";
+  return @"1.4.1";
 }
 
 - (id)dataSource {
@@ -532,7 +532,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (BOOL)isBusy {
-  return [self.controlAngleTimer isValid] || [self.controlIndexTimer isValid];
+  return [self.controlAngleTimer isValid] || [self.controlIndexTimer isValid] || self.pageCurlBusy;
 }
 
 - (NSString *)rawPlatformString {
@@ -621,15 +621,13 @@ static BOOL iOS5AndAbove = NO;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || [self isPortrait]);
+  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || [self isPortrait] || (iOS5AndAbove && self.enablePageCurlEffect));
   
   if (self.isBookView || noGestureInDetailView)
     return NO;
-  if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
+  if ([self isBusy])
     return NO;
-  if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
-    return NO;
-  
+
   if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
     return YES;
   
@@ -682,7 +680,7 @@ static BOOL iOS5AndAbove = NO;
 - (void)onPanning:(UIPanGestureRecognizer *)recognizer
 {
   //in case gestureRecognizerShouldBegin does not work properly
-  if (self.isDetailView || self.isBookView)
+  if ([self isBusy])
     return;
     
   //Remember initial value to calculate based on delta later
@@ -1769,12 +1767,16 @@ static BOOL iOS5AndAbove = NO;
   if (!iOS5AndAbove || self.pageViewController == nil)
     return;
   
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+    vc.view = nil;
+  [self.reusePageViewDetailControllerArray removeAllObjects];
+  
   self.pageViewController.delegate = nil;
   self.pageViewController.dataSource = nil;
   self.pageViewController.view.hidden = YES;
   [self.pageViewController.view removeFromSuperview];
   [self.pageViewController removeFromParentViewController];
-  self.pageViewController = nil;    
+  self.pageViewController = nil;
 }
 
 - (void)destroyPageScrollView:(BOOL)force
@@ -1822,9 +1824,14 @@ static BOOL iOS5AndAbove = NO;
 {  
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
-    
+  
   //Populate page scrollview
   [self reusePageScrollview];
+  
+  //Setup page flip effect
+  if (iOS5AndAbove && self.enablePageCurlEffect) {
+    [self setupPageViewController];
+  }
     
   //Reset pages UI
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
@@ -1835,11 +1842,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self updatePageScrollViewContentSize];
   [self scrollToPage:self.currentPageIndex duration:0];
-  
-  //Setup page flip effect
-  if (iOS5AndAbove && self.enablePageCurlEffect)
-    [self setupPageViewController];
-  
+    
   if (!self.enableOneSideMiddleZoom)
     return;
     
@@ -1858,8 +1861,11 @@ static BOOL iOS5AndAbove = NO;
 {
   if (!iOS5AndAbove)
     return;
-    
-  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
+  
+  [self setupReuseablePoolPageViewDetailController];
+  [self reusePageScrollview];
+      
+  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
   if (currentViewController == nil)
     return;
 
@@ -1921,12 +1927,12 @@ static BOOL iOS5AndAbove = NO;
   //Side-by-side
   NSArray *viewControllers = nil;
   if ((int)self.currentPageIndex % 2 == 0) {
-    PPPageViewDetailController *nextViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex+1];
+    PPPageViewDetailController *nextViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex+1];
     viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
   }
   else 
   {
-    PPPageViewDetailController *prevViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex-1];
+    PPPageViewDetailController *prevViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex-1];
     viewControllers = [NSArray arrayWithObjects:prevViewController, currentViewController, nil];    
   }
   [self.pageViewController setDoubleSided:YES];
@@ -1948,13 +1954,24 @@ static BOOL iOS5AndAbove = NO;
     endIndex = pageCount-1;
   
   //Reuse out of bound views
+  if (iOS5AndAbove && self.enablePageCurlEffect)
+    for (int i=0; i<pageCount; i++)
+      if (i < startIndex || i > endIndex)
+        [self removeReusablePageViewDetailControllerWithIndex:i];
+  
+  //Reuse out of bound views
   for (int i=0; i<pageCount; i++)
     if (i < startIndex || i > endIndex)
       [self removePageFromScrollView:i];
-    
+  
   //Add new views
   for (int i=startIndex; i<=endIndex; i++)
     [self addPageToScrollView:i];
+  
+  //Add new views
+  if (iOS5AndAbove && self.enablePageCurlEffect)
+    for (int i=startIndex; i<=endIndex; i++)
+      [self addReusablePageViewDetailControllerWithIndex:i];
 }
 
 //
@@ -2016,9 +2033,20 @@ static BOOL iOS5AndAbove = NO;
     [self.reusePageViewArray addObject:subview];
     [self.visiblePageViewArray removeObject:subview];
     
-    //This is quite expensive, substitute by just hiding it & use self.visiblePageViewArray to keep track
+    //Remove subview is quite expensive, substitute by just hiding it & use self.visiblePageViewArray to keep track
     //[subview removeFromSuperview];
     subview.hidden = YES;
+
+    /*
+    if (iOS5AndAbove && self.enablePageCurlEffect) {
+      PPPageViewDetailController *vc = [self getVisiblePageViewDetailControllerWithIndex:index];
+      if (vc != nil) {
+        NSLog(@"removed: %d", index);
+        vc.view = nil;
+      }
+    }
+    */
+    
     break;
   }
 }
@@ -2173,7 +2201,10 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - UI Helper functions (Page flip effect)
 
 - (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
-{
+{  
+  self.pageViewController.view.userInteractionEnabled = YES;
+  self.pageCurlBusy = NO;
+  
   //Flip to the same page
   if (!completed)
     return;
@@ -2204,7 +2235,7 @@ static BOOL iOS5AndAbove = NO;
   if ([self.pageViewController.viewControllers count] > 0)
     currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
   else
-    currentViewController = [self getPageViewDetailControllerAtIndex:self.currentPageIndex];
+    currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
   currentViewController.view.hidden = NO;
   
   //One side
@@ -2242,50 +2273,116 @@ static BOOL iOS5AndAbove = NO;
   return UIPageViewControllerSpineLocationMid;
 }
 
+
 #pragma mark - Page View Controller Data Source
+
+- (void)setupReuseablePoolPageViewDetailController
+{
+  //No need to re-setup
+  if (self.reusePageViewDetailControllerArray != nil || [self.reusePageViewDetailControllerArray count] > 0)
+    return;
+  
+  if (self.reusePageViewDetailControllerArray == nil)
+    self.reusePageViewDetailControllerArray = [[NSMutableArray alloc] init];
+  
+  //Reuseable views pool
+  int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
+  for (int i=0; i<total; i++) {
+    PPPageViewDetailController *wrapperView = [[PPPageViewDetailController alloc] init];
+    wrapperView.tag = -1;
+    [self.reusePageViewDetailControllerArray addObject:wrapperView];
+  }
+}
 
 - (NSUInteger)indexOfPageViewDetailController:(PPPageViewDetailController *)viewController
 {   
-  return viewController.view.tag;
+  return viewController.tag;
 }
 
-- (PPPageViewDetailController *)getPageViewDetailControllerAtIndex:(int)index
-{   
+- (void)removeReusablePageViewDetailControllerWithIndex:(int)index
+{
+  //Already visible
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray) {
+    if (vc.tag != index)
+      continue;    
+    vc.tag = -1;
+    break;
+  }
+}
+
+- (void)addReusablePageViewDetailControllerWithIndex:(int)index
+{
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   if (pageCount <= 0 || index < 0 || index >= pageCount)
-    return nil;
+    return;
   
-  PPPageViewDetailController *dataViewController = [[PPPageViewDetailController alloc] init];
-  PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:index];
-  dataViewController.view = wrapper;
-  dataViewController.view.tag = index;
-  dataViewController.view.hidden = NO;
-  [wrapper removeFromSuperview];
-  return dataViewController;
+  if ([self.reusePageViewDetailControllerArray count] <= 0)
+    return;
+  
+  if ([self hasPageViewDetailControllerWithIndex:index])
+    return;
+
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray) {
+    if (vc.tag >= 0)
+      continue;
+  
+    PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:index];
+    if ([wrapper superview] != nil)
+      [wrapper removeFromSuperview];
+    
+    vc.tag = index;
+    vc.view = wrapper;
+    vc.view.hidden = NO;
+    break;
+  }
+}
+
+- (BOOL)hasPageViewDetailControllerWithIndex:(int)index
+{
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+    if (vc.tag == index)
+      return YES;
+  
+  return NO;
+}
+
+- (PPPageViewDetailController *)getPageViewDetailControllerWithIndex:(int)index
+{
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+    if (vc.tag == index)
+      return vc;
+  
+  return nil;
 }
 
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerBeforeViewController:(UIViewController *)viewController
 {
-  NSUInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
-  if ((index <= 0) || (index == NSNotFound)) {
-    return nil;
-  }
-  
+  NSInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
+  if (index < 0 || index == NSNotFound)
+    return nil;  
   index--;
-  return [self getPageViewDetailControllerAtIndex:index];
+  
+  //self.pageViewController.view.userInteractionEnabled = NO;
+  self.pageCurlBusy = YES;
+  
+  return [self getPageViewDetailControllerWithIndex:index];
 }
 
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerAfterViewController:(UIViewController *)viewController
-{
-  NSUInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
-  if (index == NSNotFound)
+{  
+  NSInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
+  if (index < 0 || index == NSNotFound)
     return nil;
   index++;
   
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   if (index >= pageCount)
     return nil;
-  return [self getPageViewDetailControllerAtIndex:index];
+
+  //self.pageViewController.view.userInteractionEnabled = NO;
+  self.pageCurlBusy = YES;
+  
+  return [self getPageViewDetailControllerWithIndex:index];
 }
 
 

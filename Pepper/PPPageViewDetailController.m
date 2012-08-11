@@ -8,12 +8,13 @@
 #import "PPPageViewDetailController.h"
 
 @implementation PPPageViewDetailController
+@synthesize tag;
 
 - (void)viewDidLoad
 {
   [super viewDidLoad];
   
-  /*
+  /* For debugging
   self.view.backgroundColor = [UIColor redColor];
 
   UIButton *button1 = [UIButton buttonWithType:UIButtonTypeRoundedRect];
