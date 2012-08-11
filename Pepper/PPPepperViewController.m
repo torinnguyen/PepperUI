@@ -1871,7 +1871,7 @@ static BOOL iOS5AndAbove = NO;
     return;
 
   BOOL resetup = NO;
-  int requiredNumVC = 1;
+  int requiredNumVC;
   BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
   
   //Resetup if spine location is not right
