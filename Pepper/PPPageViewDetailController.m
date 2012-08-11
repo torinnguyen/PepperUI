@@ -14,4 +14,10 @@
  This class is just an empty UIViewController to carry PPPageViewDetailWrapper for implementing UIPageViewController
  */
 
+//This is mandatory
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+  return YES;
+}
+
 @end
