@@ -2249,7 +2249,7 @@ static BOOL iOS5AndAbove = NO;
     [self.pageViewController setViewControllers:[NSArray arrayWithObject:currentViewController]
                                       direction:UIPageViewControllerNavigationDirectionForward 
                                        animated:NO 
-                                     completion:NULL];    
+                                     completion:nil];    
     [self.pageViewController setDoubleSided:NO];
     return UIPageViewControllerSpineLocationMin;
   }
@@ -2271,7 +2271,7 @@ static BOOL iOS5AndAbove = NO;
   [self.pageViewController setViewControllers:viewControllers
                                     direction:UIPageViewControllerNavigationDirectionForward
                                      animated:NO 
-                                   completion:NULL];
+                                   completion:nil];
   [self.pageViewController setDoubleSided:YES];
   return UIPageViewControllerSpineLocationMid;
 }
@@ -2352,7 +2352,7 @@ static BOOL iOS5AndAbove = NO;
 - (PPPageViewDetailController *)getPageViewDetailControllerWithIndex:(int)index
 {
   for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
-    if (vc.tag == index)
+    if (vc.tag >= 0 && vc.tag == index)
       return vc;
   
   return nil;
@@ -2361,7 +2361,7 @@ static BOOL iOS5AndAbove = NO;
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerBeforeViewController:(UIViewController *)viewController
 {
   NSInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
-  if (index < 0 || index == NSNotFound)
+  if (index <= 0)
     return nil;  
   index--;
   
@@ -2375,7 +2375,7 @@ static BOOL iOS5AndAbove = NO;
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerAfterViewController:(UIViewController *)viewController
 {  
   NSInteger index = [self indexOfPageViewDetailController:(PPPageViewDetailController *)viewController];
-  if (index < 0 || index == NSNotFound)
+  if (index < 0)
     return nil;
   index++;
   
