@@ -87,9 +87,7 @@ static UIImage *backgroundImageFlipped = nil;
 }
 
 - (void)setContentView:(UIView *)theContentView
-{ 
-  [self reset:NO];
-    
+{    
   [_myContentView removeFromSuperview];
   _myContentView = nil;
   _myContentView = theContentView;
@@ -98,6 +96,8 @@ static UIImage *backgroundImageFlipped = nil;
     self.contentSize = CGSizeMake(10,10);
     return;
   }
+  
+  [self reset:NO];
     
   //Flip background horizontally for even page
   if (self.tag%2 == 0)  self.background.image = backgroundImageFlipped;
@@ -310,9 +310,15 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)onDoubleTap:(UITapGestureRecognizer *)recognizer
 {
+  //No double tap in side-by-side mode
+  //Don't put this in gestureRecognizerShouldBegin to avoid double tap generating tap delegate event
+  if (!self.scrollEnabled || self.maximumZoomScale <= 1)
+    return;
+  
   float newZoomScale = self.zoomScale;
-  if (newZoomScale < MAXIMUM_ZOOM_SCALE/2)    newZoomScale = MAXIMUM_ZOOM_SCALE;
-  else                                        newZoomScale = 1.0f;
+  float halfZoomScale = 1.0/2 + self.maximumZoomScale/2;
+  if (newZoomScale < halfZoomScale)       newZoomScale = self.maximumZoomScale;
+  else                                    newZoomScale = 1.0f;
   
   CGPoint tapPoint = [recognizer locationInView:self];
 	[self zoomToScale:newZoomScale atPoint:tapPoint animated:YES];
@@ -338,7 +344,8 @@ static UIImage *backgroundImageFlipped = nil;
   [self setZoomScale:newScale animated:animated];
   
   //Currently zoomed out, now perform zoom in
-  if (newScale >= MAXIMUM_ZOOM_SCALE/2)
+  float halfZoomScale = 1.0/2 + self.maximumZoomScale/2;
+  if (newScale >= halfZoomScale)
   {
     x = point.x*newScale - self.bounds.size.width/2;
     y = point.y*newScale - self.bounds.size.height/2;

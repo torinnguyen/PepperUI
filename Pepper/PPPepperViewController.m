@@ -385,6 +385,8 @@ static BOOL iOS5AndAbove = NO;
   midYLandscape = 0;
   midYPortrait = 0;
   
+  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
+  
   [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
   
   //Switching from portrait to landscape, with enableOneSideZoom disabled, need to set to even pageIndex
@@ -429,12 +431,13 @@ static BOOL iOS5AndAbove = NO;
   }
   [self scrollToBook:self.currentBookIndex duration:duration];
   
-  //Relayout detail views with animation
+  //Relayout detail/fullscreen views with animation
   for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
     int index = subview.tag;
     CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
     [subview layoutWithFrame:frame duration:duration];
+    [subview setEnableScrollingZooming:zoomingOneSide];
     
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       subview.frame = frame;
@@ -445,7 +448,7 @@ static BOOL iOS5AndAbove = NO;
   [self updatePageScrollViewContentSizeForOrientation:toInterfaceOrientation];
   [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
   
-  //Relayout 3D views with animation
+  //Relayout 3D/Pepper views with animation
   for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
     int index = subview.tag;
     CGRect frame = [self getPepperFrameForPageIndex:index forOrientation:toInterfaceOrientation];
@@ -3104,11 +3107,7 @@ static BOOL iOS5AndAbove = NO;
   BOOL switchingToPepper = previousControlAngle >= 0 && newControlAngle < 0;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && newControlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
   BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
-  
-  if (switchingToFullscreen)
-    for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
-      [subview setEnableScrollingZooming:zoomingOneSide];   
-  
+    
   //Memory management
   if (switchingFromPepperToFullscreen)
   {
@@ -3123,6 +3122,9 @@ static BOOL iOS5AndAbove = NO;
   {
     [self setupPageScrollview];
     self.pepperView.hidden = YES;
+    
+    for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
+      [subview setEnableScrollingZooming:zoomingOneSide];
   }
   else if (switchingToPepper)
   {
