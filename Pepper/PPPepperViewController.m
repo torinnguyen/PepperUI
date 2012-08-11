@@ -1775,6 +1775,7 @@ static BOOL iOS5AndAbove = NO;
     vc.view = nil;
   [self.reusePageViewDetailControllerArray removeAllObjects];
   
+  self.pageCurlBusy = NO;
   self.pageViewController.view.hidden = YES;
 }
 
@@ -1863,6 +1864,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self setupReuseablePoolPageViewDetailController];
   [self reusePageScrollview];
+  self.pageCurlBusy = NO;
       
   PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
   if (currentViewController == nil)
