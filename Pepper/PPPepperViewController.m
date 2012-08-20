@@ -11,9 +11,11 @@
 #import "PPPepperViewController.h"
 #import "PPPageViewContentWrapper.h"
 #import "PPPageViewDetailWrapper.h"
+#import "PPPageViewDetailController.h"
+#import "PPPageFlipView.h"
 #include <sys/types.h>
 #include <sys/sysctl.h>
-#import "PPPageViewDetailController.h"
+
 
 //Used to be public contants
 //These are only default values at compile time, can be changed on-the-fly at runtime
@@ -26,7 +28,8 @@
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
 #define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
-#define ENABLE_PAGE_URL               YES         //iOS5 page curl effect
+#define ENABLE_PAGE_CURL              YES         //iOS5 page curl effect
+#define ENABLE_PAGE_FLIP              YES         //Flipboard-like page flip effect
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
 
 //Graphics
@@ -134,6 +137,9 @@
 @property (nonatomic, strong) NSMutableArray *reusePageViewDetailControllerArray;
 @property (nonatomic, assign) BOOL pageCurlBusy;
 
+//Pageflip custom view
+@property (nonatomic, strong) PPPageFlipView *pageFlipController;
+
 @end
 
 
@@ -149,6 +155,7 @@
 @synthesize enableOneSideZoom;
 @synthesize enableOneSideMiddleZoom;
 @synthesize enablePageCurlEffect;
+@synthesize enablePageFlipEffect;
 @synthesize enableHighSpeedScrolling;
 @synthesize scaleOnDeviceRotation;
 
@@ -207,6 +214,9 @@
 @synthesize reusePageViewDetailControllerArray;
 @synthesize pageCurlBusy;
 
+//Pageflip custom view
+@synthesize pageFlipController;
+
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
 static float layer2WidthAt90 = 0;
@@ -221,10 +231,11 @@ static BOOL isLowEndDevice = NO;
 static BOOL isPad = NO;
 static BOOL iOS5AndAbove = NO;
 
+
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.1";
+  return @"1.4.2";
 }
 
 - (id)dataSource {
@@ -279,9 +290,12 @@ static BOOL iOS5AndAbove = NO;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.enableOneSideZoom = ENABLE_ONE_SIDE_ZOOM;
   self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
-  self.enablePageCurlEffect = ENABLE_PAGE_URL;
+  self.enablePageCurlEffect = ENABLE_PAGE_CURL;
+  self.enablePageFlipEffect = ENABLE_PAGE_FLIP;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
+  
+  self.enablePageCurlEffect = NO;
   
   //Initial op flags
   self.zoomOnLeft = YES;
@@ -364,6 +378,16 @@ static BOOL iOS5AndAbove = NO;
     self.pageScrollView.hidden = YES;
     self.pageScrollView.pagingEnabled = YES;
     [self.view addSubview:self.pageScrollView];
+  }
+  
+  if (self.pageFlipController == nil) {
+    self.pageFlipController = [[PPPageFlipView alloc] initWithFrame:self.view.bounds];
+    self.pageFlipController.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.pageFlipController.hidden = YES;
+    self.pageFlipController.clipsToBounds = NO;
+    self.pageFlipController.m34 = self.m34;
+    self.pageFlipController.delegate = self;
+    [self.view addSubview:self.pageFlipController];
   }
 }
 
@@ -632,8 +656,8 @@ static BOOL iOS5AndAbove = NO;
   //Hands-off during animation
   if ([self isBusy])
     return NO;
-  
-  //No pan gesture in fullscreen mode, handled by native scrollview
+    
+  //No pan gesture in fullscreen mode, handled by native scrollview, page curl or page flip custom subviews
   if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && (self.isDetailView || [self isFullscreen]))
     return NO;
       
@@ -690,7 +714,7 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)onPanning:(UIPanGestureRecognizer *)recognizer
 {
-  //in case gestureRecognizerShouldBegin does not work properly
+  //hands-off during animation
   if ([self isBusy])
     return;
     
@@ -1746,7 +1770,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 
-#pragma mark - UI Helper functions (Page)
+#pragma mark - UI Helper functions (Fullscreen/Detail)
 
 - (int)getCurrentPageIndex
 {
@@ -1827,8 +1851,8 @@ static BOOL iOS5AndAbove = NO;
   }
 }
 
-- (void)setupPageScrollview
-{  
+- (void)setupFullscreenView
+{
   //Re-setup in case memory warning
   [self setupReuseablePoolPageViews];
   
@@ -1838,6 +1862,9 @@ static BOOL iOS5AndAbove = NO;
   //Setup page flip effect
   if (iOS5AndAbove && self.enablePageCurlEffect) {
     [self setupPageViewController];
+  }
+  else if (self.enablePageFlipEffect) {
+    [self setupPageFlipController];
   }
     
   //Reset pages UI
@@ -1857,11 +1884,21 @@ static BOOL iOS5AndAbove = NO;
   PPPageViewDetailWrapper *wrapper = [self getDetailViewAtIndex:self.currentPageIndex];
   if (wrapper == nil)
     return;
-    
+  
   CGSize contentSize = wrapper.contentSize;
   int offsetX = 0;
   int offsetY = contentSize.height/2 - wrapper.bounds.size.height/2;
   wrapper.contentOffset = CGPointMake(offsetX, offsetY);
+}
+
+- (void)hideFullscreenView:(BOOL)hide
+{
+  [self.pageScrollView setHidden:hide];
+  
+  if (iOS5AndAbove)
+    [[self.pageViewController view] setHidden:hide];
+  
+  [self.pageFlipController setHidden:hide];
 }
 
 - (void)setupPageViewController
@@ -1945,6 +1982,48 @@ static BOOL iOS5AndAbove = NO;
   }
   [self.pageViewController setDoubleSided:YES];
   [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+}
+
+- (void)setupPageFlipController
+{
+  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
+  self.pageFlipController.zoomingOneSide = zoomingOneSide;
+  self.pageFlipController.currentPageIndex = self.currentPageIndex;
+  PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
+  PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];
+  PPPageViewDetailWrapper *nextView = [self getDetailViewAtIndex:self.currentPageIndex+1];
+  
+  //Resetup if spine location is not right
+  if (zoomingOneSide) {
+    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-2];
+    self.pageFlipController.theView1 = previousView;
+    self.pageFlipController.theView2 = currentView;
+    self.pageFlipController.theView3 = nextView;
+    self.pageFlipController.theView4 = [self getDetailViewAtIndex:self.currentPageIndex+2];
+    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
+    return;
+  }
+
+  //Side-by-side
+  if ((int)self.currentPageIndex % 2 == 0) {
+    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-2];
+    self.pageFlipController.theView1 = previousView;
+    self.pageFlipController.theView2 = currentView;
+    self.pageFlipController.theView3 = nextView;
+    self.pageFlipController.theView4 = [self getDetailViewAtIndex:self.currentPageIndex+2];
+    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
+  }
+  else 
+  {
+    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
+    self.pageFlipController.theView1 = [self getDetailViewAtIndex:self.currentPageIndex-2]; 
+    self.pageFlipController.theView2 = previousView;
+    self.pageFlipController.theView3 = currentView;
+    self.pageFlipController.theView4 = nextView;
+    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+2];
+  }
+  
+  self.pageFlipController.hidden = NO;
 }
 
 - (void)reusePageScrollview {
@@ -2206,7 +2285,7 @@ static BOOL iOS5AndAbove = NO;
 
 
 
-#pragma mark - UI Helper functions (Page flip effect)
+#pragma mark - UI Helper functions (Page curl effect)
 
 - (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
 {  
@@ -2282,7 +2361,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 
-#pragma mark - Page View Controller Data Source
+#pragma mark - Page View Controller Data Source - (Page curl effect)
 
 - (void)setupReuseablePoolPageViewDetailController
 {
@@ -2397,8 +2476,34 @@ static BOOL iOS5AndAbove = NO;
 
 
 
+#pragma mark - Flipboard-like flipping implementation
 
-#pragma mark - Flipping implementation
+- (void)ppPageFlipView:(PPPageFlipView*)theFlipView didFinishFlippingWithIndex:(float)index
+{
+  self.currentPageIndex = index;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  
+  NSLog(@"self.currentPageIndex: %.1f", self.currentPageIndex);
+  
+  [self reusePageScrollview];
+
+  [self setupPageFlipController];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
+    [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
+}
+
+- (void)ppPageFlipView:(PPPageFlipView*)theFlipView didFlippedWithIndex:(float)index
+{
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
+    [self.delegate ppPepperViewController:self didScrollWithPageIndex:theFlipView.currentPageIndex];
+}
+
+
+
+#pragma mark - Pepper/3D flipping implementation
 
 - (float)maxControlIndex
 {
@@ -2786,7 +2891,7 @@ static BOOL iOS5AndAbove = NO;
   self.isBookView = NO;
 
   //Populate detailed page scrollview
-  [self setupPageScrollview];
+  [self setupFullscreenView];
   
   if (!animated) {
     self.controlAngle = 0;
@@ -3125,7 +3230,7 @@ static BOOL iOS5AndAbove = NO;
   }
   else if (switchingToFullscreen)
   {
-    [self setupPageScrollview];
+    [self setupFullscreenView];
     self.pepperView.hidden = YES;
     
     for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
@@ -3152,12 +3257,12 @@ static BOOL iOS5AndAbove = NO;
   
   //--------------------
   
-  //Show/hide Pepper & Page scrollview accordingly
-  self.pageScrollView.hidden = (newControlAngle < 0);
-  if (iOS5AndAbove)
-    self.pageViewController.view.hidden = (newControlAngle < 0);
-  self.isDetailView = !self.pageScrollView.hidden;
-  if (!self.isBookView && newControlAngle < 0)
+  //Show/hide Pepper & Fullscreen view accordingly
+  [self hideFullscreenView:(newControlAngle < 0)];
+  self.isDetailView = (newControlAngle >= 0);
+  
+  //Not sure what I want to do here
+  if (!self.isBookView && (newControlAngle < 0))
     self.pepperView.hidden = NO;
   
   //General scale for all frames
@@ -3186,7 +3291,6 @@ static BOOL iOS5AndAbove = NO;
   float angle2 = -180.0 - angle;
   
   [self updateLeftRightPointers];
-  //[self updateFlipPointers];
         
   //Fade book scrollview
   self.bookScrollView.alpha = alpha;

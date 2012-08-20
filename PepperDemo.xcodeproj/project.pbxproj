@@ -11,6 +11,7 @@
 		423941E4157D494C0053E0FA /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E3157D494C0053E0FA /* Icon-72.png */; };
 		423941E7157D494F0053E0FA /* Icon-144.png in Resources */ = {isa = PBXBuildFile; fileRef = 423941E6157D494F0053E0FA /* Icon-144.png */; };
 		42414BE215A4378400D3D7C1 /* page_bg_shadow.png in Resources */ = {isa = PBXBuildFile; fileRef = 42414BE115A4378400D3D7C1 /* page_bg_shadow.png */; };
+		4249DC2615E277850098B49D /* PPPageFlipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4249DC2515E277850098B49D /* PPPageFlipView.m */; };
 		424ED53615B0718000E65A7E /* book_bg~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = 424ED53515B0718000E65A7E /* book_bg~ipad.png */; };
 		42523BC115793492000323EE /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC015793492000323EE /* UIKit.framework */; };
 		42523BC315793492000323EE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42523BC215793492000323EE /* Foundation.framework */; };
@@ -49,6 +50,8 @@
 		423941E3157D494C0053E0FA /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
 		423941E6157D494F0053E0FA /* Icon-144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-144.png"; sourceTree = "<group>"; };
 		42414BE115A4378400D3D7C1 /* page_bg_shadow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = page_bg_shadow.png; sourceTree = "<group>"; };
+		4249DC2415E277850098B49D /* PPPageFlipView.h */ = {isa = PBXFileReference; fileEncoding = 4; path = PPPageFlipView.h; sourceTree = "<group>"; };
+		4249DC2515E277850098B49D /* PPPageFlipView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageFlipView.m; sourceTree = "<group>"; };
 		424ED53515B0718000E65A7E /* book_bg~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "book_bg~ipad.png"; sourceTree = "<group>"; };
 		42523BBC15793492000323EE /* PepperDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PepperDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42523BC015793492000323EE /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -180,6 +183,8 @@
 				42B639B8159384B700B42A2D /* page_bg@2x.png */,
 				42B639B31593839D00B42A2D /* page_bg@2x~ipad.png */,
 				42B639B41593839D00B42A2D /* page_bg~ipad.png */,
+				4249DC2415E277850098B49D /* PPPageFlipView.h */,
+				4249DC2515E277850098B49D /* PPPageFlipView.m */,
 				426C348E15BF1E0600117F3F /* PPPageViewDetailController.h */,
 				426C348F15BF1E0600117F3F /* PPPageViewDetailController.m */,
 				421C04A5157949C700A5698B /* PPPageViewDetailWrapper.h */,
@@ -319,6 +324,7 @@
 				4276D0FB157A8FB300C27FFB /* MyPageBaseView.m in Sources */,
 				42B1252815891BF8004AF341 /* MyImageCache.m in Sources */,
 				426C349215BF1E0600117F3F /* PPPageViewDetailController.m in Sources */,
+				4249DC2615E277850098B49D /* PPPageFlipView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
