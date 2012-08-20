@@ -625,21 +625,28 @@ static BOOL iOS5AndAbove = NO;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-  BOOL noGestureInDetailView = self.isDetailView && (self.enableOneSideZoom || [self isPortrait] || (iOS5AndAbove && self.enablePageCurlEffect));
-  
-  if (self.isBookView || noGestureInDetailView)
+  //Absolutely no custom gestures in book list, handled by native scrollview
+  if (self.isBookView)
     return NO;
+  
+  //Hands-off during animation
   if ([self isBusy])
     return NO;
-
-  if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
+  
+  //No pan gesture in fullscreen mode, handled by native scrollview
+  if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && (self.isDetailView || [self isFullscreen]))
+    return NO;
+      
+  //Allow pinch in side-by-side fullscreen mode
+  BOOL sideBySide = !self.enableOneSideZoom && [self isLandscape];
+  BOOL allowPinchSideBySide = [gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]] && self.isDetailView && sideBySide;
+  if (allowPinchSideBySide)
     return YES;
   
-  if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-    if ([self isFullscreen])
-      return NO;
+  if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
     return YES;
-  }
+  if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]])
+    return YES;
   
   return NO;
 }
