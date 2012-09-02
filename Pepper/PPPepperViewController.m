@@ -2484,6 +2484,7 @@ static BOOL iOS5AndAbove = NO;
 {
   self.currentPageIndex = index;
   self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
   
   NSLog(@"self.currentPageIndex: %.1f", self.currentPageIndex);
   
