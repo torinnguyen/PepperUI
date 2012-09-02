@@ -322,14 +322,15 @@
   
   if (self.zoomingOneSide) {
     frame.size.width = self.bounds.size.width;
-    frame.size.height = self.bounds.size.height;
     frame.origin.x = isLeft ? -self.bounds.size.width : 0;
   }
   else  {
+    frame.size.width = self.bounds.size.width/2;
     frame.origin.x = isLeft ? 0 : self.bounds.size.width/2;
   }
   
   frame.origin.y = 0;
+  frame.size.height = self.bounds.size.height;
   theView.frame = frame;
   theView.layer.doubleSided = NO;
   

@@ -457,21 +457,35 @@ static BOOL iOS5AndAbove = NO;
   [self scrollToBook:self.currentBookIndex duration:duration];
   
   //Relayout detail/fullscreen views with animation
-  for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
-    int index = subview.tag;
-    CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
-    
-    [subview layoutWithFrame:frame duration:duration];
-    [subview setEnableScrollingZooming:zoomingOneSide];
-    
+  if (self.enablePageFlipEffect && self.isDetailView)
+  {
+    [self setupReuseablePoolPageViews];
+    [self reusePageScrollview];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-      subview.frame = frame;
+      //[self setupFullscreenView];
+      [self setupPageFlipControllerForOrientation:toInterfaceOrientation];
     } completion:^(BOOL finished) {
       
     }];
   }
-  [self updatePageScrollViewContentSizeForOrientation:toInterfaceOrientation];
-  [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
+  else
+  {
+    for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
+      int index = subview.tag;
+      CGRect frame = [self getFrameForPageIndex:index forOrientation:toInterfaceOrientation];
+      
+      [subview layoutWithFrame:frame duration:duration];
+      [subview setEnableScrollingZooming:zoomingOneSide];
+      
+      [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+        subview.frame = frame;
+      } completion:^(BOOL finished) {
+        
+      }];
+    }
+    [self updatePageScrollViewContentSizeForOrientation:toInterfaceOrientation];
+    [self scrollToPage:self.currentPageIndex duration:duration forOrientation:toInterfaceOrientation];
+  }
   
   //Relayout 3D/Pepper views with animation
   for (PPPageViewContentWrapper *subview in self.visiblePepperWrapperArray) {
@@ -1864,7 +1878,7 @@ static BOOL iOS5AndAbove = NO;
     [self setupPageViewController];
   }
   else if (self.enablePageFlipEffect) {
-    [self setupPageFlipController];
+    [self setupPageFlipControllerForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   }
     
   //Reset pages UI
@@ -1984,9 +1998,9 @@ static BOOL iOS5AndAbove = NO;
   [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
 }
 
-- (void)setupPageFlipController
+- (void)setupPageFlipControllerForOrientation:(UIInterfaceOrientation)orientation
 {
-  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
+  BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
   self.pageFlipController.zoomingOneSide = zoomingOneSide;
   self.pageFlipController.currentPageIndex = self.currentPageIndex;
   PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
@@ -2490,7 +2504,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self reusePageScrollview];
 
-  [self setupPageFlipController];
+  [self setupPageFlipControllerForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
