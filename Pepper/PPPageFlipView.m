@@ -104,15 +104,21 @@
   
   if (normalizedVelocityX < 1)              normalizedVelocityX = 1;
   else if (normalizedVelocityX > 2.0)       normalizedVelocityX = 2.0;
-  
+   
   //Snap to half open
   if (recognizer.state == UIGestureRecognizerStateEnded) {
     
     float snapTo = 0;
     float newControlIndex = self.controlIndex - direction * rawNormalizedVelocityX;     //opposite direction
     
-    if (newControlIndex < 0)    snapTo = -1;
-    else                        snapTo = 1;
+    if (self.zoomingOneSide) {
+      if (newControlIndex < 0)    snapTo = -1.0;    //special
+      else                        snapTo = 0.5;
+    }
+    else {
+      if (newControlIndex < 0)    snapTo = -1;
+      else                        snapTo = 1;
+    }
     
     float diff = fabs(snapTo - newControlIndex);
     float duration = diff / 2.5f;
@@ -125,10 +131,17 @@
   }
   
   //Speed calculation
-  float boost = 4.0f;
+  float boost = self.zoomingOneSide ? 2.0f : 4.0f;
   float dx = boost * (translation.x / self.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
+
+  //Special case for one-side zoom, flip to the right
+  if (self.zoomingOneSide && newControlIndex < 0)
+    newControlIndex -= 0.5;
+
   self.controlIndex = newControlIndex;
+  
+  NSLog(@"newControlIndex: %.2f", newControlIndex);
 }
 
 // This function controls everything about flipping
@@ -139,16 +152,24 @@
   if (newIndex > 1)    newIndex = 1;
     
   _controlIndex = newIndex;
-    
   
-  float newControlFlipAngle =0;
+  float newControlFlipAngle = 0;
   if (self.controlIndex > 0)      newControlFlipAngle = self.controlIndex * -180.0;
   else                            newControlFlipAngle = self.controlIndex * -180.0;
   self.controlFlipAngle = newControlFlipAngle;
   
+  float increment = 0;
+  if (self.zoomingOneSide) {
+    if (self.controlIndex < 0)  increment = 2*self.controlIndex + 1;  //-0.5 to -1
+    else                        increment = 2*self.controlIndex;      //0 to 0.5
+  }
+  else {
+    increment = 2*self.controlIndex;
+  }
+  
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPageFlipView:didFlippedWithIndex:)])
-    [self.delegate ppPageFlipView:self didFlippedWithIndex:self.currentPageIndex + 2*self.controlIndex];
+    [self.delegate ppPageFlipView:self didFlippedWithIndex:self.currentPageIndex + increment];
 }
 
 
@@ -257,6 +278,7 @@
   _theView0 = theView;
 }
 
+//For zoom oneside: previous page
 - (void)setTheView1:(UIView *)theView
 {
   [self addView:theView isLeft:YES];
@@ -264,6 +286,7 @@
   _theView1 = theView;
 }
 
+//For zoom oneside: current page
 - (void)setTheView2:(UIView *)theView
 {
   [self addView:theView isLeft:YES];
@@ -271,6 +294,7 @@
   _theView2 = theView;
 }
 
+//For zoom oneside: next page
 - (void)setTheView3:(UIView *)theView
 {
   [self addView:theView isLeft:NO];
@@ -293,10 +317,19 @@
 }
 
 - (void)addView:(UIView *)theView isLeft:(BOOL)isLeft
-{  
+{
   CGRect frame = theView.frame;
+  
+  if (self.zoomingOneSide) {
+    frame.size.width = self.bounds.size.width;
+    frame.size.height = self.bounds.size.height;
+    frame.origin.x = isLeft ? -self.bounds.size.width : 0;
+  }
+  else  {
+    frame.origin.x = isLeft ? 0 : self.bounds.size.width/2;
+  }
+  
   frame.origin.y = 0;
-  frame.origin.x = isLeft ? 0 : self.bounds.size.width/2;
   theView.frame = frame;
   theView.layer.doubleSided = NO;
   
@@ -375,26 +408,52 @@
     newValue = 1;
   self.controlIndex = newValue;
   
-  if (self.controlIndex > 0) {
-    self.theView0.hidden = YES;
-    self.theView1.hidden = YES;
-    self.theView2.hidden = YES;
-    self.theView3.hidden = YES;
-    self.theView4.hidden = NO;
-    self.theView5.hidden = NO;
+  if (self.zoomingOneSide)
+  {
+    if (self.controlIndex > 0) {
+      self.theView1.hidden = YES;
+      self.theView3.hidden = YES;
+      self.theView5.hidden = NO;
+    }
+    else {
+      self.theView1.hidden = NO;
+      self.theView3.hidden = YES;
+      self.theView5.hidden = YES;
+    }
+  }
+  else
+  {
+    if (self.controlIndex > 0) {
+      self.theView0.hidden = YES;
+      self.theView1.hidden = YES;
+      self.theView2.hidden = YES;
+      self.theView3.hidden = YES;
+      self.theView4.hidden = NO;
+      self.theView5.hidden = NO;
+    }
+    else {
+      self.theView0.hidden = NO;
+      self.theView1.hidden = NO;
+      self.theView2.hidden = YES;
+      self.theView3.hidden = YES;
+      self.theView4.hidden = YES;
+      self.theView5.hidden = YES;
+    }
+  }
+  
+  float increment = 0;
+  if (self.zoomingOneSide) {
+    if (self.controlIndex < 0)  increment = -1;
+    else                        increment = 1;
   }
   else {
-    self.theView0.hidden = NO;
-    self.theView1.hidden = NO;
-    self.theView2.hidden = YES;
-    self.theView3.hidden = YES;
-    self.theView4.hidden = YES;
-    self.theView5.hidden = YES;
+    if (self.controlIndex < 0)  increment = -2;
+    else                        increment = 2;
   }
     
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPageFlipView:didFinishFlippingWithIndex:)])
-    [self.delegate ppPageFlipView:self didFinishFlippingWithIndex:self.currentPageIndex + 2*self.controlIndex];
+    [self.delegate ppPageFlipView:self didFinishFlippingWithIndex:self.currentPageIndex + increment];
 }
 
 @end

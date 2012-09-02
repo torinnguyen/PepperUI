@@ -1840,7 +1840,7 @@ static BOOL iOS5AndAbove = NO;
   if (self.reusePageViewArray == nil)
     self.reusePageViewArray = [[NSMutableArray alloc] init];
   if (self.visiblePageViewArray == nil)
-  self.visiblePageViewArray = [[NSMutableArray alloc] init];
+    self.visiblePageViewArray = [[NSMutableArray alloc] init];
   
   //Reuseable views pool
   int total = self.enableOneSideZoom ? NUM_REUSE_DETAIL_VIEW : 2*NUM_REUSE_DETAIL_VIEW;
@@ -1859,7 +1859,7 @@ static BOOL iOS5AndAbove = NO;
   //Populate page scrollview
   [self reusePageScrollview];
   
-  //Setup page flip effect
+  //Setup page curl & page flip effect
   if (iOS5AndAbove && self.enablePageCurlEffect) {
     [self setupPageViewController];
   }
@@ -1989,38 +1989,40 @@ static BOOL iOS5AndAbove = NO;
   BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
   self.pageFlipController.zoomingOneSide = zoomingOneSide;
   self.pageFlipController.currentPageIndex = self.currentPageIndex;
+  PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
   PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
   PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];
   PPPageViewDetailWrapper *nextView = [self getDetailViewAtIndex:self.currentPageIndex+1];
+  PPPageViewDetailWrapper *nextNextView = [self getDetailViewAtIndex:self.currentPageIndex+2];
   
-  //Resetup if spine location is not right
+  //One-side
   if (zoomingOneSide) {
-    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-2];
+    self.pageFlipController.theView0 = nil;
     self.pageFlipController.theView1 = previousView;
-    self.pageFlipController.theView2 = currentView;
-    self.pageFlipController.theView3 = nextView;
-    self.pageFlipController.theView4 = [self getDetailViewAtIndex:self.currentPageIndex+2];
-    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
+    self.pageFlipController.theView2 = nil;
+    self.pageFlipController.theView3 = currentView;
+    self.pageFlipController.theView4 = nil;
+    self.pageFlipController.theView5 = nextView;
     return;
   }
 
   //Side-by-side
   if ((int)self.currentPageIndex % 2 == 0) {
-    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-2];
+    self.pageFlipController.theView0 = previousPreviousView;
     self.pageFlipController.theView1 = previousView;
     self.pageFlipController.theView2 = currentView;
     self.pageFlipController.theView3 = nextView;
-    self.pageFlipController.theView4 = [self getDetailViewAtIndex:self.currentPageIndex+2];
+    self.pageFlipController.theView4 = nextNextView;
     self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
   }
   else 
   {
     self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
-    self.pageFlipController.theView1 = [self getDetailViewAtIndex:self.currentPageIndex-2]; 
+    self.pageFlipController.theView1 = previousPreviousView;
     self.pageFlipController.theView2 = previousView;
     self.pageFlipController.theView3 = currentView;
     self.pageFlipController.theView4 = nextView;
-    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+2];
+    self.pageFlipController.theView5 = nextNextView;
   }
   
   self.pageFlipController.hidden = NO;
@@ -2498,7 +2500,7 @@ static BOOL iOS5AndAbove = NO;
 {
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didScrollWithPageIndex:)])
-    [self.delegate ppPepperViewController:self didScrollWithPageIndex:theFlipView.currentPageIndex];
+    [self.delegate ppPepperViewController:self didScrollWithPageIndex:index];
 }
 
 
