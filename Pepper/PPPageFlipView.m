@@ -112,8 +112,10 @@
     float newControlIndex = self.controlIndex - direction * rawNormalizedVelocityX;     //opposite direction
     
     if (self.zoomingOneSide) {
-      if (newControlIndex < 0)    snapTo = -1.0;    //special
-      else                        snapTo = 0.5;
+      if (newControlIndex > 0 && newControlIndex < 0.25)        snapTo = 0;
+      else if (newControlIndex > 0)                             snapTo = 0.5;
+      else if (newControlIndex < 0 && newControlIndex > -0.75)  snapTo = -0.5;
+      else                                                      snapTo = -1.0;    //special
     }
     else {
       if (newControlIndex < 0)    snapTo = -1;
@@ -121,7 +123,7 @@
     }
     
     float diff = fabs(snapTo - newControlIndex);
-    float duration = diff / 2.5f;
+    float duration = diff * 1.5;
     if (diff <= 0)
       return;
     
@@ -160,8 +162,8 @@
   
   float increment = 0;
   if (self.zoomingOneSide) {
-    if (self.controlIndex < 0)  increment = 2*self.controlIndex + 1;  //-0.5 to -1
-    else                        increment = 2*self.controlIndex;      //0 to 0.5
+    if (self.controlIndex < 0)    increment = 2*self.controlIndex + 1;  //-0.5 to -1
+    else                          increment = 2*self.controlIndex;      //0 to 0.5
   }
   else {
     increment = 2*self.controlIndex;
@@ -179,7 +181,7 @@
   float angle2 = angle - 180;
 
   //Transformation for center 2 pages 
-  if (self.controlIndex > 0) {
+  if (self.controlIndex >= 0) {
     CALayer *layer3 = self.theView3.layer;
     CATransform3D transform = CATransform3DIdentity;
     transform.m34 = self.m34;
@@ -379,10 +381,6 @@
   float deltaDiff = deltaMs / TIMER_INTERVAL;
   
   float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
-  /*
-   if (newValue > [self maxControlIndex])
-   newValue = [self maxControlIndex];
-   */
   
   if (self.controlIndexTimerDx >= 0 && newValue > self.controlIndexTimerTarget)
     newValue = self.controlIndexTimerTarget;
@@ -444,12 +442,11 @@
   
   float increment = 0;
   if (self.zoomingOneSide) {
-    if (self.controlIndex < 0)  increment = -1;
-    else                        increment = 1;
+    if (self.controlIndex < 0)    increment = 2*self.controlIndex + 1;  //-0.5 to -1
+    else                          increment = 2*self.controlIndex;      //0 to 0.5
   }
   else {
-    if (self.controlIndex < 0)  increment = -2;
-    else                        increment = 2;
+    increment = 2*self.controlIndex;
   }
     
   //Notify the delegate
