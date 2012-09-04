@@ -23,7 +23,7 @@
 @property (nonatomic, assign) float controlIndexTimerTarget;
 @property (nonatomic, assign) float controlIndexTimerDx;
 @property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
-@property (nonatomic, strong) NSTimer *controlIndexTimer;
+@property (nonatomic, strong) CADisplayLink *displayLink;
 
 
 @end
@@ -43,7 +43,7 @@
 @synthesize controlIndex = _controlIndex;
 @synthesize controlFlipAngle = _controlFlipAngle;
 @synthesize touchDownControlIndex;
-@synthesize controlIndexTimer;
+@synthesize displayLink;
 @synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
 
 
@@ -60,6 +60,8 @@
   panGestureRecognizer.delegate = self;
   [self addGestureRecognizer:panGestureRecognizer];
   
+  self.displayLink = nil;
+  
   return self;
 }
 
@@ -74,8 +76,9 @@
   return index;
 }
 
-- (BOOL)isBusy {
-  return [self.controlIndexTimer isValid];
+- (BOOL)isBusy
+{
+  return (self.displayLink != nil);
 }
 
 
@@ -123,9 +126,12 @@
     }
     
     float diff = fabs(snapTo - newControlIndex);
-    float duration = diff * 1.5;
     if (diff <= 0)
       return;
+    
+    float duration = diff / 2;
+    if (duration <= 0.2)
+      duration = 0.2;
     
     //Correct behavior but sluggish
     [self animateControlIndexTo:snapTo duration:duration];
@@ -133,7 +139,7 @@
   }
   
   //Speed calculation
-  float boost = self.zoomingOneSide ? 2.0f : 4.0f;
+  float boost = self.zoomingOneSide ? 2.0f : 3.0f;
   float dx = boost * (translation.x / self.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
 
@@ -142,8 +148,6 @@
     newControlIndex -= 0.5;
 
   self.controlIndex = newControlIndex;
-  
-  NSLog(@"newControlIndex: %.2f", newControlIndex);
 }
 
 // This function controls everything about flipping
@@ -351,9 +355,9 @@
 
 - (void)animateControlIndexTo:(float)index duration:(float)duration
 {
-  if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
+  if (self.displayLink != nil)
     return;
-  
+   
   if (index < -1)     index = -1;
   if (index > 1)      index = 1;
   self.controlIndexTimerTarget = index;
@@ -366,21 +370,18 @@
   //0.016667 = 1/60
   self.controlIndexTimerLastTime = [[NSDate alloc] init];
   self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / TIMER_INTERVAL);
-  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: TIMER_INTERVAL
-                                                            target: self
-                                                          selector: @selector(onControlIndexTimer:)
-                                                          userInfo: nil
-                                                           repeats: YES];
+  
+  self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onControlIndexTimer)];
+  [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
-- (void)onControlIndexTimer:(NSTimer *)timer
+- (void)onControlIndexTimer
 {
-  NSDate *nowDate = [[NSDate alloc] init];
   float deltaMs = fabsf([self.controlIndexTimerLastTime timeIntervalSinceNow]);
-  self.controlIndexTimerLastTime = nowDate;
   float deltaDiff = deltaMs / TIMER_INTERVAL;
-  
   float newValue = self.controlIndex + self.controlIndexTimerDx * deltaDiff;
+  
+  self.controlIndexTimerLastTime = [[NSDate alloc] init];
   
   if (self.controlIndexTimerDx >= 0 && newValue > self.controlIndexTimerTarget)
     newValue = self.controlIndexTimerTarget;
@@ -399,8 +400,8 @@
 
 - (void)onControlIndexTimerFinish
 {
-  [self.controlIndexTimer invalidate];
-  self.controlIndexTimer = nil;
+  [self.displayLink invalidate];
+  self.displayLink = nil;
   
   float newValue = self.controlIndexTimerTarget;
   if (newValue > 1)
