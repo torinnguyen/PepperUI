@@ -101,12 +101,12 @@
 @property (nonatomic, assign) float controlIndexTimerTarget;
 @property (nonatomic, assign) float controlIndexTimerDx;
 @property (nonatomic, strong) NSDate *controlIndexTimerLastTime;
-@property (nonatomic, strong) NSTimer *controlIndexTimer;
+@property (nonatomic, strong) CADisplayLink *controlIndexCADisplayLink;
 
 @property (nonatomic, assign) float controlAngleTimerTarget;
 @property (nonatomic, assign) float controlAngleTimerDx;
 @property (nonatomic, strong) NSDate *controlAngleTimerLastTime;
-@property (nonatomic, strong) NSTimer *controlAngleTimer;
+@property (nonatomic, strong) CADisplayLink *controlAngleCADisplayLink;
 
 //Book scrollview
 @property (nonatomic, assign) int currentBookIndex;
@@ -186,9 +186,9 @@
 @synthesize controlAngleTimerTarget;
 @synthesize controlAngleTimerDx;
 @synthesize controlAngleTimerLastTime;
-@synthesize controlAngleTimer;
+@synthesize controlAngleCADisplayLink;
 @synthesize controlIndex = _controlIndex;
-@synthesize controlIndexTimer;
+@synthesize controlIndexCADisplayLink;
 @synthesize controlIndexTimerTarget, controlIndexTimerDx, controlIndexTimerLastTime;
 
 //Book
@@ -574,7 +574,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (BOOL)isBusy {
-  return [self.controlAngleTimer isValid] || [self.controlIndexTimer isValid] || self.pageCurlBusy;
+  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil || self.pageCurlBusy;
 }
 
 - (NSString *)rawPlatformString {
@@ -607,7 +607,7 @@ static BOOL iOS5AndAbove = NO;
 - (void)PPPageViewWrapper:(PPPageViewContentWrapper*)thePage viewDidTap:(int)tag
 {
   //UI is busy
-  if ([self.controlAngleTimer isValid] || [self.controlIndexTimer isValid])
+  if ([self isBusy])
     return;
   if (!self.isBookView && self.controlAngle == 0)
     return;
@@ -2811,7 +2811,7 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)animateControlIndexTo:(float)index duration:(float)duration
 {
-  if (self.controlIndexTimer != nil || [self.controlIndexTimer isValid])
+  if (self.controlIndexCADisplayLink != nil)
     return;
   
   //Upper limit
@@ -2830,14 +2830,12 @@ static BOOL iOS5AndAbove = NO;
   //0.016667 = 1/60
   self.controlIndexTimerLastTime = [[NSDate alloc] init];
   self.controlIndexTimerDx = (self.controlIndexTimerTarget - self.controlIndex) / (duration / TIMER_INTERVAL);
-  self.controlIndexTimer = [NSTimer scheduledTimerWithTimeInterval: TIMER_INTERVAL
-                                                            target: self
-                                                          selector: @selector(onControlIndexTimer:)
-                                                          userInfo: nil
-                                                           repeats: YES];
+  
+  self.controlIndexCADisplayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onControlIndexTimer)];
+  [self.controlIndexCADisplayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
-- (void)onControlIndexTimer:(NSTimer *)timer
+- (void)onControlIndexTimer
 {
   NSDate *nowDate = [[NSDate alloc] init];
   float deltaMs = fabsf([self.controlIndexTimerLastTime timeIntervalSinceNow]);
@@ -2867,8 +2865,8 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)onControlIndexTimerFinish
 {
-  [self.controlIndexTimer invalidate];
-  self.controlIndexTimer = nil;
+  [self.controlIndexCADisplayLink invalidate];
+  self.controlIndexCADisplayLink = nil;
   
   [self reusePepperViews];
   
@@ -3499,7 +3497,7 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)animateControlAngleTo:(float)angle duration:(float)duration
 {
-  if (self.controlAngleTimer != nil || [self.controlAngleTimer isValid])
+  if (self.controlAngleCADisplayLink != nil)
     return;
     
   if (duration <= 0 || fabsf(self.controlAngle-angle) <= 0) {
@@ -3511,19 +3509,17 @@ static BOOL iOS5AndAbove = NO;
   self.controlAngleTimerLastTime = [[NSDate alloc] init];
   self.controlAngleTimerTarget = angle;
   self.controlAngleTimerDx = (self.controlAngleTimerTarget - self.controlAngle) / (duration / TIMER_INTERVAL);
-  self.controlAngleTimer = [NSTimer scheduledTimerWithTimeInterval: TIMER_INTERVAL
-                                                            target: self
-                                                          selector: @selector(onControlAngleTimer:)
-                                                          userInfo: nil
-                                                           repeats: YES];
+  
+  self.controlAngleCADisplayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onControlAngleTimer)];
+  [self.controlAngleCADisplayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
-- (void)onControlAngleTimer:(NSTimer *)timer
+- (void)onControlAngleTimer
 {
-  NSDate *nowDate = [[NSDate alloc] init];
   float deltaMs = fabsf([self.controlAngleTimerLastTime timeIntervalSinceNow]);
-  self.controlAngleTimerLastTime = nowDate;
   float deltaDiff = deltaMs / TIMER_INTERVAL;
+  
+  self.controlAngleTimerLastTime = [[NSDate alloc] init];
   
   float newValue = self.controlAngle + self.controlAngleTimerDx * deltaDiff;
   if (self.controlAngleTimerDx >= 0 && newValue > self.controlAngleTimerTarget)
@@ -3543,8 +3539,8 @@ static BOOL iOS5AndAbove = NO;
   
 - (void)onControlAngleTimerFinish
 {
-  [self.controlAngleTimer invalidate];
-  self.controlAngleTimer = nil;
+  [self.controlAngleCADisplayLink invalidate];
+  self.controlAngleCADisplayLink = nil;
   
   self.controlAngle = self.controlAngleTimerTarget;
     
