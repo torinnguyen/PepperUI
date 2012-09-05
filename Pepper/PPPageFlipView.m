@@ -7,6 +7,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "PPPageFlipView.h"
+#import "PPPageViewDetailWrapper.h"
 
 #define THRESHOLD_HALF_ANGLE         25
 #define LEFT_RIGHT_ANGLE_DIFF        9.9                //should be perfect 10, but we cheated
@@ -339,6 +340,9 @@
   frame.size.height = self.bounds.size.height;
   theView.frame = frame;
   theView.layer.doubleSided = NO;
+  
+  if ([theView isKindOfClass:[PPPageViewDetailWrapper class]])
+    [(PPPageViewDetailWrapper*)theView layoutWithFrame:frame duration:0];
   
   [theView removeFromSuperview];
   [self addSubview:theView];
