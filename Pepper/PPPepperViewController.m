@@ -154,8 +154,8 @@
 @synthesize enableBookRotate;
 @synthesize enableOneSideZoom;
 @synthesize enableOneSideMiddleZoom;
-@synthesize enablePageCurlEffect;
-@synthesize enablePageFlipEffect;
+@synthesize enablePageCurlEffect = _enablePageCurlEffect;
+@synthesize enablePageFlipEffect = _enablePageFlipEffect;
 @synthesize enableHighSpeedScrolling;
 @synthesize scaleOnDeviceRotation;
 
@@ -574,7 +574,9 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (BOOL)isBusy {
-  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil || self.pageCurlBusy || [self.pageFlipView isBusy];
+  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil
+        || self.pageCurlBusy
+        || (self.pageFlipView != nil && [self.pageFlipView isBusy]);
 }
 
 - (NSString *)rawPlatformString {
@@ -601,6 +603,38 @@ static BOOL iOS5AndAbove = NO;
   return NO;
 }
 
+
+#pragma mark - Custom setters
+
+- (void)setEnableBorderlessGraphic:(BOOL)newValue
+{
+  _enableBorderlessGraphic = newValue;
+  self.bookCoverImage = nil;
+  self.pageBackgroundImage = nil;
+  [self initializeBackgroundImagesAndRatios];
+}
+
+- (void)setEnablePageCurlEffect:(BOOL)newValue
+{
+  _enablePageCurlEffect = newValue;
+  
+  if (self.pageViewController != nil)
+    self.pageViewController.view.userInteractionEnabled = iOS5AndAbove && self.enablePageCurlEffect;    
+
+  if (self.pageFlipView != nil)
+    self.pageFlipView.userInteractionEnabled = !iOS5AndAbove || !self.enablePageCurlEffect;
+}
+
+- (void)setEnablePageFlipEffect:(BOOL)newValue
+{
+  _enablePageFlipEffect = newValue;
+  
+  if (self.pageViewController != nil)
+    self.pageViewController.view.userInteractionEnabled = !newValue;
+
+  if (self.pageFlipView != nil)
+    self.pageFlipView.userInteractionEnabled = newValue;
+}
 
 #pragma mark - PPPageViewWrapperDelegate
 
@@ -846,14 +880,6 @@ static BOOL iOS5AndAbove = NO;
 - (void)updateFrameSizesForOrientation
 {
   [self updateFrameSizesForOrientation:[UIApplication sharedApplication].statusBarOrientation];
-}
-
-- (void)setEnableBorderlessGraphic:(BOOL)newValue
-{
-  _enableBorderlessGraphic = newValue;
-  self.bookCoverImage = nil;
-  self.pageBackgroundImage = nil;
-  [self initializeBackgroundImagesAndRatios];
 }
 
 //
@@ -1811,19 +1837,6 @@ static BOOL iOS5AndAbove = NO;
   [self destroyPageViewController];
 }
 
-- (void)destroyPageViewController
-{
-  if (!iOS5AndAbove || self.pageViewController == nil)
-    return;
-  
-  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
-    vc.view = nil;
-  [self.reusePageViewDetailControllerArray removeAllObjects];
-  
-  self.pageCurlBusy = NO;
-  self.pageViewController.view.hidden = YES;
-}
-
 - (void)destroyPageScrollView:(BOOL)force
 {
   if (!force)
@@ -1843,6 +1856,19 @@ static BOOL iOS5AndAbove = NO;
   self.visiblePageViewArray = nil;
   
   [self destroyPageViewController];
+}
+
+- (void)destroyPageViewController
+{
+  if (!iOS5AndAbove || self.pageViewController == nil)
+    return;
+  
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+    vc.view = nil;
+  [self.reusePageViewDetailControllerArray removeAllObjects];
+  
+  self.pageCurlBusy = NO;
+  self.pageViewController.view.hidden = YES;
 }
 
 - (void)setupReuseablePoolPageViews

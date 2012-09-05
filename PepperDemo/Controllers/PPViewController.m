@@ -18,6 +18,7 @@
 @property (nonatomic, strong) IBOutlet UIView * speedView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * contentSegmented;
+@property (nonatomic, strong) IBOutlet UISegmentedControl * fullscreenEffectSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
 @property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
@@ -32,6 +33,7 @@
 @synthesize speedView;
 @synthesize speedSegmented;
 @synthesize contentSegmented;
+@synthesize fullscreenEffectSegmented;
 @synthesize switchRandomPage;
 @synthesize switchScaleOnDeviceRotation;
 @synthesize lblSpeed;
@@ -73,6 +75,7 @@
   
   //Update customization options
   [self onSpeedChange:self.speedSegmented];
+  [self onFullscreenEffectChange:self.fullscreenEffectSegmented];
   [self onSwitchRandomPage:self.switchRandomPage];
   [self onSwitchScaleOnDeviceRotation:self.switchScaleOnDeviceRotation];
   
@@ -173,6 +176,27 @@
   }
   [[MyImageCache sharedCached] removeAll];
   [self.pepperViewController reload];
+}
+
+- (IBAction)onFullscreenEffectChange:(id)sender
+{
+  int idx = self.fullscreenEffectSegmented.selectedSegmentIndex;
+  switch (idx) {
+    case 0:
+      self.pepperViewController.enablePageCurlEffect = NO;
+      self.pepperViewController.enablePageFlipEffect = NO;
+      break;
+    case 1:
+      self.pepperViewController.enablePageCurlEffect = YES;
+      self.pepperViewController.enablePageFlipEffect = YES;   //set to YES to allow fallback on iOS4.3
+      break;
+    case 2:
+      self.pepperViewController.enablePageCurlEffect = NO;
+      self.pepperViewController.enablePageFlipEffect = YES;
+      break;
+    default:
+      break;
+  }
 }
 
 - (IBAction)onSwitchRandomPage:(id)sender
