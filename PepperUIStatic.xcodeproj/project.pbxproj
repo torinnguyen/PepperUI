@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4206824A15F793EC001A28E8 /* PPPageFlipView.h in Headers */ = {isa = PBXBuildFile; fileRef = 4206824815F793EC001A28E8 /* PPPageFlipView.h */; };
+		4206824B15F793EC001A28E8 /* PPPageFlipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4206824915F793EC001A28E8 /* PPPageFlipView.m */; };
 		423E5CE315A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 423E5CE215A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch */; };
 		42ED4C52158FA0790055BAE7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C51158FA0790055BAE7 /* Foundation.framework */; };
 		42ED4C5F158FA0A30055BAE7 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42ED4C5E158FA0A30055BAE7 /* QuartzCore.framework */; };
@@ -24,6 +26,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4206824815F793EC001A28E8 /* PPPageFlipView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PPPageFlipView.h; sourceTree = "<group>"; };
+		4206824915F793EC001A28E8 /* PPPageFlipView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PPPageFlipView.m; sourceTree = "<group>"; };
 		423E5CE215A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "PepperUIStatic-Prefix.pch"; sourceTree = "<group>"; };
 		42ED4C4E158FA0790055BAE7 /* libPepperUI.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPepperUI.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		42ED4C51158FA0790055BAE7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -96,6 +100,8 @@
 		42ED4C60158FA0E00055BAE7 /* Pepper */ = {
 			isa = PBXGroup;
 			children = (
+				4206824815F793EC001A28E8 /* PPPageFlipView.h */,
+				4206824915F793EC001A28E8 /* PPPageFlipView.m */,
 				42EE6D0415C464FF004C8B97 /* PPPageViewDetailController.h */,
 				42EE6D0515C464FF004C8B97 /* PPPageViewDetailController.m */,
 				42ED4C66158FA0E00055BAE7 /* PPPageViewContentWrapper.h */,
@@ -122,6 +128,7 @@
 				42ED4C72158FA0E00055BAE7 /* PPPepperViewController.h in Headers */,
 				423E5CE315A9DD3800D7AB34 /* PepperUIStatic-Prefix.pch in Headers */,
 				42EE6D0615C464FF004C8B97 /* PPPageViewDetailController.h in Headers */,
+				4206824A15F793EC001A28E8 /* PPPageFlipView.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -180,6 +187,7 @@
 				42ED4C70158FA0E00055BAE7 /* PPPageViewDetailWrapper.m in Sources */,
 				42ED4C73158FA0E00055BAE7 /* PPPepperViewController.m in Sources */,
 				42EE6D0715C464FF004C8B97 /* PPPageViewDetailController.m in Sources */,
+				4206824B15F793EC001A28E8 /* PPPageFlipView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
