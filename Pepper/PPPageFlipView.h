@@ -21,6 +21,7 @@
 @property (nonatomic, assign) BOOL zoomingOneSide;
 @property (nonatomic, assign) float m34;
 @property (nonatomic, assign) float currentPageIndex;
+@property (nonatomic, assign) float numberOfPages;
 
 @property (nonatomic, unsafe_unretained) UIView *theView0;
 @property (nonatomic, unsafe_unretained) UIView *theView1;

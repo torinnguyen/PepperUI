@@ -675,7 +675,7 @@ static BOOL iOS5AndAbove = NO;
   if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && (self.isDetailView || [self isFullscreen]))
     return NO;
       
-  //Allow pinch in side-by-side fullscreen mode to allow closing fullscreen mode
+  //Allow pinch in side-by-side fullscreen mode to allow closing
   BOOL sideBySide = !self.enableOneSideZoom && [self isLandscape];
   BOOL allowPinchSideBySide = [gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]] && self.isDetailView && sideBySide;
   if (allowPinchSideBySide)
@@ -2003,6 +2003,7 @@ static BOOL iOS5AndAbove = NO;
   BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
   self.pageFlipView.zoomingOneSide = zoomingOneSide;
   self.pageFlipView.currentPageIndex = self.currentPageIndex;
+  self.pageFlipView.numberOfPages = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
   PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
   PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
   PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];

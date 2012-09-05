@@ -13,6 +13,7 @@
 #define LEFT_RIGHT_ANGLE_DIFF        9.9                //should be perfect 10, but we cheated
 #define TIMER_INTERVAL               0.016666667        //60fps
 #define PI_DIV_BY_180                0.01745329251994   // M_PI / 180.0f  conversion from degree to radian
+#define INVALID_VALUE                98765
 
 @interface PPPageFlipView() <UIGestureRecognizerDelegate>
 
@@ -31,7 +32,7 @@
 
 @implementation PPPageFlipView
 @synthesize delegate;
-@synthesize currentPageIndex;
+@synthesize currentPageIndex, numberOfPages;
 @synthesize zoomingOneSide, m34;
 
 @synthesize theView0 = _theView0;
@@ -75,6 +76,21 @@
   return (self.displayLink != nil);
 }
 
+- (float)applyExtremeLimits:(float)newControlIndex
+{
+  //Apply limits  at the extremes (first & last page)
+  float extremeLimit = 0.15;
+  if (self.zoomingOneSide && self.currentPageIndex <= 0 && newControlIndex < 0)
+    return INVALID_VALUE;
+  else if (!self.zoomingOneSide && self.currentPageIndex <= 0 && newControlIndex < -extremeLimit)
+    newControlIndex = -extremeLimit;
+  else if (self.zoomingOneSide && self.currentPageIndex >= self.numberOfPages-1 && newControlIndex > extremeLimit)
+    newControlIndex = extremeLimit;
+  else if (!self.zoomingOneSide && self.currentPageIndex+1 >= self.numberOfPages-1 && newControlIndex > extremeLimit)
+    newControlIndex = extremeLimit;
+  
+  return newControlIndex;
+}
 
 #pragma mark - Control
 
@@ -105,18 +121,28 @@
   //Snap to half open
   if (recognizer.state == UIGestureRecognizerStateEnded) {
     
+    if (self.controlIndex == 0)
+      return;
+    
     float snapTo = 0;
     float newControlIndex = self.controlIndex - direction * rawNormalizedVelocityX;     //opposite direction
     
+    //Apply limits  at the extremes (first & last page)
+    newControlIndex = [self applyExtremeLimits:newControlIndex];
+    if (newControlIndex == INVALID_VALUE)
+      return;
+    
     if (self.zoomingOneSide) {
-      if (newControlIndex > 0 && newControlIndex < 0.25)        snapTo = 0;
-      else if (newControlIndex > 0)                             snapTo = 0.5;
-      else if (newControlIndex < 0 && newControlIndex > -0.75)  snapTo = -0.5;
-      else                                                      snapTo = -1.0;    //special
+      if (newControlIndex > 0 && newControlIndex < 0.25)          snapTo = 0;
+      else if (newControlIndex > 0.25)                            snapTo = 0.5;
+      else if (newControlIndex < -0.5 && newControlIndex > -0.65) snapTo = -0.5;
+      else                                                        snapTo = -1.0;    //special
     }
     else {
-      if (newControlIndex < 0)    snapTo = -1;
-      else                        snapTo = 1;
+      if (newControlIndex < 0 && newControlIndex > -0.25)         snapTo = 0;
+      else if (newControlIndex < 0)                               snapTo = -1;
+      else if (newControlIndex < 0.25)                            snapTo = 0;
+      else                                                        snapTo = 1;
     }
     
     float diff = fabs(snapTo - newControlIndex);
@@ -136,12 +162,19 @@
   float boost = self.zoomingOneSide ? 2.0f : 3.0f;
   float dx = boost * (translation.x / self.bounds.size.width/2);
   float newControlIndex = self.touchDownControlIndex - dx;
-
+  
+  //Apply limits  at the extremes (first & last page)
+  newControlIndex = [self applyExtremeLimits:newControlIndex];
+  if (newControlIndex == INVALID_VALUE)
+    return;
+  
   //Special case for one-side zoom, flip to the right
   if (self.zoomingOneSide && newControlIndex < 0)
     newControlIndex -= 0.5;
 
   self.controlIndex = newControlIndex;
+  
+  NSLog(@"%.2f", self.controlIndex);
 }
 
 // This function controls everything about flipping

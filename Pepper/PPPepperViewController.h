@@ -11,7 +11,7 @@
 
 //For demo app only, don't care about this in your actual usuage
 #define DEMO_NUM_BOOKS               32
-#define DEMO_NUM_PAGES               100
+#define DEMO_NUM_PAGES               32
 
 @class PPPepperViewController;
 
