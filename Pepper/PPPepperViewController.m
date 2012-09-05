@@ -138,7 +138,7 @@
 @property (nonatomic, assign) BOOL pageCurlBusy;
 
 //Pageflip custom view
-@property (nonatomic, strong) PPPageFlipView *pageFlipController;
+@property (nonatomic, strong) PPPageFlipView *pageFlipView;
 
 @end
 
@@ -215,7 +215,7 @@
 @synthesize pageCurlBusy;
 
 //Pageflip custom view
-@synthesize pageFlipController;
+@synthesize pageFlipView;
 
 //I have not found a better way to implement this yet
 static float layer23WidthAtMid = 0;
@@ -380,14 +380,14 @@ static BOOL iOS5AndAbove = NO;
     [self.view addSubview:self.pageScrollView];
   }
   
-  if (self.pageFlipController == nil) {
-    self.pageFlipController = [[PPPageFlipView alloc] initWithFrame:self.view.bounds];
-    self.pageFlipController.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.pageFlipController.hidden = YES;
-    self.pageFlipController.clipsToBounds = NO;
-    self.pageFlipController.m34 = self.m34;
-    self.pageFlipController.delegate = self;
-    [self.view addSubview:self.pageFlipController];
+  if (self.pageFlipView == nil) {
+    self.pageFlipView = [[PPPageFlipView alloc] initWithFrame:self.view.bounds];
+    self.pageFlipView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.pageFlipView.hidden = YES;
+    self.pageFlipView.clipsToBounds = NO;
+    self.pageFlipView.m34 = self.m34;
+    self.pageFlipView.delegate = self;
+    [self.view addSubview:self.pageFlipView];
   }
 }
 
@@ -463,7 +463,7 @@ static BOOL iOS5AndAbove = NO;
     [self reusePageScrollview];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
       //[self setupFullscreenView];
-      [self setupPageFlipControllerForOrientation:toInterfaceOrientation];
+      [self setuppageFlipViewForOrientation:toInterfaceOrientation];
     } completion:^(BOOL finished) {
       
     }];
@@ -574,7 +574,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (BOOL)isBusy {
-  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil || self.pageCurlBusy;
+  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil || self.pageCurlBusy || [self.pageFlipView isBusy];
 }
 
 - (NSString *)rawPlatformString {
@@ -671,11 +671,11 @@ static BOOL iOS5AndAbove = NO;
   if ([self isBusy])
     return NO;
     
-  //No pan gesture in fullscreen mode, handled by native scrollview, page curl or page flip custom subviews
+  //No pan gesture in fullscreen mode, handled by native scrollview, page curl or page flip custom subview
   if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && (self.isDetailView || [self isFullscreen]))
     return NO;
       
-  //Allow pinch in side-by-side fullscreen mode
+  //Allow pinch in side-by-side fullscreen mode to allow closing fullscreen mode
   BOOL sideBySide = !self.enableOneSideZoom && [self isLandscape];
   BOOL allowPinchSideBySide = [gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]] && self.isDetailView && sideBySide;
   if (allowPinchSideBySide)
@@ -1878,7 +1878,7 @@ static BOOL iOS5AndAbove = NO;
     [self setupPageViewController];
   }
   else if (self.enablePageFlipEffect) {
-    [self setupPageFlipControllerForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+    [self setuppageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   }
     
   //Reset pages UI
@@ -1912,7 +1912,7 @@ static BOOL iOS5AndAbove = NO;
   if (iOS5AndAbove)
     [[self.pageViewController view] setHidden:hide];
   
-  [self.pageFlipController setHidden:hide];
+  [self.pageFlipView setHidden:hide];
 }
 
 - (void)setupPageViewController
@@ -1998,11 +1998,11 @@ static BOOL iOS5AndAbove = NO;
   [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
 }
 
-- (void)setupPageFlipControllerForOrientation:(UIInterfaceOrientation)orientation
+- (void)setuppageFlipViewForOrientation:(UIInterfaceOrientation)orientation
 {
   BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
-  self.pageFlipController.zoomingOneSide = zoomingOneSide;
-  self.pageFlipController.currentPageIndex = self.currentPageIndex;
+  self.pageFlipView.zoomingOneSide = zoomingOneSide;
+  self.pageFlipView.currentPageIndex = self.currentPageIndex;
   PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
   PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
   PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];
@@ -2011,35 +2011,35 @@ static BOOL iOS5AndAbove = NO;
   
   //One-side
   if (zoomingOneSide) {
-    self.pageFlipController.theView0 = nil;
-    self.pageFlipController.theView1 = previousView;
-    self.pageFlipController.theView2 = nil;
-    self.pageFlipController.theView3 = currentView;
-    self.pageFlipController.theView4 = nil;
-    self.pageFlipController.theView5 = nextView;
+    self.pageFlipView.theView0 = nil;
+    self.pageFlipView.theView1 = previousView;
+    self.pageFlipView.theView2 = nil;
+    self.pageFlipView.theView3 = currentView;
+    self.pageFlipView.theView4 = nil;
+    self.pageFlipView.theView5 = nextView;
     return;
   }
 
   //Side-by-side
   if ((int)self.currentPageIndex % 2 == 0) {
-    self.pageFlipController.theView0 = previousPreviousView;
-    self.pageFlipController.theView1 = previousView;
-    self.pageFlipController.theView2 = currentView;
-    self.pageFlipController.theView3 = nextView;
-    self.pageFlipController.theView4 = nextNextView;
-    self.pageFlipController.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
+    self.pageFlipView.theView0 = previousPreviousView;
+    self.pageFlipView.theView1 = previousView;
+    self.pageFlipView.theView2 = currentView;
+    self.pageFlipView.theView3 = nextView;
+    self.pageFlipView.theView4 = nextNextView;
+    self.pageFlipView.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
   }
   else 
   {
-    self.pageFlipController.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
-    self.pageFlipController.theView1 = previousPreviousView;
-    self.pageFlipController.theView2 = previousView;
-    self.pageFlipController.theView3 = currentView;
-    self.pageFlipController.theView4 = nextView;
-    self.pageFlipController.theView5 = nextNextView;
+    self.pageFlipView.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
+    self.pageFlipView.theView1 = previousPreviousView;
+    self.pageFlipView.theView2 = previousView;
+    self.pageFlipView.theView3 = currentView;
+    self.pageFlipView.theView4 = nextView;
+    self.pageFlipView.theView5 = nextNextView;
   }
   
-  self.pageFlipController.hidden = NO;
+  self.pageFlipView.hidden = NO;
 }
 
 - (void)reusePageScrollview {
@@ -2504,7 +2504,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self reusePageScrollview];
 
-  [self setupPageFlipControllerForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  [self setuppageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])

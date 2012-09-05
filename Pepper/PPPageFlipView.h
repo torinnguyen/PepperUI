@@ -29,4 +29,6 @@
 @property (nonatomic, unsafe_unretained) UIView *theView4;
 @property (nonatomic, unsafe_unretained) UIView *theView5;
 
+- (BOOL)isBusy;
+
 @end

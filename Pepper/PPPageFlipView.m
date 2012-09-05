@@ -62,20 +62,13 @@
   [self addGestureRecognizer:panGestureRecognizer];
   
   self.displayLink = nil;
+  self.controlIndexTimerLastTime = nil;
   
   return self;
 }
 
 
 #pragma mark - Helpers
-
-- (float)getCurrentSpecialIndex
-{
-  float index = 1.5f + ceil((self.controlIndex-2.5) / 2) * 2;
-  if (index < 1.5f)
-    index = 1.5f;
-  return index;
-}
 
 - (BOOL)isBusy
 {
@@ -406,6 +399,7 @@
 {
   [self.displayLink invalidate];
   self.displayLink = nil;
+  self.controlIndexTimerLastTime = nil;
   
   float newValue = self.controlIndexTimerTarget;
   if (newValue > 1)
