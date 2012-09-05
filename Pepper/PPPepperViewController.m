@@ -83,7 +83,7 @@
 @property (nonatomic, assign) float pepperPageSpacing;
 @property (nonatomic, assign) float m34;
 @property (nonatomic, assign) int numBooks, numPages, numDetailPages;
-@property (nonatomic, assign) float currenPageContentOffsetY;
+@property (nonatomic, assign) float currentPageContentOffsetY;
 @property (nonatomic, strong) UIImage *bookCoverImage;
 @property (nonatomic, strong) UIImage *pageBackgroundImage;
 
@@ -167,7 +167,7 @@
 @synthesize aspectRatioPortrait, aspectRatioLandscape, edgePaddingPercentage;
 @synthesize bookSpacing, pepperPageSpacing, m34;
 @synthesize numBooks, numPages, numDetailPages;
-@synthesize currenPageContentOffsetY;
+@synthesize currentPageContentOffsetY;
 @synthesize bookCoverImage, pageBackgroundImage;
 
 @synthesize zoomOnLeft;
@@ -294,9 +294,7 @@ static BOOL iOS5AndAbove = NO;
   self.enablePageFlipEffect = ENABLE_PAGE_FLIP;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
   self.scaleOnDeviceRotation = SMALLER_FRAME_FOR_PORTRAIT;
-  
-  self.enablePageCurlEffect = NO;
-  
+    
   //Initial op flags
   self.zoomOnLeft = YES;
   self.isBookView = YES;
@@ -457,17 +455,19 @@ static BOOL iOS5AndAbove = NO;
   [self scrollToBook:self.currentBookIndex duration:duration];
   
   //Relayout detail/fullscreen views with animation
-  if (self.enablePageFlipEffect && self.isDetailView)
+  BOOL hasPageFlip = self.enablePageFlipEffect && (!iOS5AndAbove || !self.enablePageCurlEffect);
+  BOOL shouldRelayoutPageFlip = hasPageFlip && self.isDetailView;
+  if (shouldRelayoutPageFlip)
   {
     [self setupReuseablePoolPageViews];
     [self reusePageScrollview];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-      //[self setupFullscreenView];
       [self setuppageFlipViewForOrientation:toInterfaceOrientation];
     } completion:^(BOOL finished) {
       
     }];
   }
+  //Only applicable to page curl or scrollview
   else
   {
     for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray) {
@@ -2983,7 +2983,7 @@ static BOOL iOS5AndAbove = NO;
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
     self.controlIndex = self.controlIndex;
-    self.currenPageContentOffsetY = 0;
+    self.currentPageContentOffsetY = 0;
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
@@ -3234,16 +3234,20 @@ static BOOL iOS5AndAbove = NO;
   BOOL switchingFromPepperToFullscreen = previousControlAngle <= -THRESHOLD_HALF_ANGLE && newControlAngle > -THRESHOLD_HALF_ANGLE && hasNoPageScrollView;
   BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
     
-  //Memory management
+  //----------------------------------------------
+  //Memory management & setup
+  
+  //From Pepper mode zoom MORE than halfScale
   if (switchingFromPepperToFullscreen)
   {
-    self.currenPageContentOffsetY = INVALID_NUMBER;
+    self.currentPageContentOffsetY = INVALID_NUMBER;
     [self reorderPepperViews];
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:willOpenPageIndex:)])
       [self.delegate ppPepperViewController:self willOpenPageIndex:self.currentPageIndex];
   }
+  //Just before fullscreen mode is shown
   else if (switchingToFullscreen)
   {
     [self setupFullscreenView];
@@ -3252,17 +3256,19 @@ static BOOL iOS5AndAbove = NO;
     for (PPPageViewDetailWrapper *subview in self.visiblePageViewArray)
       [subview setEnableScrollingZooming:zoomingOneSide];
   }
+  //From fullscreen mode zoom LESS than 1.0 scale
   else if (switchingToPepper)
   {
     //For intermediate zoom OUT
     PPPageViewDetailWrapper *detailView = [self getDetailViewAtIndex:self.currentPageIndex];
-    self.currenPageContentOffsetY = detailView.contentOffset.y;
+    self.currentPageContentOffsetY = detailView.contentOffset.y;
     
     [self setupReusablePoolPepperViews];
     [self reusePepperViews];
     self.pepperView.hidden = NO;
     self.previousSpecialControlIndex = INVALID_NUMBER;
   }
+  //From Pepper mode zoom LESS than halfScale
   else if (switchingToBookView)
   {
     [self setupReuseablePoolBookViews];
@@ -3271,7 +3277,7 @@ static BOOL iOS5AndAbove = NO;
     [self scrollViewDidScroll:self.bookScrollView];
   }
   
-  //--------------------
+  //----------------------------------------------
   
   //Show/hide Pepper & Fullscreen view accordingly
   [self hideFullscreenView:(newControlAngle < 0)];
@@ -3337,14 +3343,14 @@ static BOOL iOS5AndAbove = NO;
     zoomedFrame.size.height = zoomedFrame.size.width / frameAspectRatio;
 
     //Reset content offset upon opening
-    if (self.currenPageContentOffsetY == INVALID_NUMBER)
-      self.currenPageContentOffsetY = 0;
+    if (self.currentPageContentOffsetY == INVALID_NUMBER)
+      self.currentPageContentOffsetY = 0;
 
     //Zoom INTO middle of page
     float fullFrameY = 0;
     if (hasNoPageScrollView && self.enableOneSideMiddleZoom)      fullFrameY = midY - fullHeight/2;
     //Intermediate zoom OUT (normal case)
-    else                                                          fullFrameY = - self.currenPageContentOffsetY;
+    else                                                          fullFrameY = - self.currentPageContentOffsetY;
     
     float fullDy = frameY - fullFrameY;
     zoomedFrame.origin.y = originalFrame.origin.y - (fullDy * frameScale) - EDGE_PADDING*frameScale;

@@ -66,7 +66,8 @@
   self.pepperViewController.enableBorderlessGraphic = YES;
   self.pepperViewController.enableOneSideZoom = YES;
   self.pepperViewController.enableOneSideMiddleZoom = YES;
-  self.pepperViewController.enablePageCurlEffect = YES;   //iOS5 and above only
+  self.pepperViewController.enablePageCurlEffect = YES;   //iOS5 and above only, fallback to pageFlipEffect
+  self.pepperViewController.enablePageFlipEffect = YES;
   self.pepperViewController.hideFirstPage = YES;
    */
   
