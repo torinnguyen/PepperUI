@@ -173,8 +173,6 @@
     newControlIndex -= 0.5;
 
   self.controlIndex = newControlIndex;
-  
-  NSLog(@"%.2f", self.controlIndex);
 }
 
 // This function controls everything about flipping
