@@ -302,16 +302,7 @@ static BOOL iOS5AndAbove = NO;
   _controlIndex = MIN_CONTROL_INDEX;
   _controlAngle = -THRESHOLD_HALF_ANGLE;
   _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
-  
-  //Gesture recognizers
-  UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
-  pinchGestureRecognizer.delegate = self;
-  [self.view addGestureRecognizer:pinchGestureRecognizer];
-  
-  UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onPanning:)];
-  panGestureRecognizer.delegate = self;
-  [self.view addGestureRecognizer:panGestureRecognizer];
-  
+    
   return self;
 }
 
@@ -332,6 +323,15 @@ static BOOL iOS5AndAbove = NO;
   self.view.clipsToBounds = YES;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+  
+  //Gesture recognizers
+  UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
+  pinchGestureRecognizer.delegate = self;
+  [self.view addGestureRecognizer:pinchGestureRecognizer];
+  
+  UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onPanning:)];
+  panGestureRecognizer.delegate = self;
+  [self.view addGestureRecognizer:panGestureRecognizer];
 
   [self initializeBackgroundImagesAndRatios];
   [self updateFrameSizesForOrientation];
@@ -376,16 +376,6 @@ static BOOL iOS5AndAbove = NO;
     self.pageScrollView.hidden = YES;
     self.pageScrollView.pagingEnabled = YES;
     [self.view addSubview:self.pageScrollView];
-  }
-  
-  if (self.pageFlipView == nil) {
-    self.pageFlipView = [[PPPageFlipView alloc] initWithFrame:self.view.bounds];
-    self.pageFlipView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.pageFlipView.hidden = YES;
-    self.pageFlipView.clipsToBounds = NO;
-    self.pageFlipView.m34 = self.m34;
-    self.pageFlipView.delegate = self;
-    [self.view addSubview:self.pageFlipView];
   }
 }
 
@@ -462,7 +452,7 @@ static BOOL iOS5AndAbove = NO;
     [self setupReuseablePoolPageViews];
     [self reusePageScrollview];
     [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
-      [self setuppageFlipViewForOrientation:toInterfaceOrientation];
+      [self setupPageFlipViewForOrientation:toInterfaceOrientation];
     } completion:^(BOOL finished) {
       
     }];
@@ -616,21 +606,33 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)setEnablePageCurlEffect:(BOOL)newValue
 {
+  if (self.isDetailView) {
+    NSLog(@"You can't set this property while fullscreen mode");
+    return;
+  }
+  
   _enablePageCurlEffect = newValue;
   
-  if (self.pageViewController != nil)
-    self.pageViewController.view.userInteractionEnabled = iOS5AndAbove && self.enablePageCurlEffect;    
-
-  if (self.pageFlipView != nil)
-    self.pageFlipView.userInteractionEnabled = !iOS5AndAbove || !self.enablePageCurlEffect;
+  if (self.enablePageCurlEffect)        [self destroyPageFlipView];
+  else                                  [self destroyPageViewController];
 }
 
 - (void)setEnablePageFlipEffect:(BOOL)newValue
 {
+  if (self.isDetailView) {
+    NSLog(@"You can't set this property while fullscreen mode");
+    return;
+  }
+  
   _enablePageFlipEffect = newValue;
   
-  if (self.pageViewController != nil)
-    self.pageViewController.view.userInteractionEnabled = !newValue;
+  if (newValue == YES)    [self initPageFlipView];
+  else                    [self destroyPageFlipView];
+  
+  if (iOS5AndAbove) {
+    if (self.pageViewController != nil)
+      self.pageViewController.view.userInteractionEnabled = !newValue;
+  }
 
   if (self.pageFlipView != nil)
     self.pageFlipView.userInteractionEnabled = newValue;
@@ -1810,7 +1812,7 @@ static BOOL iOS5AndAbove = NO;
 }
 
 
-#pragma mark - UI Helper functions (Fullscreen/Detail)
+#pragma mark - UI Helper functions (Fullscreen/Detail - Scrolling)
 
 - (int)getCurrentPageIndex
 {
@@ -1858,19 +1860,6 @@ static BOOL iOS5AndAbove = NO;
   [self destroyPageViewController];
 }
 
-- (void)destroyPageViewController
-{
-  if (!iOS5AndAbove || self.pageViewController == nil)
-    return;
-  
-  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
-    vc.view = nil;
-  [self.reusePageViewDetailControllerArray removeAllObjects];
-  
-  self.pageCurlBusy = NO;
-  self.pageViewController.view.hidden = YES;
-}
-
 - (void)setupReuseablePoolPageViews
 {
   //No need to re-setup
@@ -1904,7 +1893,7 @@ static BOOL iOS5AndAbove = NO;
     [self setupPageViewController];
   }
   else if (self.enablePageFlipEffect) {
-    [self setuppageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+    [self setupPageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   }
     
   //Reset pages UI
@@ -1939,134 +1928,6 @@ static BOOL iOS5AndAbove = NO;
     [[self.pageViewController view] setHidden:hide];
   
   [self.pageFlipView setHidden:hide];
-}
-
-- (void)setupPageViewController
-{
-  if (!iOS5AndAbove)
-    return;
-  
-  [self setupReuseablePoolPageViewDetailController];
-  [self reusePageScrollview];
-  self.pageCurlBusy = NO;
-      
-  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
-  if (currentViewController == nil)
-    return;
-
-  BOOL resetup = NO;
-  int requiredNumVC;
-  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
-  
-  //Resetup if spine location is not right
-  if (zoomingOneSide) {
-    requiredNumVC = 1;
-    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMin;
-    if (resetup) {
-      [self.pageViewController removeFromParentViewController];
-      [[self.pageViewController view] removeFromSuperview];
-      self.pageViewController = nil;
-      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
-                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
-                                                                              options:nil];
-    }
-  }
-  else {
-    static NSString *key = @"UIPageViewControllerOptionSpineLocationKey";   //hack for iOS4.3 bypass
-    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:UIPageViewControllerSpineLocationMid] forKey:key];
-    requiredNumVC = 2;
-    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMid;
-    if (resetup) {
-      [self.pageViewController removeFromParentViewController];
-      [[self.pageViewController view] removeFromSuperview];
-      self.pageViewController = nil;
-      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
-                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
-                                                                              options:options];
-    }
-  }
-      
-  //First time, almost everytime
-  if (resetup) {
-    [self addChildViewController:self.pageViewController];
-    [self.view addSubview:self.pageViewController.view];
-    self.pageViewController.view.frame = self.view.bounds;
-    self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.pageViewController didMoveToParentViewController:self]; 
-    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
-    //  [self.view addGestureRecognizer:recognizer];
-  }
-  
-  self.pageViewController.delegate = self;
-  self.pageViewController.dataSource = self;
-  self.pageViewController.view.hidden = NO;
-  
-  //One side only
-  if (zoomingOneSide) {
-    NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
-    [self.pageViewController setDoubleSided:NO];
-    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
-    return;
-  }
-  
-  //Side-by-side
-  NSArray *viewControllers = nil;
-  if ((int)self.currentPageIndex % 2 == 0) {
-    PPPageViewDetailController *nextViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex+1];
-    viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
-  }
-  else 
-  {
-    PPPageViewDetailController *prevViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex-1];
-    viewControllers = [NSArray arrayWithObjects:prevViewController, currentViewController, nil];    
-  }
-  [self.pageViewController setDoubleSided:YES];
-  [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
-}
-
-- (void)setuppageFlipViewForOrientation:(UIInterfaceOrientation)orientation
-{
-  BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
-  self.pageFlipView.zoomingOneSide = zoomingOneSide;
-  self.pageFlipView.currentPageIndex = self.currentPageIndex;
-  self.pageFlipView.numberOfPages = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
-  PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
-  PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
-  PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];
-  PPPageViewDetailWrapper *nextView = [self getDetailViewAtIndex:self.currentPageIndex+1];
-  PPPageViewDetailWrapper *nextNextView = [self getDetailViewAtIndex:self.currentPageIndex+2];
-  
-  //One-side
-  if (zoomingOneSide) {
-    self.pageFlipView.theView0 = nil;
-    self.pageFlipView.theView1 = previousView;
-    self.pageFlipView.theView2 = nil;
-    self.pageFlipView.theView3 = currentView;
-    self.pageFlipView.theView4 = nil;
-    self.pageFlipView.theView5 = nextView;
-    return;
-  }
-
-  //Side-by-side
-  if ((int)self.currentPageIndex % 2 == 0) {
-    self.pageFlipView.theView0 = previousPreviousView;
-    self.pageFlipView.theView1 = previousView;
-    self.pageFlipView.theView2 = currentView;
-    self.pageFlipView.theView3 = nextView;
-    self.pageFlipView.theView4 = nextNextView;
-    self.pageFlipView.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
-  }
-  else 
-  {
-    self.pageFlipView.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
-    self.pageFlipView.theView1 = previousPreviousView;
-    self.pageFlipView.theView2 = previousView;
-    self.pageFlipView.theView3 = currentView;
-    self.pageFlipView.theView4 = nextView;
-    self.pageFlipView.theView5 = nextNextView;
-  }
-  
-  self.pageFlipView.hidden = NO;
 }
 
 - (void)reusePageScrollview {
@@ -2286,11 +2147,11 @@ static BOOL iOS5AndAbove = NO;
 - (void)openPageIndex:(int)pageIndex
 {
   if (self.isBookView) {
-    NSLog(@"You can't call this function in book mode");
+    NSLog(@"You can't call this function while in book mode");
     return;
   }
   if (self.isDetailView) {
-    NSLog(@"You can't call this function in fullscreen mode");
+    NSLog(@"You can't call this function while in fullscreen mode");
     return;
   }
   
@@ -2310,11 +2171,11 @@ static BOOL iOS5AndAbove = NO;
 - (void)closeCurrentPage:(BOOL)animated
 {
   if (self.isBookView) {
-    NSLog(@"You can't call this function in book mode");
+    NSLog(@"You can't call this function while in book mode");
     return;
   }
   if ([self isPepperView]) {
-    NSLog(@"You can't call this function in pepper mode");
+    NSLog(@"You can't call this function while in pepper mode");
     return;
   }
   
@@ -2329,32 +2190,6 @@ static BOOL iOS5AndAbove = NO;
 
 
 #pragma mark - UI Helper functions (Page curl effect)
-
-- (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
-{  
-  self.pageViewController.view.userInteractionEnabled = YES;
-  self.pageCurlBusy = NO;
-  
-  //Flip to the same page
-  if (!completed)
-    return;
-  
-  PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
-  int index = [self indexOfPageViewDetailController:currentViewController];
-  self.currentPageIndex = index;
-  
-  self.pepperView.hidden = YES;
-  self.pageScrollView.userInteractionEnabled = NO;
-  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
-  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
-  //self.controlAngle = 0;
-  
-  [self reusePageScrollview];
-  
-  //Notify the delegate
-  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
-    [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
-}
 
 - (UIPageViewControllerSpineLocation)pageViewController:(UIPageViewController *)pageViewController
                    spineLocationForInterfaceOrientation:(UIInterfaceOrientation)orientation
@@ -2403,8 +2238,134 @@ static BOOL iOS5AndAbove = NO;
   return UIPageViewControllerSpineLocationMid;
 }
 
+- (void)pageViewController:(UIPageViewController *)pageViewController didFinishAnimating:(BOOL)finished previousViewControllers:(NSArray *)previousViewControllers transitionCompleted:(BOOL)completed
+{
+  self.pageViewController.view.userInteractionEnabled = YES;
+  self.pageCurlBusy = NO;
+  
+  //Flip to the same page
+  if (!completed)
+    return;
+  
+  PPPageViewDetailController *currentViewController = [self.pageViewController.viewControllers objectAtIndex:0];
+  int index = [self indexOfPageViewDetailController:currentViewController];
+  self.currentPageIndex = index;
+  
+  self.pepperView.hidden = YES;
+  self.pageScrollView.userInteractionEnabled = NO;
+  self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
+  self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
+  //self.controlAngle = 0;
+  
+  [self reusePageScrollview];
+  
+  //Notify the delegate
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
+    [self.delegate ppPepperViewController:self didSnapToPageIndex:self.currentPageIndex];
+}
+
 
 #pragma mark - Page View Controller Data Source - (Page curl effect)
+
+- (void)setupPageViewController
+{
+  if (!iOS5AndAbove)
+    return;
+  
+  [self setupReuseablePoolPageViewDetailController];
+  [self reusePageScrollview];
+  self.pageCurlBusy = NO;
+  
+  PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
+  if (currentViewController == nil)
+    return;
+  
+  BOOL resetup = NO;
+  int requiredNumVC;
+  BOOL zoomingOneSide = self.enableOneSideZoom || [self isPortrait];
+  
+  //Resetup if spine location is not right
+  if (zoomingOneSide) {
+    requiredNumVC = 1;
+    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMin;
+    if (resetup) {
+      [self.pageViewController removeFromParentViewController];
+      [[self.pageViewController view] removeFromSuperview];
+      self.pageViewController = nil;
+      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
+                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
+                                                                              options:nil];
+    }
+  }
+  else {
+    static NSString *key = @"UIPageViewControllerOptionSpineLocationKey";   //hack for iOS4.3 bypass
+    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:UIPageViewControllerSpineLocationMid] forKey:key];
+    requiredNumVC = 2;
+    resetup = self.pageViewController == nil || self.pageViewController.spineLocation != UIPageViewControllerSpineLocationMid;
+    if (resetup) {
+      [self.pageViewController removeFromParentViewController];
+      [[self.pageViewController view] removeFromSuperview];
+      self.pageViewController = nil;
+      self.pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStylePageCurl
+                                                                navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
+                                                                              options:options];
+    }
+  }
+  
+  //First time, almost everytime
+  if (resetup) {
+    [self addChildViewController:self.pageViewController];
+    [self.view addSubview:self.pageViewController.view];
+    self.pageViewController.view.frame = self.view.bounds;
+    self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.pageViewController didMoveToParentViewController:self];
+    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
+    //  [self.view addGestureRecognizer:recognizer];
+  }
+  
+  self.pageViewController.delegate = self;
+  self.pageViewController.dataSource = self;
+  self.pageViewController.view.hidden = NO;
+  
+  //One side only
+  if (zoomingOneSide) {
+    NSArray *viewControllers = [NSArray arrayWithObject:currentViewController];
+    [self.pageViewController setDoubleSided:NO];
+    [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+    return;
+  }
+  
+  //Side-by-side
+  NSArray *viewControllers = nil;
+  if ((int)self.currentPageIndex % 2 == 0) {
+    PPPageViewDetailController *nextViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex+1];
+    viewControllers = [NSArray arrayWithObjects:currentViewController, nextViewController, nil];
+  }
+  else
+  {
+    PPPageViewDetailController *prevViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex-1];
+    viewControllers = [NSArray arrayWithObjects:prevViewController, currentViewController, nil];
+  }
+  [self.pageViewController setDoubleSided:YES];
+  [self.pageViewController setViewControllers:viewControllers direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:NULL];
+}
+
+- (void)destroyPageViewController
+{
+  if (!iOS5AndAbove || self.pageViewController == nil)
+    return;
+  
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+    vc.view = nil;
+  [self.reusePageViewDetailControllerArray removeAllObjects];
+  
+  self.pageCurlBusy = NO;
+  self.pageViewController.view.hidden = YES;
+  [self.pageViewController.view removeFromSuperview];
+  self.pageViewController.delegate = nil;
+  self.pageViewController.dataSource = nil;
+  self.pageViewController = nil;
+}
 
 - (void)setupReuseablePoolPageViewDetailController
 {
@@ -2531,7 +2492,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self reusePageScrollview];
 
-  [self setuppageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  [self setupPageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToPageIndex:)])
@@ -2545,6 +2506,73 @@ static BOOL iOS5AndAbove = NO;
     [self.delegate ppPepperViewController:self didScrollWithPageIndex:index];
 }
 
+- (void)initPageFlipView
+{
+  if (self.pageFlipView != nil)
+    return;
+  
+  self.pageFlipView = [[PPPageFlipView alloc] initWithFrame:self.view.bounds];
+  self.pageFlipView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  self.pageFlipView.hidden = YES;
+  self.pageFlipView.clipsToBounds = NO;
+  self.pageFlipView.m34 = self.m34;
+  self.pageFlipView.delegate = self;
+  [self.view addSubview:self.pageFlipView];
+}
+
+- (void)destroyPageFlipView
+{
+  if (self.pageFlipView == nil)
+    return;
+  
+  [self.pageFlipView removeFromSuperview];
+  self.pageFlipView = nil;
+}
+
+- (void)setupPageFlipViewForOrientation:(UIInterfaceOrientation)orientation
+{
+  BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
+  self.pageFlipView.zoomingOneSide = zoomingOneSide;
+  self.pageFlipView.currentPageIndex = self.currentPageIndex;
+  self.pageFlipView.numberOfPages = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
+  PPPageViewDetailWrapper *previousPreviousView = [self getDetailViewAtIndex:self.currentPageIndex-2];
+  PPPageViewDetailWrapper *previousView = [self getDetailViewAtIndex:self.currentPageIndex-1];
+  PPPageViewDetailWrapper *currentView = [self getDetailViewAtIndex:self.currentPageIndex];
+  PPPageViewDetailWrapper *nextView = [self getDetailViewAtIndex:self.currentPageIndex+1];
+  PPPageViewDetailWrapper *nextNextView = [self getDetailViewAtIndex:self.currentPageIndex+2];
+  
+  //One-side
+  if (zoomingOneSide) {
+    self.pageFlipView.theView0 = nil;
+    self.pageFlipView.theView1 = previousView;
+    self.pageFlipView.theView2 = nil;
+    self.pageFlipView.theView3 = currentView;
+    self.pageFlipView.theView4 = nil;
+    self.pageFlipView.theView5 = nextView;
+    return;
+  }
+  
+  //Side-by-side
+  if ((int)self.currentPageIndex % 2 == 0) {
+    self.pageFlipView.theView0 = previousPreviousView;
+    self.pageFlipView.theView1 = previousView;
+    self.pageFlipView.theView2 = currentView;
+    self.pageFlipView.theView3 = nextView;
+    self.pageFlipView.theView4 = nextNextView;
+    self.pageFlipView.theView5 = [self getDetailViewAtIndex:self.currentPageIndex+3];
+  }
+  else
+  {
+    self.pageFlipView.theView0 = [self getDetailViewAtIndex:self.currentPageIndex-3];
+    self.pageFlipView.theView1 = previousPreviousView;
+    self.pageFlipView.theView2 = previousView;
+    self.pageFlipView.theView3 = currentView;
+    self.pageFlipView.theView4 = nextView;
+    self.pageFlipView.theView5 = nextNextView;
+  }
+  
+  self.pageFlipView.hidden = NO;
+}
 
 
 #pragma mark - Pepper/3D flipping implementation
