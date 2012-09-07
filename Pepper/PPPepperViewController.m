@@ -880,6 +880,12 @@ static BOOL iOS5AndAbove = NO;
   return numDetailPages;
 }
 
+- (void)clearNumberOfPagesCache
+{
+  self.numPages = -1;
+  self.numDetailPages = -1;
+}
+
 
 
 #pragma mark - UI Helper functions (Common)
@@ -1181,6 +1187,7 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)reusePepperViews {
   
+  [self clearNumberOfPagesCache];
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
       
   //Visible range
@@ -1936,6 +1943,8 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (void)reusePageScrollview {
+  
+  [self clearNumberOfPagesCache];
   int currentIndex = (int)self.currentPageIndex;
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
     
@@ -2927,9 +2936,7 @@ static BOOL iOS5AndAbove = NO;
 {
   [self.controlIndexCADisplayLink invalidate];
   self.controlIndexCADisplayLink = nil;
-  
-  [self reusePepperViews];
-  
+    
   float newValue = self.controlIndexTimerTarget;
   if (newValue > [self maxControlIndex])
     newValue = [self maxControlIndex];
@@ -2940,6 +2947,8 @@ static BOOL iOS5AndAbove = NO;
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didFinishFlippingWithIndex:)])
     [self.delegate ppPepperViewController:self didFinishFlippingWithIndex:self.controlIndex];
+
+  [self reusePepperViews];
 }
 
 #pragma mark - Pinch control implementation

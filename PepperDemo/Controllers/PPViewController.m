@@ -178,6 +178,13 @@
   else {
     self.pepperViewController.enableBorderlessGraphic = YES;
     self.pepperViewController.dataSource = self;
+    UIAlertView *alert = [[UIAlertView alloc]
+                          initWithTitle: @"Image content demo"
+                          message:@"This demo mode has infinite pages"
+                          delegate:nil
+                          cancelButtonTitle:@"OK"
+                          otherButtonTitles:nil];
+    [alert show];
   }
   [[MyImageCache sharedCached] removeAll];
   [self.pepperViewController reload];
@@ -239,6 +246,24 @@
   }
 }
 
+#pragma mark - Helpers
+
+- (void)showHideMenuBarWithAlpha:(float)alpha
+{
+  //Show our menu together with the books
+  self.menuView.alpha = alpha;
+  self.speedView.alpha = 1.0 - alpha;
+  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
+  self.menuView.userInteractionEnabled = (alpha != 0);
+}
+
+- (void)showHideMenuBar:(BOOL)isShow
+{
+  [UIView animateWithDuration:0.3 animations:^{
+    [self showHideMenuBarWithAlpha:isShow ? 1.0 : 0];
+  }];
+}
+
 - (void)showHideCloseButton:(BOOL)isShow
 {
   [UIView animateWithDuration:0.3 animations:^{
@@ -248,6 +273,7 @@
   self.btnClose.userInteractionEnabled = isShow;
   [self.view bringSubviewToFront:self.btnClose];
 }
+
 
 #pragma mark - Data
 
@@ -294,6 +320,53 @@
   }
 }
 
+- (void)addPageToBookIndex:(int)bookIndex
+{
+  //Dummy image list. Use with permission from Flickr user
+  NSArray *imageArray = [NSArray arrayWithObjects:
+                         @"http://farm5.staticflickr.com/4013/4403864606_1ef5903b40_b.jpg",
+                         @"http://farm3.staticflickr.com/2772/4409418974_df2bc0e6a8_b.jpg",
+                         @"http://farm5.staticflickr.com/4043/4411334362_652660cd36_b.jpg",
+                         @"http://farm3.staticflickr.com/2787/4410850119_0088b812b6_b.jpg",
+                         @"http://farm5.staticflickr.com/4013/4413884482_cd8b7f29fb_b.jpg",
+                         @"http://farm8.staticflickr.com/7217/7188226254_809e5b218b_b.jpg",
+                         @"http://farm5.staticflickr.com/4030/4411581280_8ef29563d8_z.jpg?zz=1",
+                         @"http://farm8.staticflickr.com/7223/7188230154_13db066420_b.jpg",
+                         nil];
+  int imageCount = imageArray.count;
+  
+  Page *newPage = [[Page alloc] init];
+  newPage.pageID = arc4random() % 123456;
+  newPage.halfsizeURL = [imageArray objectAtIndex:(arc4random() % imageCount)];
+  newPage.fullsizeURL = newPage.halfsizeURL;
+
+  Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
+  [theBook.pages addObject:newPage];
+  
+  NSLog(@"Add page to bookIndex: %d - total: %d", bookIndex, theBook.pages.count);
+}
+
+/*
+ * This is used to load more dummy pages as user is flipping through the book
+ * For implementing infinite pages
+ */
+- (void)loadMorePageForBookIndex:(int)bookIndex currentPageIndex:(int)pageIndex
+{
+  int numBufferPages = 12;      //minimum 10, more buffer is better
+  
+  Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
+  if (pageIndex <= (int)theBook.pages.count - numBufferPages)
+    return;
+  
+  //Still make sure the number of pages is even
+  int lastPage = pageIndex + numBufferPages;
+  if (lastPage % 2 != 0)
+    lastPage++;
+  
+  for (int i=theBook.pages.count; i<lastPage; i++)
+    [self addPageToBookIndex:bookIndex];
+}
+
 
 #pragma mark - PPScrollListViewControllerDataSource
 
@@ -334,6 +407,7 @@
 
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
+  //Return nil for the last page if number of actual page data is odd
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   int numPages = [theBook.pages count];
   if (pageIndex >= numPages)
@@ -353,6 +427,7 @@
 
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
+  //Return nil for the last page if number of actual page data is odd
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   int numPages = [theBook.pages count];
   if (pageIndex >= numPages)
@@ -416,6 +491,8 @@
   //This is mandatory in version 1.3.0 and above
   [scrollList openCurrentBookAtPageIndex:pageIndex];
   
+  //Hide menu bar, show Close button
+  [self showHideMenuBar:NO];
   [self showHideCloseButton:YES];
 }
 
@@ -427,11 +504,7 @@
   NSLog(@"%@", [NSString stringWithFormat:@"willOpenBookIndex:%d duration:%.2f", bookIndex, duration]);
   
   //Hide our menu together with the books
-  self.menuView.userInteractionEnabled = NO;
-  [UIView animateWithDuration:duration animations:^{
-    self.menuView.alpha = 0;
-    self.speedView.alpha = 1;
-  }];
+  [self showHideMenuBar:NO];
 }
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didOpenBookIndex:(int)bookIndex atPageIndex:(int)pageIndex
@@ -443,6 +516,8 @@
 {
   NSLog(@"%@", [NSString stringWithFormat:@"didCloseBookIndex:%d", bookIndex]);
   
+  //Show menu bar, hide Close button
+  [self showHideMenuBar:YES];
   [self showHideCloseButton:NO];
 }
 
@@ -455,10 +530,7 @@
   //NSLog(@"%@", [NSString stringWithFormat:@"closingBookWithAlpha:%.2f", alpha]);
   
   //Show our menu together with the books
-  self.menuView.alpha = alpha;
-  self.speedView.alpha = 1.0 - alpha;
-  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
-  self.menuView.userInteractionEnabled = (alpha != 0);
+  [self showHideMenuBarWithAlpha:alpha];
 }
 
 /*
@@ -489,14 +561,35 @@
 { 
   //Commented out for performance reason
   //NSLog(@"%@", [NSString stringWithFormat:@"didFlippedWithIndex:%.2f", index]);
+  
+  //Built-in demo content
+  if (self.pepperViewController.dataSource != self)
+    return;
+  
+  //Add new pages when there is a change of (integer) page
+  static int previousIndex = -1;
+  if (previousIndex < 0)
+    previousIndex = index;
+  if (fabsf(index-previousIndex) >= 1) {
+    previousIndex = index;
+    [self loadMorePageForBookIndex:[self.pepperViewController getCurrentBookIndex] currentPageIndex:index];
+  }
 }
 
 /*
  * This is called after the flipping finish snapping to a page
  */
-- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFinishFlippingWithIndex:(float)index
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didFinishFlippingWithIndex:(float)pageIndex
 {
-  NSLog(@"%@", [NSString stringWithFormat:@"didFinishFlippingWithIndex:%.2f", index]);
+  NSLog(@"%@", [NSString stringWithFormat:@"didFinishFlippingWithIndex:%.2f", pageIndex]);
+  
+  //Built-in demo content
+  if (self.pepperViewController.dataSource != self)
+    return;
+
+  //Infinite book
+  //It's better to be implemented here, but fast scrolling is causing problem
+  //[self loadMorePageForBookIndex:[self.pepperViewController getCurrentBookIndex] currentPageIndex:pageIndex];
 }
 
 /*
@@ -514,6 +607,13 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToPageIndex:(int)pageIndex
 {
   NSLog(@"%@", [NSString stringWithFormat:@"didSnapToPageIndex:%d", pageIndex]);
+  
+  //Built-in demo content
+  if (self.pepperViewController.dataSource != self)
+    return;
+  
+  //Infinite book
+  [self loadMorePageForBookIndex:[self.pepperViewController getCurrentBookIndex] currentPageIndex:pageIndex];
 }
 
 /*
