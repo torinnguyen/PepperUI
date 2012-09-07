@@ -22,6 +22,7 @@
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
 @property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
+@property (nonatomic, strong) IBOutlet UIButton * btnClose;
 
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
 @property (nonatomic, strong) NSMutableArray *bookDataArray;
@@ -37,6 +38,7 @@
 @synthesize switchRandomPage;
 @synthesize switchScaleOnDeviceRotation;
 @synthesize lblSpeed;
+@synthesize btnClose;
 
 @synthesize pepperViewController;
 @synthesize bookDataArray;
@@ -82,6 +84,9 @@
   //Bring our top level menu to highest z-index
   [self.view bringSubviewToFront:self.menuView];
   [self.view bringSubviewToFront:self.speedView];
+  
+  //Hide close button initially
+  [self showHideCloseButton:NO];
   
   //Initialize data
   [self initializeBookData];
@@ -215,6 +220,34 @@
   self.pepperViewController.scaleOnDeviceRotation = self.switchScaleOnDeviceRotation.on;
 }
 
+- (IBAction)onBtnClose:(id)sender
+{
+  if ([self.pepperViewController isBusy])
+    return;
+  
+  if (self.pepperViewController.isBookView)
+    return;
+  
+  if ([self.pepperViewController isPepperView]) {
+    [self.pepperViewController closeCurrentBook:YES];
+    return;
+  }
+  
+  if (self.pepperViewController.isDetailView) {
+    [self.pepperViewController closeCurrentPage:YES];
+    return;
+  }
+}
+
+- (void)showHideCloseButton:(BOOL)isShow
+{
+  [UIView animateWithDuration:0.3 animations:^{
+    self.btnClose.alpha = isShow ? 1 : 0;
+  }];
+  
+  self.btnClose.userInteractionEnabled = isShow;
+  [self.view bringSubviewToFront:self.btnClose];
+}
 
 #pragma mark - Data
 
@@ -302,6 +335,10 @@
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList thumbnailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
+  int numPages = [theBook.pages count];
+  if (pageIndex >= numPages)
+    return nil;
+
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
 
   MyBookOrPageView *view = nil;
@@ -317,6 +354,10 @@
 - (UIView*)ppPepperViewController:(PPPepperViewController*)scrollList detailViewForPageIndex:(int)pageIndex inBookIndex:(int)bookIndex withFrame:(CGRect)frame reusableView:(UIView*)contentView
 {
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
+  int numPages = [theBook.pages count];
+  if (pageIndex >= numPages)
+    return nil;
+  
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
     
   MyPageViewDetail *view = nil;
@@ -374,6 +415,8 @@
   
   //This is mandatory in version 1.3.0 and above
   [scrollList openCurrentBookAtPageIndex:pageIndex];
+  
+  [self showHideCloseButton:YES];
 }
 
 /*
@@ -398,7 +441,9 @@
 
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didCloseBookIndex:(int)bookIndex
 {
-  NSLog(@"%@", [NSString stringWithFormat:@"didCloseBookIndex:%d", bookIndex]); 
+  NSLog(@"%@", [NSString stringWithFormat:@"didCloseBookIndex:%d", bookIndex]);
+  
+  [self showHideCloseButton:NO];
 }
 
 /*

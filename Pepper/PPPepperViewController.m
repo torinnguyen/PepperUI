@@ -856,6 +856,8 @@ static BOOL iOS5AndAbove = NO;
   
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:numberOfPagesForBookIndex:)]) {
     self.numPages = [self.dataSource ppPepperViewController:self numberOfPagesForBookIndex:bookIndex];
+    if (self.numPages % 2 != 0)
+      NSLog(@"WARNING: Number of pages must be even");
     return self.numPages;
   }
   
@@ -871,6 +873,9 @@ static BOOL iOS5AndAbove = NO;
     self.numDetailPages = [self.dataSource ppPepperViewController:self numberOfDetailPagesForBookIndex:bookIndex];    
   else
     self.numDetailPages = self.numPages;
+  
+  if (self.numDetailPages % 2 != 0)
+    NSLog(@"WARNING: Number of pages must be even");
   
   return numDetailPages;
 }
