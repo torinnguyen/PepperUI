@@ -612,6 +612,7 @@ static BOOL iOS5AndAbove = NO;
   }
   
   _enablePageCurlEffect = newValue;
+  self.pageScrollView.userInteractionEnabled = !self.enablePageCurlEffect && !self.enablePageFlipEffect;
   
   if (self.enablePageCurlEffect)        [self destroyPageFlipView];
   else                                  [self destroyPageViewController];
@@ -625,17 +626,10 @@ static BOOL iOS5AndAbove = NO;
   }
   
   _enablePageFlipEffect = newValue;
+  self.pageScrollView.userInteractionEnabled = !self.enablePageCurlEffect && !self.enablePageFlipEffect;
   
   if (newValue == YES)    [self initPageFlipView];
   else                    [self destroyPageFlipView];
-  
-  if (iOS5AndAbove) {
-    if (self.pageViewController != nil)
-      self.pageViewController.view.userInteractionEnabled = !newValue;
-  }
-
-  if (self.pageFlipView != nil)
-    self.pageFlipView.userInteractionEnabled = newValue;
 }
 
 #pragma mark - PPPageViewWrapperDelegate
