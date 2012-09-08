@@ -1559,6 +1559,7 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)reuseBookScrollView {
   
+  [self clearNumberOfBooksCache];
   int bookCount = [self getNumberOfBooks];
   
   //Visible indexes

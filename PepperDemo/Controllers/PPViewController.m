@@ -180,7 +180,7 @@
     self.pepperViewController.dataSource = self;
     UIAlertView *alert = [[UIAlertView alloc]
                           initWithTitle: @"Image content demo"
-                          message:@"This demo mode has infinite pages"
+                          message:@"This demo mode has infinite books & pages"
                           delegate:nil
                           cancelButtonTitle:@"OK"
                           otherButtonTitles:nil];
@@ -282,7 +282,18 @@
   //You can supply your own data model
   //For demo purpose, a very basic Book & Page model is supplied
   //and they are being initialized with random data here
-  
+    
+  self.bookDataArray = [[NSMutableArray alloc] init];
+  for (int i=0; i<DEMO_NUM_BOOKS; i++)
+    [self addOneBook];
+}
+
+/*
+ * This is used to load more dummy book as user is scrolling through the book list
+ * For implementing infinite pages
+ */
+- (void)addOneBook
+{
   //Dummy image list. Use with permission from Flickr user
   NSArray *imageArray = [NSArray arrayWithObjects:
                          @"http://farm5.staticflickr.com/4013/4403864606_1ef5903b40_b.jpg",
@@ -296,28 +307,20 @@
                          nil];
   int imageCount = imageArray.count;
   
-  int randomBookID = arc4random() % 123456;
-  int randomPageID = arc4random() % 123456;
+  Book *myBook = [[Book alloc] init];
+  myBook.bookID = arc4random() % 123456;
+  myBook.pages = [[NSMutableArray alloc] init];
   
-  self.bookDataArray = [[NSMutableArray alloc] init];
-  for (int i=0; i<DEMO_NUM_BOOKS; i++) {
-    Book *myBook = [[Book alloc] init];
-    myBook.bookID = randomBookID;
-    myBook.pages = [[NSMutableArray alloc] init];
-    randomBookID += arc4random() % 123456;
+  for (int j=0; j<DEMO_NUM_PAGES; j++) {
+    Page *myPage = [[Page alloc] init];
+    myPage.pageID = arc4random() % 123456;
+    myPage.halfsizeURL = [imageArray objectAtIndex:(arc4random()) % imageCount];
+    myPage.fullsizeURL = myPage.halfsizeURL;
     
-    for (int j=0; j<DEMO_NUM_PAGES; j++) {
-      Page *myPage = [[Page alloc] init];
-      myPage.pageID = randomPageID;
-      myPage.halfsizeURL = [imageArray objectAtIndex:(i+j) % imageCount];
-      myPage.fullsizeURL = myPage.halfsizeURL;
-      randomPageID += arc4random() % 123456;
-      
-      [myBook.pages addObject:myPage];
-    }
-    
-    [self.bookDataArray addObject:myBook];
+    [myBook.pages addObject:myPage];
   }
+  
+  [self.bookDataArray addObject:myBook];
 }
 
 - (void)addPageToBookIndex:(int)bookIndex
@@ -339,7 +342,7 @@
   newPage.pageID = arc4random() % 123456;
   newPage.halfsizeURL = [imageArray objectAtIndex:(arc4random() % imageCount)];
   newPage.fullsizeURL = newPage.halfsizeURL;
-
+  
   Book *theBook = [self.bookDataArray objectAtIndex:bookIndex];
   [theBook.pages addObject:newPage];
   
@@ -347,7 +350,7 @@
 }
 
 /*
- * This is used to load more dummy pages as user is flipping through the book
+ * This is used to load more dummy pages as user is flipping through the pages
  * For implementing infinite pages
  */
 - (void)loadMorePageForBookIndex:(int)bookIndex currentPageIndex:(int)pageIndex
@@ -466,6 +469,12 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didSnapToBookIndex:(int)bookIndex
 {
   NSLog(@"%@", [NSString stringWithFormat:@"didSnapToBookIndex:%d", bookIndex]);
+  
+  //Built-in demo content
+  if (self.pepperViewController.dataSource != self)
+    return;
+  
+  [self addOneBook];
 }
 
 /*
