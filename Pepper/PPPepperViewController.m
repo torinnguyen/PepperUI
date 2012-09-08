@@ -311,6 +311,7 @@ static BOOL iOS5AndAbove = NO;
   [self destroyBookScrollView:YES];
   [self destroyPepperView:YES];
   [self destroyPageScrollView:YES];
+  [self destroyPageFlipView];
   [self destroyPageViewController];
 }
 
@@ -548,7 +549,9 @@ static BOOL iOS5AndAbove = NO;
   [self unloadBookScrollView:YES];
   [self unloadPepperView:YES];
   [self unloadPageScrollView:YES];
-
+  [self destroyPageFlipView];
+  [self destroyPageViewController];
+  
   //Initialize books scrollview
   [self setupReuseablePoolBookViews];
   [self updateBookScrollViewContentSize];
@@ -556,7 +559,7 @@ static BOOL iOS5AndAbove = NO;
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
   [self updateBookScrollViewBookScale];
-  
+    
   self.bookScrollView.hidden = NO;
   self.bookScrollView.alpha = 1;
   self.pepperView.hidden = YES;
@@ -614,8 +617,16 @@ static BOOL iOS5AndAbove = NO;
   _enablePageCurlEffect = newValue;
   self.pageScrollView.userInteractionEnabled = !self.enablePageCurlEffect && !self.enablePageFlipEffect;
   
-  if (self.enablePageCurlEffect)        [self destroyPageFlipView];
-  else                                  [self destroyPageViewController];
+  //No curling, just destroy it
+  if (!self.enablePageCurlEffect) {
+    [self destroyPageViewController];
+    return;
+  }
+  
+  [self destroyPageFlipView];
+    
+  //When switching from flip to curl, the reusable PPPageViewDetailWrapper somehow got screwed up. So we need this
+  [self destroyPageScrollView:YES];
 }
 
 - (void)setEnablePageFlipEffect:(BOOL)newValue
@@ -628,8 +639,8 @@ static BOOL iOS5AndAbove = NO;
   _enablePageFlipEffect = newValue;
   self.pageScrollView.userInteractionEnabled = !self.enablePageCurlEffect && !self.enablePageFlipEffect;
   
-  if (newValue == YES)    [self initPageFlipView];
-  else                    [self destroyPageFlipView];
+  if (newValue == YES)      [self initPageFlipView];
+  else                      [self destroyPageFlipView];
 }
 
 #pragma mark - PPPageViewWrapperDelegate
@@ -872,6 +883,11 @@ static BOOL iOS5AndAbove = NO;
     NSLog(@"WARNING: Number of pages must be even");
   
   return numDetailPages;
+}
+
+- (void)clearNumberOfBooksCache
+{
+  self.numBooks = -1;
 }
 
 - (void)clearNumberOfPagesCache
@@ -2327,8 +2343,6 @@ static BOOL iOS5AndAbove = NO;
     self.pageViewController.view.frame = self.view.bounds;
     self.pageViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.pageViewController didMoveToParentViewController:self];
-    //for (UIGestureRecognizer *recognizer in self.pageViewController.gestureRecognizers)
-    //  [self.view addGestureRecognizer:recognizer];
   }
   
   self.pageViewController.delegate = self;
@@ -2363,13 +2377,18 @@ static BOOL iOS5AndAbove = NO;
   if (!iOS5AndAbove || self.pageViewController == nil)
     return;
   
-  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray)
+  for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray) {
     vc.view = nil;
+    [vc.view removeFromSuperview];
+  }
   [self.reusePageViewDetailControllerArray removeAllObjects];
+  self.reusePageViewDetailControllerArray = nil;
   
   self.pageCurlBusy = NO;
   self.pageViewController.view.hidden = YES;
+  [self.pageViewController willMoveToParentViewController:nil];
   [self.pageViewController.view removeFromSuperview];
+  [self.pageViewController removeFromParentViewController];
   self.pageViewController.delegate = nil;
   self.pageViewController.dataSource = nil;
   self.pageViewController = nil;
@@ -2403,7 +2422,7 @@ static BOOL iOS5AndAbove = NO;
   //Already visible
   for (PPPageViewDetailController *vc in self.reusePageViewDetailControllerArray) {
     if (vc.tag != index)
-      continue;    
+      continue;
     vc.tag = -1;
     break;
   }
@@ -2514,6 +2533,15 @@ static BOOL iOS5AndAbove = NO;
     [self.delegate ppPepperViewController:self didScrollWithPageIndex:index];
 }
 
+- (void)destroyPageFlipView
+{
+  if (self.pageFlipView == nil)
+    return;
+  
+  [self.pageFlipView removeFromSuperview];
+  self.pageFlipView = nil;
+}
+
 - (void)initPageFlipView
 {
   if (self.pageFlipView != nil)
@@ -2528,17 +2556,10 @@ static BOOL iOS5AndAbove = NO;
   [self.view addSubview:self.pageFlipView];
 }
 
-- (void)destroyPageFlipView
-{
-  if (self.pageFlipView == nil)
-    return;
-  
-  [self.pageFlipView removeFromSuperview];
-  self.pageFlipView = nil;
-}
-
 - (void)setupPageFlipViewForOrientation:(UIInterfaceOrientation)orientation
 {
+  [self initPageFlipView];
+  
   BOOL zoomingOneSide = self.enableOneSideZoom || UIInterfaceOrientationIsPortrait(orientation);
   self.pageFlipView.zoomingOneSide = zoomingOneSide;
   self.pageFlipView.currentPageIndex = self.currentPageIndex;
