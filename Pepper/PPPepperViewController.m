@@ -555,7 +555,7 @@ static BOOL iOS5AndAbove = NO;
   //Initialize books scrollview
   [self setupReuseablePoolBookViews];
   [self updateBookScrollViewContentSize];
-  for (int i=0; i<numBooks; i++)
+  for (int i=0; i<self.numBooks; i++)
     [self addBookToScrollView:i];
   self.currentBookIndex = 0;
   [self updateBookScrollViewBookScale];
@@ -1582,6 +1582,9 @@ static BOOL iOS5AndAbove = NO;
   for (int i=startIndex; i<=endIndex; i++)
     if (i != self.currentBookIndex)
       [self addBookToScrollView:i];
+  
+  [self updateBookScrollViewContentSize];
+  [self updateBookScrollViewBookScale];
 }
 
 //

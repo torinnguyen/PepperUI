@@ -180,7 +180,7 @@
     self.pepperViewController.dataSource = self;
     UIAlertView *alert = [[UIAlertView alloc]
                           initWithTitle: @"Image content demo"
-                          message:@"This demo mode has infinite books & pages"
+                          message:@"This demo mode has\ninfinite books & pages"
                           delegate:nil
                           cancelButtonTitle:@"OK"
                           otherButtonTitles:nil];
@@ -285,14 +285,10 @@
     
   self.bookDataArray = [[NSMutableArray alloc] init];
   for (int i=0; i<DEMO_NUM_BOOKS; i++)
-    [self addOneBook];
+    [self addBookIndex:i];
 }
 
-/*
- * This is used to load more dummy book as user is scrolling through the book list
- * For implementing infinite pages
- */
-- (void)addOneBook
+- (void)addBookIndex:(int)bookIndex
 {
   //Dummy image list. Use with permission from Flickr user
   NSArray *imageArray = [NSArray arrayWithObjects:
@@ -308,7 +304,7 @@
   int imageCount = imageArray.count;
   
   Book *myBook = [[Book alloc] init];
-  myBook.bookID = arc4random() % 123456;
+  myBook.bookID = bookIndex;
   myBook.pages = [[NSMutableArray alloc] init];
   
   for (int j=0; j<DEMO_NUM_PAGES; j++) {
@@ -347,6 +343,26 @@
   [theBook.pages addObject:newPage];
   
   NSLog(@"Add page to bookIndex: %d - total: %d", bookIndex, theBook.pages.count);
+}
+
+/*
+ * This is used to load more dummy book as user is scrolling through the book list
+ * For implementing infinite pages
+ */
+- (void)loadMoreBooksWithCurrentBookIndex:(int)bookIndex
+{
+  int numBufferBooks = 4;      //minimum 4, more buffer is better
+  int desiredBookCount = (bookIndex+1) + numBufferBooks;
+  
+  NSLog(@"bookIndex: %d - count: %d - desired: %d", bookIndex, self.bookDataArray.count, desiredBookCount);
+
+  if (desiredBookCount <= (int)self.bookDataArray.count)
+    return;
+    
+  for (int i=self.bookDataArray.count; i<desiredBookCount; i++)
+    [self addBookIndex:i];
+  
+  NSLog(@"Add more books - total: %d", self.bookDataArray.count);
 }
 
 /*
@@ -461,6 +477,19 @@
 {
   //Commented out for performance reason
   //NSLog(@"%@", [NSString stringWithFormat:@"didScrollWithBookIndex:%.2f", bookIndex]);
+  
+  //Built-in demo content
+  if (self.pepperViewController.dataSource != self)
+    return;
+  
+  //Add new pages when there is a change of (integer) page
+  static int previousIndex = -1;
+  if (previousIndex < 0)
+    previousIndex = bookIndex;
+  if (fabsf(bookIndex-previousIndex) >= 1) {
+    previousIndex = bookIndex;
+    [self loadMoreBooksWithCurrentBookIndex:bookIndex];
+  }
 }
 
 /*
@@ -474,7 +503,9 @@
   if (self.pepperViewController.dataSource != self)
     return;
   
-  [self addOneBook];
+  //Infinite books
+  //It's better to be implemented here, but fast scrolling is causing problem
+  //[self loadMoreBooksWithCurrentBookIndex:bookIndex];
 }
 
 /*
@@ -596,7 +627,7 @@
   if (self.pepperViewController.dataSource != self)
     return;
 
-  //Infinite book
+  //Infinite numage of pages
   //It's better to be implemented here, but fast scrolling is causing problem
   //[self loadMorePageForBookIndex:[self.pepperViewController getCurrentBookIndex] currentPageIndex:pageIndex];
 }
