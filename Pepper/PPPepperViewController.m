@@ -3319,9 +3319,7 @@ static BOOL iOS5AndAbove = NO;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
-  
-  NSLog(@"_controlAngle: %.2f", _controlAngle);
-  
+    
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToBookView = previousControlAngle > -THRESHOLD_HALF_ANGLE-30 && newControlAngle <= -THRESHOLD_HALF_ANGLE-30;
   BOOL switchingToFullscreen = previousControlAngle < 0 && newControlAngle >= 0;
