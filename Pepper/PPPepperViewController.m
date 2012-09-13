@@ -235,7 +235,7 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.2";
+  return @"1.4.3";
 }
 
 - (id)dataSource {
@@ -746,9 +746,9 @@ static BOOL iOS5AndAbove = NO;
     }
   }
   
-  //Don't scale the first page
-  if (!self.isDetailView && self.theLeftView.tag <= 0 && self.zoomOnLeft)
-    return;
+  //Don't allow zooming in the first page
+  //if (newControlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle == -THRESHOLD_HALF_ANGLE && self.theLeftView.tag <= 0 && self.zoomOnLeft)
+  //  return;
 
   //Snap control angle to 3 thresholds
   if (recognizer.state == UIGestureRecognizerStateEnded) {
@@ -764,6 +764,12 @@ static BOOL iOS5AndAbove = NO;
   
   float dx = boost * (-90.0) * (1.0-recognizer.scale);
   float newControlAngle = self.touchDownControlAngle + dx;
+
+  //Doesn't make sense anymore
+  //Don't allow zooming in the first page
+  //if (newControlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle == -THRESHOLD_HALF_ANGLE && self.theLeftView.tag <= 0 && self.zoomOnLeft)
+  //  return;
+  
   self.controlAngle = newControlAngle;
 }
 
@@ -3313,6 +3319,8 @@ static BOOL iOS5AndAbove = NO;
   if (newControlAngle < -MAXIMUM_ANGLE)     newControlAngle = -MAXIMUM_ANGLE;
   float previousControlAngle = _controlAngle;
   _controlAngle = newControlAngle;
+  
+  NSLog(@"_controlAngle: %.2f", _controlAngle);
   
   BOOL hasNoPageScrollView = self.reusePageViewArray == nil;
   BOOL switchingToBookView = previousControlAngle > -THRESHOLD_HALF_ANGLE-30 && newControlAngle <= -THRESHOLD_HALF_ANGLE-30;
