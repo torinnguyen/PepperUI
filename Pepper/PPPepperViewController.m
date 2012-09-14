@@ -746,10 +746,6 @@ static BOOL iOS5AndAbove = NO;
     }
   }
   
-  //Don't allow zooming in the first page
-  //if (newControlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle == -THRESHOLD_HALF_ANGLE && self.theLeftView.tag <= 0 && self.zoomOnLeft)
-  //  return;
-
   //Snap control angle to 3 thresholds
   if (recognizer.state == UIGestureRecognizerStateEnded) {
     if (self.controlAngle >= 0)
@@ -764,12 +760,6 @@ static BOOL iOS5AndAbove = NO;
   
   float dx = boost * (-90.0) * (1.0-recognizer.scale);
   float newControlAngle = self.touchDownControlAngle + dx;
-
-  //Doesn't make sense anymore
-  //Don't allow zooming in the first page
-  //if (newControlAngle > -THRESHOLD_HALF_ANGLE && self.controlAngle == -THRESHOLD_HALF_ANGLE && self.theLeftView.tag <= 0 && self.zoomOnLeft)
-  //  return;
-  
   self.controlAngle = newControlAngle;
 }
 
