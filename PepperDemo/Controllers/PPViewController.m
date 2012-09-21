@@ -351,7 +351,7 @@
  */
 - (void)loadMoreBooksWithCurrentBookIndex:(int)bookIndex
 {
-  int numBufferBooks = 4;      //minimum 4, more buffer is better
+  int numBufferBooks = 5;      //minimum 4, more buffer is better
   int desiredBookCount = (bookIndex+1) + numBufferBooks;
   
   NSLog(@"bookIndex: %d - count: %d - desired: %d", bookIndex, self.bookDataArray.count, desiredBookCount);
@@ -483,6 +483,7 @@
     return;
   
   //Add new pages when there is a change of (integer) page
+  //It's smoother to use this implementation
   static int previousIndex = -1;
   if (previousIndex < 0)
     previousIndex = bookIndex;
@@ -504,7 +505,8 @@
     return;
   
   //Infinite books
-  //It's better to be implemented here, but fast scrolling is causing problem
+  //It's more efficient to implemented here, but fast scrolling is causing problem, need to buffer more
+  //This will also give less time for the book image/content/cover to load
   //[self loadMoreBooksWithCurrentBookIndex:bookIndex];
 }
 
@@ -578,6 +580,9 @@
  */
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnEmptySpaceInPepperView:(int)pageIndex
 {
+  NSLog(@"%@", [NSString stringWithFormat:@"didTapOnEmptySpaceInPepperView:%d", pageIndex]);
+  
+  //Close current book
   [self.pepperViewController closeCurrentBook:YES];
 }
 
