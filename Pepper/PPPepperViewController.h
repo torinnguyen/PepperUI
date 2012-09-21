@@ -84,6 +84,11 @@
 - (void)ppPepperViewController:(PPPepperViewController*)scrollList closingBookWithAlpha:(float)alpha;
 
 /*
+ * This is called when the empty space is tapped while in 3D/Pepper mode
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnEmptySpaceInPepperView:(int)pageIndex;
+
+/*
  * This is called when a page is tapped on
  * The page will zoom to fullscreen mode automatically if delegate does not implement this (default)
  * If implemented, you need to call [pepperViewController openPageIndex:xxx]; yourself

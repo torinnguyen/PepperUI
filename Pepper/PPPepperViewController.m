@@ -235,7 +235,7 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.3";
+  return @"1.4.4";
 }
 
 - (id)dataSource {
@@ -324,8 +324,14 @@ static BOOL iOS5AndAbove = NO;
   self.view.clipsToBounds = YES;
   self.view.backgroundColor = [UIColor clearColor];
   self.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-  
+   
   //Gesture recognizers
+  UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTapGesture:)];
+  tapGestureRecognizer.delegate = self;
+  tapGestureRecognizer.numberOfTapsRequired = 1;
+  tapGestureRecognizer.numberOfTouchesRequired = 1;
+  [self.view addGestureRecognizer:tapGestureRecognizer];
+  
   UIPinchGestureRecognizer *pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onTwoFingerPinch:)];
   pinchGestureRecognizer.delegate = self;
   [self.view addGestureRecognizer:pinchGestureRecognizer];
@@ -721,13 +727,17 @@ static BOOL iOS5AndAbove = NO;
   BOOL allowPinchSideBySide = [gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]] && self.isDetailView && sideBySide;
   if (allowPinchSideBySide)
     return YES;
-  
-  if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]])
-    return YES;
-  if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]])
-    return YES;
-  
-  return NO;
+    
+  return YES;
+}
+
+- (void)onTapGesture:(UIPinchGestureRecognizer *)recognizer
+{
+  if ([self isPepperView] == NO)
+    return;
+
+  if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didTapOnEmptySpaceInPepperView:)])
+    [self.delegate ppPepperViewController:self didTapOnEmptySpaceInPepperView:self.currentPageIndex];
 }
 
 - (void)onTwoFingerPinch:(UIPinchGestureRecognizer *)recognizer 

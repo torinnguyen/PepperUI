@@ -574,6 +574,14 @@
 }
 
 /*
+ * This is called when the empty space is tapped while in 3D/Pepper mode
+ */
+- (void)ppPepperViewController:(PPPepperViewController*)scrollList didTapOnEmptySpaceInPepperView:(int)pageIndex
+{
+  [self.pepperViewController closeCurrentBook:YES];
+}
+
+/*
  * This is called when a page is tapped on
  * The book will open automatically by the library if AUTO_OPEN_PAGE is enabled (default)
  * Otherwise you need to call [pepperViewController openPageIndex:xxx]; yourself
