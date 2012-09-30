@@ -74,8 +74,11 @@
 
 - (void)unloadContent
 {
-  [self.contentView removeFromSuperview];
-  self.contentView = nil;
+  self.contentView.hidden = YES;
+  
+  //This is too expensive
+  //[self.contentView removeFromSuperview];
+  //self.contentView = nil;
 }
 
 - (void)onOneFingerTap
@@ -114,6 +117,8 @@
   //Flip content horizontally for odd page
   if (self.isLeft)    self.contentView.layer.transform = CATransform3DMakeRotation(M_PI, 0, 1, 0);
   else                self.contentView.layer.transform = CATransform3DMakeRotation(0, 0, 1, 0);
+  
+  theContentView.hidden = NO;
 }
 
 
