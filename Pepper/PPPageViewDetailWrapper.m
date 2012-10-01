@@ -105,6 +105,8 @@ static UIImage *backgroundImageFlipped = nil;
   
   theContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   [self.background addSubview:theContentView];
+  
+  theContentView.hidden = NO;
 }
 
 - (void)setBackgroundImage:(UIImage*)image
@@ -188,8 +190,11 @@ static UIImage *backgroundImageFlipped = nil;
 
 - (void)unloadContent
 {
-  [self.contentView removeFromSuperview];
-  self.contentView = nil;
+  self.contentView.hidden = YES;
+  
+  //This is too expensive
+  //[self.contentView removeFromSuperview];
+  //self.contentView = nil;
 }
 
 /*
