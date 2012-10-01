@@ -70,6 +70,7 @@
   self.pepperViewController.enableBorderlessGraphic = YES;
   self.pepperViewController.enableOneSideZoom = YES;
   self.pepperViewController.enableOneSideMiddleZoom = YES;
+  self.pepperViewController.enableDualDetailedPage = NO;  //very very experimental, totally NOT supported by me
   self.pepperViewController.enablePageCurlEffect = YES;   //iOS5 and above only, fallback to pageFlipEffect
   self.pepperViewController.enablePageFlipEffect = YES;
   self.pepperViewController.hideFirstPage = YES;
@@ -451,7 +452,7 @@
   int numPages = [theBook.pages count];
   if (pageIndex >= numPages)
     return nil;
-  
+      
   Page *thePage = [theBook.pages objectAtIndex:pageIndex];
     
   MyPageViewDetail *view = nil;

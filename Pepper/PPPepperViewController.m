@@ -28,6 +28,7 @@
 #define ENABLE_BOOK_ROTATE            NO          //other book not in center will be slightly rotated (carousel effect)
 #define ENABLE_ONE_SIDE_ZOOM          NO          //zoom into one side, instead of side-by-side like Paper
 #define ENABLE_ONE_SIDE_MIDDLE_ZOOM   NO          //zoom into one side, anchor at middle of the page
+#define ENABLE_DUAL_DETAILED_PAGE     NO          //this is very experimental, totally NOT supported by me
 #define ENABLE_PAGE_CURL              YES         //iOS5 page curl effect
 #define ENABLE_PAGE_FLIP              YES         //Flipboard-like page flip effect
 #define SMALLER_FRAME_FOR_PORTRAIT    YES         //resize everything smaller when device is in portrait mode
@@ -154,6 +155,7 @@
 @synthesize enableBookRotate;
 @synthesize enableOneSideZoom;
 @synthesize enableOneSideMiddleZoom;
+@synthesize enableDualDetailedPage;
 @synthesize enablePageCurlEffect = _enablePageCurlEffect;
 @synthesize enablePageFlipEffect = _enablePageFlipEffect;
 @synthesize enableHighSpeedScrolling;
@@ -290,6 +292,7 @@ static BOOL iOS5AndAbove = NO;
   self.enableBookRotate = ENABLE_BOOK_ROTATE;
   self.enableOneSideZoom = ENABLE_ONE_SIDE_ZOOM;
   self.enableOneSideMiddleZoom = ENABLE_ONE_SIDE_MIDDLE_ZOOM;
+  self.enableDualDetailedPage = ENABLE_DUAL_DETAILED_PAGE;
   self.enablePageCurlEffect = ENABLE_PAGE_CURL;
   self.enablePageFlipEffect = ENABLE_PAGE_FLIP;
   self.enableHighSpeedScrolling = ENABLE_HIGH_SPEED_SCROLLING;
@@ -2129,14 +2132,34 @@ static BOOL iOS5AndAbove = NO;
   
   BOOL useBookCoverImage = (FIRST_PAGE_BOOK_COVER && index <= 0 && !self.hideFirstPage);
   [pageDetailView setBackgroundImage:(useBookCoverImage ? self.bookCoverImage : self.pageBackgroundImage)];
+  
+  //Quick hack for enable 1 content view to span both sides
+  //Very very experimental, totally NOT supported by me
+  if (self.enablePageCurlEffect == NO && self.enablePageFlipEffect == NO &&
+      self.enableDualDetailedPage && self.enableOneSideZoom == NO
+      && [self isLandscape] && index % 2 == 1)
+  {
+    pageDetailView.hidden = YES;
+    [self.reusePageViewArray addObject:pageDetailView];
+    
+    pageFrame.size.width *= 2;
+    
+    PPPageViewDetailWrapper *previousDetailWrapper = [self getDetailViewAtIndex:index-1];
+    [previousDetailWrapper layoutWithFrame:pageFrame duration:0];
+    previousDetailWrapper.hidden = NO;
+    previousDetailWrapper.clipsToBounds = NO;
+    previousDetailWrapper.layer.masksToBounds = NO;
+    return;
+  }
    
+  //Ask for content view from datasource
   if ([self.dataSource respondsToSelector:@selector(ppPepperViewController:detailViewForPageIndex:inBookIndex:withFrame:reusableView:)])
     pageDetailView.contentView = [self.dataSource ppPepperViewController:self detailViewForPageIndex:index inBookIndex:self.currentBookIndex withFrame:pageDetailView.bounds reusableView:pageDetailView.contentView];
   else
     [pageDetailView unloadContent];
   
   [pageDetailView layoutWithFrame:pageFrame duration:0];
-
+  
   pageDetailView.customDelegate = self;
   pageDetailView.hidden = NO;
   [self.pageScrollView addSubview:pageDetailView];

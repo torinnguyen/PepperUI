@@ -158,6 +158,7 @@
 @property (nonatomic, assign) BOOL enableBookShadow;
 @property (nonatomic, assign) BOOL enableOneSideZoom;
 @property (nonatomic, assign) BOOL enableOneSideMiddleZoom;
+@property (nonatomic, assign) BOOL enableDualDetailedPage;
 @property (nonatomic, assign) BOOL enablePageCurlEffect;
 @property (nonatomic, assign) BOOL enablePageFlipEffect;
 @property (nonatomic, assign) BOOL enableHighSpeedScrolling;
