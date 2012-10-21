@@ -505,7 +505,10 @@ static BOOL iOS5AndAbove = NO;
   [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
   [self updateBookScrollViewContentSize];
   [self updateBookScrollViewBookScale];
-  [self updatePageScrollViewContentSize]; 
+  [self updatePageScrollViewContentSize];
+  
+  //Might not be the best place for this, but this flag to be clear somehow
+  self.pageCurlBusy = NO;
     
   self.controlFlipAngle = self.controlFlipAngle;
   if (self.isBookView || self.isDetailView)
