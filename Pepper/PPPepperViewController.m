@@ -65,6 +65,30 @@
 #define PI_DIV_BY_180                0.01745329251994   // M_PI / 180.0f  conversion from degree to radian
 
 
+@interface UIView (FindUIViewController)
+- (UIViewController *) firstAvailableUIViewController;
+- (id) traverseResponderChainForUIViewController;
+@end
+
+@implementation UIView (FindUIViewController)
+- (UIViewController *) firstAvailableUIViewController {
+  // convenience function for casting and to "mask" the recursive function
+  return (UIViewController *)[self traverseResponderChainForUIViewController];
+}
+
+- (id) traverseResponderChainForUIViewController {
+  id nextResponder = [self nextResponder];
+  if ([nextResponder isKindOfClass:[UIViewController class]]) {
+    return nextResponder;
+  } else if ([nextResponder isKindOfClass:[UIView class]]) {
+    return [nextResponder traverseResponderChainForUIViewController];
+  } else {
+    return nil;
+  }
+}
+@end
+
+
 @interface PPPepperViewController()
 <
  UIGestureRecognizerDelegate,
@@ -237,7 +261,7 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.5";
+  return @"1.4.6";
 }
 
 - (id)dataSource {
@@ -506,6 +530,8 @@ static BOOL iOS5AndAbove = NO;
   [self updateBookScrollViewContentSize];
   [self updateBookScrollViewBookScale];
   [self updatePageScrollViewContentSize];
+  
+  self.pageViewController.view.userInteractionEnabled = YES;
   
   //Might not be the best place for this, but this flag to be clear somehow
   self.pageCurlBusy = NO;
@@ -2334,6 +2360,7 @@ static BOOL iOS5AndAbove = NO;
   
   [self setupReuseablePoolPageViewDetailController];
   [self reusePageScrollview];
+  self.pageViewController.view.userInteractionEnabled = YES;
   self.pageCurlBusy = NO;
   
   PPPageViewDetailController *currentViewController = [self getPageViewDetailControllerWithIndex:self.currentPageIndex];
@@ -2421,6 +2448,7 @@ static BOOL iOS5AndAbove = NO;
   self.reusePageViewDetailControllerArray = nil;
   
   self.pageCurlBusy = NO;
+  self.pageViewController.view.userInteractionEnabled = YES;
   self.pageViewController.view.hidden = YES;
   [self.pageViewController willMoveToParentViewController:nil];
   [self.pageViewController.view removeFromSuperview];
@@ -2484,6 +2512,10 @@ static BOOL iOS5AndAbove = NO;
     if ([wrapper superview] != nil)
       [wrapper removeFromSuperview];
     
+    //Deassociate view from VC, otherwise the view hierachy is violated & crash
+    UIViewController *wrapperVC = [wrapper firstAvailableUIViewController];
+    [wrapperVC setView:nil];
+    
     vc.tag = index;
     vc.view = wrapper;
     vc.view.hidden = NO;
@@ -2516,8 +2548,8 @@ static BOOL iOS5AndAbove = NO;
     return nil;  
   index--;
   
-  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation
-  //self.pageViewController.view.userInteractionEnabled = NO;
+  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation (flipping continuously)
+  self.pageViewController.view.userInteractionEnabled = NO;
   
   self.pageCurlBusy = YES;
   
@@ -2538,8 +2570,8 @@ static BOOL iOS5AndAbove = NO;
   if (index >= pageCount)
     return nil;
 
-  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation
-  //self.pageViewController.view.userInteractionEnabled = NO;
+  //Uncomment this to prevent UIPageViewController asking for the same VC twice during animation (flipping continuously)
+  self.pageViewController.view.userInteractionEnabled = NO;
 
   self.pageCurlBusy = YES;
   

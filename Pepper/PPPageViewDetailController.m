@@ -20,4 +20,10 @@
   return YES;
 }
 
+//iOS6
+- (BOOL)shouldAutorotate
+{
+  return YES;
+}
+
 @end
