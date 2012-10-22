@@ -2520,7 +2520,11 @@ static BOOL iOS5AndAbove = NO;
   //self.pageViewController.view.userInteractionEnabled = NO;
   
   self.pageCurlBusy = YES;
-  return [self getPageViewDetailControllerWithIndex:index];
+  
+  PPPageViewDetailController *vc = [self getPageViewDetailControllerWithIndex:index];
+  vc.view.alpha = 1;
+  vc.view.hidden = NO;
+  return vc;
 }
 
 - (UIViewController *)pageViewController:(UIPageViewController *)pageViewController viewControllerAfterViewController:(UIViewController *)viewController
@@ -2538,7 +2542,11 @@ static BOOL iOS5AndAbove = NO;
   //self.pageViewController.view.userInteractionEnabled = NO;
 
   self.pageCurlBusy = YES;
-  return [self getPageViewDetailControllerWithIndex:index];
+  
+  PPPageViewDetailController *vc = [self getPageViewDetailControllerWithIndex:index];
+  vc.view.alpha = 1;
+  vc.view.hidden = NO;
+  return vc;
 }
 
 
