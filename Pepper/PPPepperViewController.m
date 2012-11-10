@@ -3341,7 +3341,7 @@ static BOOL iOS5AndAbove = NO;
   float removeCoverDuration = 90.0/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;
   
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    gapFiller = 1;
+    gapFiller = 2;
     [self hideBookCoverFromFirstPage];
   });
   
