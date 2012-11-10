@@ -246,12 +246,12 @@
   int currentBookIndex = [self.pepperViewController getCurrentBookIndex];
   int totalPages = [[[self.bookDataArray objectAtIndex:currentBookIndex] pages] count];
   int currentPageIndex = [self.pepperViewController getCurrentPageIndex];
-  int randomPage = arc4random() % totalPages - 4;
+  int randomPage = (arc4random() % totalPages - 4) + 0.5;
   
   int diffPage = fabs(randomPage - currentPageIndex);
   CGFloat duration = MAX(0.4, MIN(diffPage * 0.2, 1.5));
   
-  [self.pepperViewController scrollToPage:randomPage duration:duration];
+  [self.pepperViewController flipToPage:randomPage duration:duration];
 }
 
 #pragma mark - Helpers

@@ -2971,8 +2971,33 @@ static BOOL iOS5AndAbove = NO;
   }
 }
 
-- (void)onSpecialControlIndexChanged {
+- (void)onSpecialControlIndexChanged
+{
   [self reusePepperViews];
+}
+
+- (void)flipToPage:(int)pageIndex duration:(float)duration
+{
+  if ([self isBusy])
+    return;
+  if ([self isPepperView] == NO)
+    return;
+  
+  if (pageIndex % 4 == 1)         pageIndex = pageIndex - 1;
+  else if (pageIndex % 4 == 2)    pageIndex = pageIndex - 2;
+  else if (pageIndex % 4 == 3)    pageIndex = pageIndex + 1;
+  
+  float newControlIndex = pageIndex;
+  float snapTo = 0;
+  int lowerBound = (int)floor(newControlIndex);
+  int lowerBoundEven = lowerBound % 2 == 0;
+  int upperBound = (int)ceil(newControlIndex);
+  int theIndex = (int)round(newControlIndex);
+  if (lowerBoundEven)               snapTo = lowerBound + 0.5;
+  else if (theIndex == upperBound)  snapTo = upperBound + 0.5;
+  else                              snapTo = lowerBound - 0.5;
+  
+  [self animateControlIndexTo:snapTo duration:duration];
 }
 
 - (void)animateControlIndexTo:(float)index duration:(float)duration

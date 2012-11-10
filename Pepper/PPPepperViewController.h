@@ -193,6 +193,7 @@
 - (BOOL)hasPageInPepperView:(int)index;
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)pageIndex;
 - (void)animateControlIndexTo:(float)index duration:(float)duration;
+- (void)flipToPage:(int)pageIndex duration:(float)duration;
 
 // Page list (scrolling effect)
 - (int)getCurrentPageIndex;
