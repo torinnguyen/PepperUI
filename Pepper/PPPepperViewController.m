@@ -2820,7 +2820,6 @@ static BOOL iOS5AndAbove = NO;
   else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
     float x1 = CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - floorf(layer2WidthAt90*positionScale/2.5);
     float x4 = CGRectGetMaxX(layer3.frame) - gapFiller;
-    NSLog(@"Left angle: %.5f  angle2: %.5f  x4: %.2f", angle, angle2, x4);
     self.theView1.frame = CGRectMake(ceilf(x1), frameY, self.frameWidth, self.frameHeight);
     self.theView4.frame = CGRectMake(floorf(x4), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = YES;
@@ -2830,7 +2829,6 @@ static BOOL iOS5AndAbove = NO;
   else {
     float x1 = CGRectGetMinX(layer2.frame) + gapFiller;
     float x4 = CGRectGetMinX(layer2.frame) + layer2WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - floorf(layer2WidthAt90*positionScale/2.5);
-    NSLog(@"Right angle: %.5f  angle2: %.5f  x1: %.2f", angle, angle2, x1);
     self.theView1.frame = CGRectMake(ceilf(x1), frameY, self.frameWidth, self.frameHeight);
     self.theView4.frame = CGRectMake(floorf(x4), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
