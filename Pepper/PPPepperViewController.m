@@ -45,7 +45,7 @@
 #define THRESHOLD_FULL_ANGLE         10
 #define THRESHOLD_HALF_ANGLE         25
 #define THRESHOLD_CLOSE_ANGLE        80
-#define LEFT_RIGHT_ANGLE_DIFF        9.9          //should be perfect 10, but we cheated
+#define LEFT_RIGHT_ANGLE_DIFF        9.95         //should be perfect 10, but we cheated
 #define MAXIMUM_ANGLE                89.0         //near 90, but cannot be 90
 #define MINIMUM_SCALE                0.3
 #define MINIMUM_SCALE_PAGES          6
@@ -252,6 +252,7 @@ static int midXLandscape = 0;
 static int midXPortrait = 0;
 static int midYLandscape = 0;
 static int midYPortrait = 0;
+static int gapFiller = 2;
 static float deviceFactor = 0;
 static BOOL isLowEndDevice = NO;
 static BOOL isPad = NO;
@@ -2757,7 +2758,7 @@ static BOOL iOS5AndAbove = NO;
     transform = CATransform3DRotate(transform, (max/2+min/2) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
-    layer23WidthAtMid = layer2.frame.size.width;
+    layer23WidthAtMid = ceilf( layer2.frame.size.width );
   }
   if (layer2WidthAt90 == 0) {
     CALayer *layer2 = self.theView2.layer;
@@ -2766,7 +2767,7 @@ static BOOL iOS5AndAbove = NO;
     transform = CATransform3DRotate(transform, (-90-angleDiff) * PI_DIV_BY_180, 0.0f, 1.0f, 0.0f);
     layer2.anchorPoint = CGPointMake(0, 0.5);
     layer2.transform = transform;
-    layer2WidthAt90 = layer2.frame.size.width;
+    layer2WidthAt90 = floorf( layer2.frame.size.width );
   }
 
   //Transformation for center 4 pages
@@ -2800,32 +2801,38 @@ static BOOL iOS5AndAbove = NO;
   layer4.anchorPoint = CGPointMake(0, 0.5);
   layer4.transform = transform;
   
-  float position = position = CGRectGetMidX(self.view.bounds) + 2*positionScale*layer23WidthAtMid;
-  self.theView2.frame = CGRectMake(position-layer23WidthAtMid, frameY, self.frameWidth, self.frameHeight);
-  self.theView3.frame = CGRectMake(position+layer23WidthAtMid, frameY, self.frameWidth, self.frameHeight);
+  float position = CGRectGetMidX(self.view.bounds) + 2*positionScale*layer23WidthAtMid;
+  self.theView2.frame = CGRectMake(ceilf( position-layer23WidthAtMid ), frameY, self.frameWidth, self.frameHeight);
+  self.theView3.frame = CGRectMake(floorf( position+layer23WidthAtMid ), frameY, self.frameWidth, self.frameHeight);
   self.theView1.hidden = NO;
   self.theView4.hidden = NO;
   
   //Center
-  if (fabs(angle) <= 90.0 && fabs(angle2) >= 90.0) {        
-    self.theView1.frame = CGRectMake(CGRectGetMinX(layer2.frame), frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMaxX(layer3.frame), frameY, self.frameWidth, self.frameHeight);
+  if (fabs(angle) <= 90.0 && fabs(angle2) >= 90.0) {
+    float x1 = CGRectGetMinX(layer2.frame) + 1;
+    float x4 = CGRectGetMaxX(layer3.frame) - 1;
+    self.theView1.frame = CGRectMake(x1, frameY, self.frameWidth, self.frameHeight);
+    self.theView4.frame = CGRectMake(x4, frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
     self.theView3.hidden = NO;
   }
   //Flip to left
   else if (fabs(angle) > 90.0 && fabs(angle2) > 90.0) {
-    self.theView1.frame = CGRectMake(CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer2WidthAt90*positionScale/2.5,
-                                     frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMaxX(layer3.frame), frameY, self.frameWidth, self.frameHeight);
+    float x1 = CGRectGetMaxX(layer3.frame) - layer2WidthAt90 - (MINOR_X_ADJUSTMENT_14*deviceFactor) - floorf(layer2WidthAt90*positionScale/2.5);
+    float x4 = CGRectGetMaxX(layer3.frame) - gapFiller;
+    NSLog(@"Left angle: %.5f  angle2: %.5f  x4: %.2f", angle, angle2, x4);
+    self.theView1.frame = CGRectMake(ceilf(x1), frameY, self.frameWidth, self.frameHeight);
+    self.theView4.frame = CGRectMake(floorf(x4), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = YES;
     self.theView3.hidden = NO;
   }
   //Flip to right
   else {
-    self.theView1.frame = CGRectMake(CGRectGetMinX(layer2.frame), frameY, self.frameWidth, self.frameHeight);
-    self.theView4.frame = CGRectMake(CGRectGetMinX(layer2.frame) + layer2WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - layer2WidthAt90*positionScale/2.5,
-                                     frameY, self.frameWidth, self.frameHeight);
+    float x1 = CGRectGetMinX(layer2.frame) + gapFiller;
+    float x4 = CGRectGetMinX(layer2.frame) + layer2WidthAt90 + (MINOR_X_ADJUSTMENT_14*deviceFactor) - floorf(layer2WidthAt90*positionScale/2.5);
+    NSLog(@"Right angle: %.5f  angle2: %.5f  x1: %.2f", angle, angle2, x1);
+    self.theView1.frame = CGRectMake(ceilf(x1), frameY, self.frameWidth, self.frameHeight);
+    self.theView4.frame = CGRectMake(floorf(x4), frameY, self.frameWidth, self.frameHeight);
     self.theView2.hidden = NO;
     self.theView3.hidden = YES;
   }
@@ -2841,7 +2848,7 @@ static BOOL iOS5AndAbove = NO;
   if (endIndex > pageCount-1)
     endIndex = pageCount-1;
   
-  //Hide irrelevant pages
+  //Hide irrelevant pages & position other pages
   for (int i=startIndex-1; i <= endIndex+1; i++) {
     PPPageViewContentWrapper *page = [self getPepperPageAtIndex:i];
     if (page == nil)
@@ -2862,6 +2869,7 @@ static BOOL iOS5AndAbove = NO;
       continue;
     }
     
+    //Position other pages
     page.hidden = NO;
     
     float scale = [self getPepperScaleForPageIndex:i];
@@ -3534,8 +3542,9 @@ static BOOL iOS5AndAbove = NO;
   //So we keep the frame size the same, vary only origin.x & scale the layer with frameZoomScaleX/Y
   float newMidYFullDy = CGRectGetMidY(zoomedFrame) - CGRectGetMidY(originalFrame);
   frameY = originalFrame.origin.y + (newMidYFullDy * frameScale);
-  self.theLeftView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
-  self.theRightView.frame = CGRectMake(zoomedFrame.origin.x, frameY, self.frameWidth, self.frameHeight);
+  zoomedFrame.origin.x = roundf(zoomedFrame.origin.x);
+  self.theLeftView.frame = CGRectMake(zoomedFrame.origin.x+gapFiller, frameY, self.frameWidth, self.frameHeight);
+  self.theRightView.frame = CGRectMake(zoomedFrame.origin.x-gapFiller, frameY, self.frameWidth, self.frameHeight);
   float frameZoomScaleX = zoomedFrame.size.width / originalFrame.size.width;
   float frameZoomScaleY = zoomedFrame.size.height / originalFrame.size.height;
   
