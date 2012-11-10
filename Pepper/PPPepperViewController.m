@@ -3332,12 +3332,16 @@ static BOOL iOS5AndAbove = NO;
 
   if (!animated)
     return;
+  
+  //This is abit of a hack
+  gapFiller = 0;
     
   //Remove layer later (not the best implementation, but looks almost perfect even in slo-mo)
   float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
   float removeCoverDuration = 90.0/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;
   
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    gapFiller = 1;
     [self hideBookCoverFromFirstPage];
   });
   
