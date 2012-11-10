@@ -15,13 +15,11 @@
 
 @interface PPViewController () <PPScrollListViewControllerDataSource, PPScrollListViewControllerDelegate>
 @property (nonatomic, strong) IBOutlet UIView * menuView;
-@property (nonatomic, strong) IBOutlet UIView * speedView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * contentSegmented;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * fullscreenEffectSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
 @property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
-@property (nonatomic, strong) IBOutlet UILabel * lblSpeed;
 @property (nonatomic, strong) IBOutlet UIButton * btnClose;
 
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
@@ -31,13 +29,11 @@
 
 @implementation PPViewController
 @synthesize menuView;
-@synthesize speedView;
 @synthesize speedSegmented;
 @synthesize contentSegmented;
 @synthesize fullscreenEffectSegmented;
 @synthesize switchRandomPage;
 @synthesize switchScaleOnDeviceRotation;
-@synthesize lblSpeed;
 @synthesize btnClose;
 
 @synthesize pepperViewController;
@@ -84,7 +80,6 @@
   
   //Bring our top level menu to highest z-index
   [self.view bringSubviewToFront:self.menuView];
-  [self.view bringSubviewToFront:self.speedView];
   
   //Hide close button initially
   [self showHideCloseButton:NO];
@@ -253,8 +248,6 @@
 {
   //Show our menu together with the books
   self.menuView.alpha = alpha;
-  self.speedView.alpha = 1.0 - alpha;
-  self.lblSpeed.text = [NSString stringWithFormat:@"%.1fx", self.pepperViewController.animationSlowmoFactor];
   self.menuView.userInteractionEnabled = (alpha != 0);
 }
 
