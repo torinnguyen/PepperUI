@@ -262,7 +262,7 @@ static BOOL iOS5AndAbove = NO;
 #pragma mark - View life cycle
 
 + (NSString*)version {
-  return @"1.4.6";
+  return @"1.4.7";
 }
 
 - (id)dataSource {
