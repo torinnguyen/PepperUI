@@ -194,7 +194,7 @@
 - (PPPageViewContentWrapper*)getPepperPageAtIndex:(int)pageIndex;
 - (void)animateControlIndexTo:(float)index duration:(float)duration;
 
-// Page list
+// Page list (scrolling effect)
 - (int)getCurrentPageIndex;
 - (BOOL)hasPageInPageScrollView:(int)pageIndex;
 - (void)scrollToPage:(int)pageIndex duration:(float)duration;

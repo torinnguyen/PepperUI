@@ -15,12 +15,11 @@
 
 @interface PPViewController () <PPScrollListViewControllerDataSource, PPScrollListViewControllerDelegate>
 @property (nonatomic, strong) IBOutlet UIView * menuView;
+@property (nonatomic, strong) IBOutlet UIView * bottomMenuView;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * speedSegmented;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * contentSegmented;
 @property (nonatomic, strong) IBOutlet UISegmentedControl * fullscreenEffectSegmented;
 @property (nonatomic, strong) IBOutlet UISwitch * switchRandomPage;
-@property (nonatomic, strong) IBOutlet UISwitch * switchScaleOnDeviceRotation;
-@property (nonatomic, strong) IBOutlet UIButton * btnClose;
 
 @property (nonatomic, strong) PPPepperViewController * pepperViewController;
 @property (nonatomic, strong) NSMutableArray *bookDataArray;
@@ -29,12 +28,11 @@
 
 @implementation PPViewController
 @synthesize menuView;
+@synthesize bottomMenuView;
 @synthesize speedSegmented;
 @synthesize contentSegmented;
 @synthesize fullscreenEffectSegmented;
 @synthesize switchRandomPage;
-@synthesize switchScaleOnDeviceRotation;
-@synthesize btnClose;
 
 @synthesize pepperViewController;
 @synthesize bookDataArray;
@@ -76,10 +74,10 @@
   [self onSpeedChange:self.speedSegmented];
   [self onFullscreenEffectChange:self.fullscreenEffectSegmented];
   [self onSwitchRandomPage:self.switchRandomPage];
-  [self onSwitchScaleOnDeviceRotation:self.switchScaleOnDeviceRotation];
   
   //Bring our top level menu to highest z-index
   [self.view bringSubviewToFront:self.menuView];
+  [self.view bringSubviewToFront:self.bottomMenuView];
   
   //Hide close button initially
   [self showHideCloseButton:NO];
@@ -218,11 +216,6 @@
                     otherButtonTitles:nil] show];
 }
 
-- (IBAction)onSwitchScaleOnDeviceRotation:(id)sender
-{
-  self.pepperViewController.scaleOnDeviceRotation = self.switchScaleOnDeviceRotation.on;
-}
-
 - (IBAction)onBtnClose:(id)sender
 {
   if ([self.pepperViewController isBusy])
@@ -242,12 +235,32 @@
   }
 }
 
+- (IBAction)onBtnRandomPage:(id)sender
+{
+  if ([self.pepperViewController isBusy])
+    return;
+  
+  if (self.pepperViewController.isBookView)
+    return;
+
+  int currentBookIndex = [self.pepperViewController getCurrentBookIndex];
+  int totalPages = [[[self.bookDataArray objectAtIndex:currentBookIndex] pages] count];
+  int currentPageIndex = [self.pepperViewController getCurrentPageIndex];
+  int randomPage = arc4random() % totalPages - 4;
+  
+  int diffPage = fabs(randomPage - currentPageIndex);
+  CGFloat duration = MAX(0.4, MIN(diffPage * 0.2, 1.5));
+  
+  [self.pepperViewController scrollToPage:randomPage duration:duration];
+}
+
 #pragma mark - Helpers
 
 - (void)showHideMenuBarWithAlpha:(float)alpha
 {
   //Show our menu together with the books
   self.menuView.alpha = alpha;
+  self.bottomMenuView.alpha = 1.0 - alpha;
   self.menuView.userInteractionEnabled = (alpha != 0);
 }
 
@@ -261,11 +274,11 @@
 - (void)showHideCloseButton:(BOOL)isShow
 {
   [UIView animateWithDuration:0.3 animations:^{
-    self.btnClose.alpha = isShow ? 1 : 0;
+    self.bottomMenuView.alpha = isShow ? 1 : 0;
   }];
   
-  self.btnClose.userInteractionEnabled = isShow;
-  [self.view bringSubviewToFront:self.btnClose];
+  self.bottomMenuView.userInteractionEnabled = isShow;
+  [self.view bringSubviewToFront:self.bottomMenuView];
 }
 
 
