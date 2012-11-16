@@ -64,7 +64,6 @@
 								<string key="NSFrame">{{8, 7}, {72, 32}}</string>
 								<reference key="NSSuperview" ref="612514920"/>
 								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView"/>
 								<string key="NSReuseIdentifierKey">_NS:9</string>
 								<bool key="IBUIOpaque">NO</bool>
 								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
@@ -113,6 +112,50 @@
 							<object class="IBUIView" id="929065201">
 								<reference key="NSNextResponder" ref="678338434"/>
 								<int key="NSvFlags">274</int>
+								<array class="NSMutableArray" key="NSSubviews">
+									<object class="IBUISegmentedControl" id="468506989">
+										<reference key="NSNextResponder" ref="929065201"/>
+										<int key="NSvFlags">300</int>
+										<string key="NSFrame">{{5, 35}, {178, 30}}</string>
+										<reference key="NSSuperview" ref="929065201"/>
+										<reference key="NSWindow"/>
+										<reference key="NSNextKeyView" ref="36991633"/>
+										<string key="NSReuseIdentifierKey">_NS:9</string>
+										<bool key="IBUIOpaque">NO</bool>
+										<bool key="IBUIClipsSubviews">YES</bool>
+										<string key="targetRuntimeIdentifier">IBIPadFramework</string>
+										<int key="IBUIContentHorizontalAlignment">0</int>
+										<int key="IBUIContentVerticalAlignment">0</int>
+										<int key="IBSegmentControlStyle">2</int>
+										<int key="IBNumberOfSegments">3</int>
+										<int key="IBSelectedSegmentIndex">0</int>
+										<array key="IBSegmentTitles">
+											<string>Default</string>
+											<string>Slow</string>
+											<string>Slow-mo</string>
+										</array>
+										<array class="NSMutableArray" key="IBSegmentWidths">
+											<real value="0.0"/>
+											<real value="0.0"/>
+											<real value="0.0"/>
+										</array>
+										<array class="NSMutableArray" key="IBSegmentEnabledStates">
+											<boolean value="YES"/>
+											<boolean value="YES"/>
+											<boolean value="YES"/>
+										</array>
+										<array class="NSMutableArray" key="IBSegmentContentOffsets">
+											<string>{0, 0}</string>
+											<string>{0, 0}</string>
+											<string>{0, 0}</string>
+										</array>
+										<array class="NSMutableArray" key="IBSegmentImages">
+											<object class="NSNull" id="4"/>
+											<reference ref="4"/>
+											<reference ref="4"/>
+										</array>
+									</object>
+								</array>
 								<string key="NSFrameSize">{320, 120}</string>
 								<reference key="NSSuperview" ref="678338434"/>
 								<reference key="NSWindow"/>
@@ -124,55 +167,13 @@
 								<bool key="IBUIUserInteractionEnabled">NO</bool>
 								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
 							</object>
-							<object class="IBUISegmentedControl" id="468506989">
-								<reference key="NSNextResponder" ref="678338434"/>
-								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{5, 35}, {140, 30}}</string>
-								<reference key="NSSuperview" ref="678338434"/>
-								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView" ref="36991633"/>
-								<string key="NSReuseIdentifierKey">_NS:9</string>
-								<bool key="IBUIOpaque">NO</bool>
-								<bool key="IBUIClipsSubviews">YES</bool>
-								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
-								<int key="IBUIContentHorizontalAlignment">0</int>
-								<int key="IBUIContentVerticalAlignment">0</int>
-								<int key="IBSegmentControlStyle">2</int>
-								<int key="IBNumberOfSegments">3</int>
-								<int key="IBSelectedSegmentIndex">0</int>
-								<array key="IBSegmentTitles">
-									<string>Default</string>
-									<string>Slow</string>
-									<string>Slow-mo</string>
-								</array>
-								<array class="NSMutableArray" key="IBSegmentWidths">
-									<real value="0.0"/>
-									<real value="0.0"/>
-									<real value="0.0"/>
-								</array>
-								<array class="NSMutableArray" key="IBSegmentEnabledStates">
-									<boolean value="YES"/>
-									<boolean value="YES"/>
-									<boolean value="YES"/>
-								</array>
-								<array class="NSMutableArray" key="IBSegmentContentOffsets">
-									<string>{0, 0}</string>
-									<string>{0, 0}</string>
-									<string>{0, 0}</string>
-								</array>
-								<array class="NSMutableArray" key="IBSegmentImages">
-									<object class="NSNull" id="4"/>
-									<reference ref="4"/>
-									<reference ref="4"/>
-								</array>
-							</object>
 							<object class="IBUILabel" id="105014013">
 								<reference key="NSNextResponder" ref="678338434"/>
 								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{161, -1}, {65, 35}}</string>
+								<string key="NSFrame">{{234, -1}, {65, 35}}</string>
 								<reference key="NSSuperview" ref="678338434"/>
 								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView" ref="696701918"/>
+								<reference key="NSNextKeyView"/>
 								<string key="NSReuseIdentifierKey">_NS:9</string>
 								<bool key="IBUIOpaque">NO</bool>
 								<bool key="IBUIClipsSubviews">YES</bool>
@@ -207,10 +208,10 @@
 							<object class="IBUISwitch" id="36991633">
 								<reference key="NSNextResponder" ref="678338434"/>
 								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{139, 36}, {94, 27}}</string>
+								<string key="NSFrame">{{212, 36}, {94, 27}}</string>
 								<reference key="NSSuperview" ref="678338434"/>
 								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView" ref="783098989"/>
+								<reference key="NSNextKeyView"/>
 								<string key="NSReuseIdentifierKey">_NS:9</string>
 								<bool key="IBUIOpaque">NO</bool>
 								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
@@ -224,7 +225,7 @@
 							<object class="IBUILabel" id="249837108">
 								<reference key="NSNextResponder" ref="678338434"/>
 								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{5, 5}, {140, 22}}</string>
+								<string key="NSFrame">{{24, 5}, {140, 22}}</string>
 								<reference key="NSSuperview" ref="678338434"/>
 								<reference key="NSWindow"/>
 								<reference key="NSNextKeyView" ref="105014013"/>
@@ -249,53 +250,6 @@
 								<reference key="IBUIFontDescription" ref="922569048"/>
 								<reference key="IBUIFont" ref="654451817"/>
 								<double key="preferredMaxLayoutWidth">140</double>
-							</object>
-							<object class="IBUISwitch" id="783098989">
-								<reference key="NSNextResponder" ref="678338434"/>
-								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{223, 36}, {94, 27}}</string>
-								<reference key="NSSuperview" ref="678338434"/>
-								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView" ref="44388892"/>
-								<string key="NSReuseIdentifierKey">_NS:9</string>
-								<bool key="IBUIOpaque">NO</bool>
-								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
-								<int key="IBUIContentHorizontalAlignment">0</int>
-								<int key="IBUIContentVerticalAlignment">0</int>
-								<bool key="IBUIOn">YES</bool>
-								<object class="NSColor" key="IBUIOnTintColor">
-									<int key="NSColorSpace">1</int>
-									<bytes key="NSRGB">MSAwLjQ5NTc0ODAyMTYgMAA</bytes>
-								</object>
-							</object>
-							<object class="IBUILabel" id="696701918">
-								<reference key="NSNextResponder" ref="678338434"/>
-								<int key="NSvFlags">300</int>
-								<string key="NSFrame">{{232, -1}, {89, 35}}</string>
-								<reference key="NSSuperview" ref="678338434"/>
-								<reference key="NSWindow"/>
-								<reference key="NSNextKeyView" ref="468506989"/>
-								<string key="NSReuseIdentifierKey">_NS:9</string>
-								<bool key="IBUIOpaque">NO</bool>
-								<bool key="IBUIClipsSubviews">YES</bool>
-								<int key="IBUIContentMode">7</int>
-								<bool key="IBUIUserInteractionEnabled">NO</bool>
-								<string key="targetRuntimeIdentifier">IBIPadFramework</string>
-								<string key="IBUIText">Scale on rotation</string>
-								<object class="NSColor" key="IBUITextColor">
-									<int key="NSColorSpace">1</int>
-									<bytes key="NSRGB">MSAxIDEAA</bytes>
-									<reference key="NSCustomColorSpace" ref="406230348"/>
-								</object>
-								<nil key="IBUIHighlightedColor"/>
-								<int key="IBUIBaselineAdjustment">0</int>
-								<float key="IBUIMinimumFontSize">10</float>
-								<int key="IBUINumberOfLines">0</int>
-								<int key="IBUITextAlignment">1</int>
-								<int key="IBUILineBreakMode">0</int>
-								<reference key="IBUIFontDescription" ref="922569048"/>
-								<reference key="IBUIFont" ref="654451817"/>
-								<double key="preferredMaxLayoutWidth">89</double>
 							</object>
 							<object class="IBUILabel" id="44388892">
 								<reference key="NSNextResponder" ref="678338434"/>
@@ -4848,14 +4802,6 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">speedSegmented</string>
-						<reference key="source" ref="841351856"/>
-						<reference key="destination" ref="468506989"/>
-					</object>
-					<int key="connectionID">18</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBCocoaTouchOutletConnection" key="connection">
 						<string key="label">menuView</string>
 						<reference key="source" ref="841351856"/>
 						<reference key="destination" ref="678338434"/>
@@ -4869,14 +4815,6 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 						<reference key="destination" ref="36991633"/>
 					</object>
 					<int key="connectionID">19</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">switchScaleOnDeviceRotation</string>
-						<reference key="source" ref="841351856"/>
-						<reference key="destination" ref="783098989"/>
-					</object>
-					<int key="connectionID">28</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
@@ -4903,6 +4841,14 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 					<int key="connectionID">60</int>
 				</object>
 				<object class="IBConnectionRecord">
+					<object class="IBCocoaTouchOutletConnection" key="connection">
+						<string key="label">speedSegmented</string>
+						<reference key="source" ref="841351856"/>
+						<reference key="destination" ref="468506989"/>
+					</object>
+					<int key="connectionID">18</int>
+				</object>
+				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchEventConnection" key="connection">
 						<string key="label">onSwitchRandomPage:</string>
 						<reference key="source" ref="36991633"/>
@@ -4919,15 +4865,6 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 						<int key="IBEventType">13</int>
 					</object>
 					<int key="connectionID">16</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBCocoaTouchEventConnection" key="connection">
-						<string key="label">onSwitchScaleOnDeviceRotation:</string>
-						<reference key="source" ref="783098989"/>
-						<reference key="destination" ref="841351856"/>
-						<int key="IBEventType">13</int>
-					</object>
-					<int key="connectionID">29</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchEventConnection" key="connection">
@@ -4991,11 +4928,8 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 						<array class="NSMutableArray" key="children">
 							<reference ref="249837108"/>
 							<reference ref="929065201"/>
-							<reference ref="468506989"/>
-							<reference ref="696701918"/>
 							<reference ref="105014013"/>
 							<reference ref="36991633"/>
-							<reference ref="783098989"/>
 							<reference ref="44388892"/>
 							<reference ref="173498882"/>
 							<reference ref="436351418"/>
@@ -5011,17 +4945,9 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 					<object class="IBObjectRecord">
 						<int key="objectID">11</int>
 						<reference key="object" ref="929065201"/>
-						<array class="NSMutableArray" key="children"/>
-						<reference key="parent" ref="678338434"/>
-					</object>
-					<object class="IBObjectRecord">
-						<int key="objectID">15</int>
-						<reference key="object" ref="468506989"/>
-						<reference key="parent" ref="678338434"/>
-					</object>
-					<object class="IBObjectRecord">
-						<int key="objectID">24</int>
-						<reference key="object" ref="696701918"/>
+						<array class="NSMutableArray" key="children">
+							<reference ref="468506989"/>
+						</array>
 						<reference key="parent" ref="678338434"/>
 					</object>
 					<object class="IBObjectRecord">
@@ -5032,11 +4958,6 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 					<object class="IBObjectRecord">
 						<int key="objectID">13</int>
 						<reference key="object" ref="36991633"/>
-						<reference key="parent" ref="678338434"/>
-					</object>
-					<object class="IBObjectRecord">
-						<int key="objectID">23</int>
-						<reference key="object" ref="783098989"/>
 						<reference key="parent" ref="678338434"/>
 					</object>
 					<object class="IBObjectRecord">
@@ -5079,6 +5000,11 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 						<reference key="object" ref="714449027"/>
 						<reference key="parent" ref="612514920"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">15</int>
+						<reference key="object" ref="468506989"/>
+						<reference key="parent" ref="929065201"/>
+					</object>
 				</array>
 			</object>
 			<dictionary class="NSMutableDictionary" key="flattenedProperties">
@@ -5092,8 +5018,6 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 				<string key="15.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 				<integer value="2" key="15.IUISegmentedControlInspectorSelectedSegmentMetadataKey"/>
 				<string key="2.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
-				<string key="23.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
-				<string key="24.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 				<string key="4.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 				<string key="44.IBPluginDependency">com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 				<integer value="1" key="44.IUISegmentedControlInspectorSelectedSegmentMetadataKey"/>
@@ -5117,6 +5041,40 @@ AAgAAAAIAAIACAACAAAAAgAAAAEAAQABAAE</bytes>
 				<object class="IBPartialClassDescription">
 					<string key="className">PPViewController</string>
 					<string key="superclassName">UIViewController</string>
+					<dictionary class="NSMutableDictionary" key="actions">
+						<string key="onBtnClose:">id</string>
+						<string key="onBtnRandomPage:">id</string>
+						<string key="onContentChange:">id</string>
+						<string key="onFullscreenEffectChange:">id</string>
+						<string key="onSpeedChange:">id</string>
+						<string key="onSwitchRandomPage:">id</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="onBtnClose:">
+							<string key="name">onBtnClose:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="onBtnRandomPage:">
+							<string key="name">onBtnRandomPage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="onContentChange:">
+							<string key="name">onContentChange:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="onFullscreenEffectChange:">
+							<string key="name">onFullscreenEffectChange:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="onSpeedChange:">
+							<string key="name">onSpeedChange:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="onSwitchRandomPage:">
+							<string key="name">onSwitchRandomPage:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
 					<dictionary class="NSMutableDictionary" key="outlets">
 						<string key="bottomMenuView">UIView</string>
 						<string key="contentSegmented">UISegmentedControl</string>
