@@ -1566,7 +1566,7 @@ static BOOL iOS5AndAbove = NO;
   self.currentBookIndex = bookIndex;
   
   if (animated) {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
       self.bookScrollView.userInteractionEnabled = YES;
     });    
   }
@@ -1863,7 +1863,7 @@ static BOOL iOS5AndAbove = NO;
   {
     UIView *bookCover = [self getBookViewAtIndex:self.currentBookIndex];
     bookCover.hidden = YES;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, self.animationSlowmoFactor*OPEN_BOOK_DURATION * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, self.animationSlowmoFactor*OPEN_BOOK_DURATION * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
       bookCover.hidden = NO;
     });
   }
@@ -3086,7 +3086,7 @@ static BOOL iOS5AndAbove = NO;
   [self animateControlAngleTo:0 duration:self.animationSlowmoFactor*diff];
   
   //Worst case senario
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     //[self destroyPepperView:NO];
     [self unloadPepperView:NO];
   });
@@ -3132,7 +3132,7 @@ static BOOL iOS5AndAbove = NO;
   [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*duration];
 
   //Worst case senario
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     //[self destroyPageScrollView:NO];
     [self unloadPageScrollView:NO];
   });
@@ -3230,7 +3230,7 @@ static BOOL iOS5AndAbove = NO;
   
   //Not perfect but good enough for fast animation
   float animationDuration = self.animationSlowmoFactor*diff;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     self.isBookView = YES;
     
     //Notify the delegate
@@ -3239,7 +3239,7 @@ static BOOL iOS5AndAbove = NO;
   });
 
   //Memory management
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.3) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.3) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     [self removeBookCoverFromFirstPage];
     [self destroyPepperView:NO];
     self.view.userInteractionEnabled = YES;
@@ -3340,12 +3340,12 @@ static BOOL iOS5AndAbove = NO;
   float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
   float removeCoverDuration = 90.0/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;
   
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     gapFiller = 2;
     [self hideBookCoverFromFirstPage];
   });
   
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.2) * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.2) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     [self removeBookCoverFromFirstPage];
   });
 }
