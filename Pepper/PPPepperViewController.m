@@ -1122,7 +1122,7 @@ static BOOL iOS5AndAbove = NO;
   float midX = [self getMidXForOrientation:interfaceOrientation];
   float indexDiff = fabsf(self.controlIndex - pageIndex) - 2.5;                   //2.5 pages away from current center
   if (indexDiff < 0)
-    return midX;
+    return round(midX);
 
   float distance = indexDiff * self.pepperPageSpacing * deviceFactor;
   float maxDistance = NUM_VISIBLE_PAGE_ONE_SIDE * self.pepperPageSpacing * deviceFactor;
@@ -1138,13 +1138,15 @@ static BOOL iOS5AndAbove = NO;
   float x = 0;  
   float deltaFromMidX = diffFromMidX * gapScale;
   
-  if (pageIndex < self.controlIndex)    x = midX - deltaFromMidX;
-  else                                  x = midX + deltaFromMidX;
+  if (pageIndex < self.controlIndex)    x = round(midX) - deltaFromMidX;
+  else                                  x = round(midX) + deltaFromMidX;
+  
+  x = round(x);
   return x;
 }
 
 //
-// Return the frame for this pepper view
+// Return the frame for a pepper view of a given index 
 //
 - (CGRect)getPepperFrameForPageIndex:(int)index forOrientation:(UIInterfaceOrientation)interfaceOrientation {
   float y = [self getFrameYForOrientation:interfaceOrientation];
@@ -1648,9 +1650,7 @@ static BOOL iOS5AndAbove = NO;
 // Return the frame for this book in scrollview
 //
 - (CGRect)getFrameForBookIndex:(int)index {
-  int frameY = [self getFrameY];
-  int x = CGRectGetWidth(self.bookScrollView.frame)/2 - self.frameWidth/2 + index * (self.frameWidth + self.bookSpacing);
-  return CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
+  return [self getFrameForBookIndex:index forOrientation:[UIApplication sharedApplication].statusBarOrientation];
 }
 
 //
@@ -2600,8 +2600,6 @@ static BOOL iOS5AndAbove = NO;
   self.controlIndex = ((int)self.currentPageIndex % 2 == 0) ? self.currentPageIndex+0.5 : self.currentPageIndex-0.5;
   self.zoomOnLeft = ((int)self.currentPageIndex % 2 == 0) ? YES : NO;
   
-  NSLog(@"self.currentPageIndex: %.1f", self.currentPageIndex);
-  
   [self reusePageScrollview];
 
   [self setupPageFlipViewForOrientation:[UIApplication sharedApplication].statusBarOrientation];
@@ -3242,23 +3240,20 @@ static BOOL iOS5AndAbove = NO;
   
   //This is where magic happens (animation)
   [self flattenAllPepperViews:diff];
-  
+
+  //Memory management
   //Not perfect but good enough for fast animation
-  float animationDuration = self.animationSlowmoFactor*diff;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.1) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+  float animationDuration = self.animationSlowmoFactor * diff;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.05) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    [self removeBookCoverFromFirstPage];
+    [self destroyPepperView:NO];
     self.isBookView = YES;
+    self.view.userInteractionEnabled = YES;
+    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
       [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
-  });
-
-  //Memory management
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.3) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-    [self removeBookCoverFromFirstPage];
-    [self destroyPepperView:NO];
-    self.view.userInteractionEnabled = YES;
-    //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
   });
 }
 
@@ -3267,7 +3262,7 @@ static BOOL iOS5AndAbove = NO;
   float flatAngle = 0;
   float scale = MAX_BOOK_SCALE;
   
-  //Find the first visible page view (already replaced by book cover)
+  //Find the first visible page view (already replaced/injected with book cover)
   int firstPageIndex = [self getFirstVisiblePepperPageIndex];
 
   int pageCount = [self getNumberOfPagesForBookIndex:self.currentBookIndex];
@@ -3280,6 +3275,7 @@ static BOOL iOS5AndAbove = NO;
     int frameY = [self getFrameY];
     int midX = [self getMidXForOrientation:[UIApplication sharedApplication].statusBarOrientation];
     float x = midX - self.frameWidth/2 * MAX_BOOK_SCALE;
+    x = roundf(x);
     CGRect pageFrame = CGRectMake(x, frameY, self.frameWidth, self.frameHeight);
     
     //Alpha
@@ -3377,16 +3373,14 @@ static BOOL iOS5AndAbove = NO;
   if (self.theBookCover == nil)
     return;
   
-  [self.theBookCover removeFromSuperview];
-
   //Add it back to book scrollview
   [self.bookScrollView addSubview:self.theBookCover];
   self.theBookCover.hidden = NO;
-  self.theBookCover.transform = CGAffineTransformIdentity;
+  self.theBookCover.alpha = 1;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
   
-  //De-reference
+  //De-reference (strong)
   self.theBookCover = nil;
   
   //Busy state
@@ -3834,16 +3828,16 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)theScrollView willDecelerate:(BOOL)decelerate
 {
+  //Book mode
   if ([theScrollView isEqual:self.bookScrollView]) {
     if (!decelerate)
       [self snapBookScrollView];
     return;
   }
   
+  //Fullscreen mode
   if ([theScrollView isEqual:self.pageScrollView]) {
-    
     self.pageScrollView.userInteractionEnabled = !decelerate;
-    
     if (!decelerate)
       [self didSnapPageScrollview];
   }
@@ -3852,19 +3846,17 @@ static BOOL iOS5AndAbove = NO;
 //For book scrollview only
 - (void)scrollViewWillBeginDecelerating:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.bookScrollView]) {
-    self.view.userInteractionEnabled = NO;
+  if ([theScrollView isEqual:self.bookScrollView])
     [self snapBookScrollView];
-  }
 }
 
 //For book scrollview only
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.bookScrollView]) {
-    self.view.userInteractionEnabled = YES;
+  self.view.userInteractionEnabled = YES;
+  
+  if ([theScrollView isEqual:self.bookScrollView])
     [self reuseBookScrollView];
-  }
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToBookIndex:)])
@@ -3874,10 +3866,10 @@ static BOOL iOS5AndAbove = NO;
 //For page scrollview only
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.pageScrollView]) {
-    self.view.userInteractionEnabled = YES;
+  self.view.userInteractionEnabled = YES;
+  
+  if ([theScrollView isEqual:self.pageScrollView])
     [self didSnapPageScrollview];
-  }
 }
 
 //
