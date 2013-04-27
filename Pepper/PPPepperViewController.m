@@ -606,9 +606,17 @@ static BOOL iOS5AndAbove = NO;
 }
 
 - (BOOL)isBusy {
-  return self.controlAngleCADisplayLink != nil || self.controlIndexCADisplayLink != nil
-        || self.pageCurlBusy
-        || (self.pageFlipView != nil && [self.pageFlipView isBusy]);
+  if (self.controlAngleCADisplayLink != nil)
+    return YES;
+  if (self.controlIndexCADisplayLink != nil)
+    return YES;
+  if (self.pageCurlBusy)
+    return YES;
+  if (self.pageFlipView != nil && [self.pageFlipView isBusy])
+    return YES;
+  if (self.view.userInteractionEnabled == NO)
+    return YES;
+  return NO;
 }
 
 - (NSString *)rawPlatformString {
@@ -3168,12 +3176,19 @@ static BOOL iOS5AndAbove = NO;
   float diff = fabs(self.controlAngle - (-THRESHOLD_HALF_ANGLE)) / 90.0;
   float duration = diff * 2;
   
+  self.view.userInteractionEnabled = NO;
   [UIView animateWithDuration:self.animationSlowmoFactor*duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
+    
   } completion:^(BOOL finished) {
     _controlFlipAngle = -THRESHOLD_HALF_ANGLE;
     self.controlIndex = self.controlIndex;
     self.currentPageContentOffsetY = 0;
+    
+    //Busy state
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+      self.view.userInteractionEnabled = YES;
+    });
     
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didOpenBookIndex:atPageIndex:)])
@@ -3337,7 +3352,7 @@ static BOOL iOS5AndAbove = NO;
   gapFiller = 0;
     
   //Remove layer later (not the best implementation, but looks almost perfect even in slo-mo)
-  float animationDuration = self.animationSlowmoFactor*OPEN_BOOK_DURATION;
+  float animationDuration = self.animationSlowmoFactor * OPEN_BOOK_DURATION;
   float removeCoverDuration = 90.0/(180.0-THRESHOLD_HALF_ANGLE) * animationDuration;
   
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, removeCoverDuration * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
@@ -3373,6 +3388,9 @@ static BOOL iOS5AndAbove = NO;
   
   //De-reference
   self.theBookCover = nil;
+  
+  //Busy state
+  self.view.userInteractionEnabled = YES;
 }
 
 - (void)updateLeftRightPointers
@@ -3834,15 +3852,19 @@ static BOOL iOS5AndAbove = NO;
 //For book scrollview only
 - (void)scrollViewWillBeginDecelerating:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.bookScrollView])
+  if ([theScrollView isEqual:self.bookScrollView]) {
+    self.view.userInteractionEnabled = NO;
     [self snapBookScrollView];
+  }
 }
 
 //For book scrollview only
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.bookScrollView])
+  if ([theScrollView isEqual:self.bookScrollView]) {
+    self.view.userInteractionEnabled = YES;
     [self reuseBookScrollView];
+  }
   
   //Notify the delegate
   if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didSnapToBookIndex:)])
@@ -3852,8 +3874,10 @@ static BOOL iOS5AndAbove = NO;
 //For page scrollview only
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)theScrollView
 {
-  if ([theScrollView isEqual:self.pageScrollView]) 
+  if ([theScrollView isEqual:self.pageScrollView]) {
+    self.view.userInteractionEnabled = YES;
     [self didSnapPageScrollview];
+  }
 }
 
 //
