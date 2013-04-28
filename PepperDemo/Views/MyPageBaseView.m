@@ -33,6 +33,7 @@
     self.imageView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
     self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.clipsToBounds = YES;
+    self.imageView.opaque = YES;
     self.imageView.layer.masksToBounds = YES;
     self.imageView.layer.shouldRasterize = YES;
     self.imageView.layer.rasterizationScale = [UIScreen mainScreen].scale;

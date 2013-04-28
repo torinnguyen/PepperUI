@@ -449,7 +449,7 @@ static BOOL iOS5AndAbove = NO;
   for (PPPageViewContentWrapper *subview in self.visibleBookViewArray) {
     int index = subview.tag;
     CGRect frame = [self getFrameForBookIndex:index forOrientation:toInterfaceOrientation];
-    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
       subview.frame = frame;
     } completion:^(BOOL finished) {
       
@@ -470,12 +470,12 @@ static BOOL iOS5AndAbove = NO;
     theAnimation.delegate = nil;
     theAnimation.duration = duration;
     theAnimation.repeatCount = 0;
-    theAnimation.removedOnCompletion = YES;
-    theAnimation.fillMode = kCAFillModeForwards;
+    theAnimation.removedOnCompletion = NO;          //frozen after animation
+    theAnimation.fillMode = kCAFillModeForwards;    //frozen after animation
     theAnimation.autoreverses = NO;
     theAnimation.fromValue = [NSValue valueWithCATransform3D:subview.layer.transform];
     theAnimation.toValue = [NSValue valueWithCATransform3D:transform];
-    [subview.layer addAnimation:theAnimation forKey:[NSString stringWithFormat:@"animateBookLayerTransform%d", index]];
+    [subview.layer addAnimation:theAnimation forKey:[NSString stringWithFormat:@"animateBookLayerTransform_%d_%d", index, rand()]];
   }
   [self scrollToBook:self.currentBookIndex duration:duration];
   
@@ -486,7 +486,7 @@ static BOOL iOS5AndAbove = NO;
   {
     [self setupReuseablePoolPageViews];
     [self reusePageScrollview];
-    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
       [self setupPageFlipViewForOrientation:toInterfaceOrientation];
     } completion:^(BOOL finished) {
       
@@ -502,7 +502,7 @@ static BOOL iOS5AndAbove = NO;
       [subview layoutWithFrame:frame duration:duration];
       [subview setEnableScrollingZooming:zoomingOneSide];
       
-      [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+      [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         subview.frame = frame;
       } completion:^(BOOL finished) {
         
@@ -517,7 +517,7 @@ static BOOL iOS5AndAbove = NO;
     int index = subview.tag;
     CGRect frame = [self getPepperFrameForPageIndex:index forOrientation:toInterfaceOrientation];
     
-    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
       subview.frame = frame;
     } completion:^(BOOL finished) {
       
@@ -867,7 +867,7 @@ static BOOL iOS5AndAbove = NO;
     }
     
     //This has some kind of glitch
-    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
       self.controlIndex = snapTo;      
     } completion:^(BOOL finished) {
       _controlAngle = -THRESHOLD_HALF_ANGLE;
@@ -1592,7 +1592,7 @@ static BOOL iOS5AndAbove = NO;
     return;
   }
   
-  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
     self.bookScrollView.contentOffset = CGPointMake(x, 0);
   } completion:^(BOOL finished) {
     
@@ -2232,7 +2232,7 @@ static BOOL iOS5AndAbove = NO;
     return;
   }
   
-  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+  [UIView animateWithDuration:duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
     self.pageScrollView.contentOffset = CGPointMake(pageFrame.origin.x, 0);
   } completion:^(BOOL finished) {
   
@@ -3117,7 +3117,7 @@ static BOOL iOS5AndAbove = NO;
   if (!self.enableOneSideZoom)    diff /= 1.3;
   else                      diff *= 1.3;
   
-  [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+  [UIView animateWithDuration:self.animationSlowmoFactor*diff delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
     self.controlAngle = 0;
   } completion:^(BOOL finished) {
     self.pageScrollView.hidden = NO;
@@ -3137,9 +3137,9 @@ static BOOL iOS5AndAbove = NO;
     
   [self animateControlAngleTo:-THRESHOLD_HALF_ANGLE duration:self.animationSlowmoFactor*duration];
 
+  //Memory management
   //Worst case senario
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (1.5 * self.animationSlowmoFactor) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-    //[self destroyPageScrollView:NO];
     [self unloadPageScrollView:NO];
   });
 }
@@ -3175,7 +3175,7 @@ static BOOL iOS5AndAbove = NO;
   float duration = diff * 2;
   
   self.view.userInteractionEnabled = NO;
-  [UIView animateWithDuration:self.animationSlowmoFactor*duration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+  [UIView animateWithDuration:self.animationSlowmoFactor*duration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
     self.controlAngle = -THRESHOLD_HALF_ANGLE;
     
   } completion:^(BOOL finished) {
@@ -3228,7 +3228,7 @@ static BOOL iOS5AndAbove = NO;
       subview.hidden = NO;
     }
   
-  if (!animated) {
+  if (animated == NO) {
     self.isBookView = YES;
     [self removeBookCoverFromFirstPage];
     [self destroyPepperView:NO];
@@ -3245,15 +3245,17 @@ static BOOL iOS5AndAbove = NO;
   //Not perfect but good enough for fast animation
   float animationDuration = self.animationSlowmoFactor * diff;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (animationDuration+0.05) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+
     [self removeBookCoverFromFirstPage];
     [self destroyPepperView:NO];
     self.isBookView = YES;
     self.view.userInteractionEnabled = YES;
     //[self unloadPepperView:NO];     //pepper view can't seem to recover from this
-    
+        
     //Notify the delegate
     if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didCloseBookIndex:)])
       [self.delegate ppPepperViewController:self didCloseBookIndex:self.currentBookIndex];
+    
   });
 }
 
@@ -3299,38 +3301,46 @@ static BOOL iOS5AndAbove = NO;
     }
     
     //Other page hide faster to avoid Z-conflict
-    [UIView animateWithDuration:self.animationSlowmoFactor*animationDuration delay:0 options:UIViewAnimationCurveEaseInOut animations:^{
+    [UIView animateWithDuration:self.animationSlowmoFactor*animationDuration delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
       page.frame = pageFrame;
       page.alpha = alpha;
     } completion:^(BOOL finished) {
       page.alpha = 1;
     }];
     
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"transform"];
-    animation.toValue = [NSValue valueWithCATransform3D:transform];
-    animation.duration = self.animationSlowmoFactor * animationDuration;
-    animation.fillMode = kCAFillModeForwards;
-    animation.removedOnCompletion = NO;
-    [animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut]];    
-    [layer addAnimation:animation forKey:[NSString stringWithFormat:@"closeBookAnimation%d",i]];
+    CABasicAnimation *theAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
+    theAnimation.toValue = [NSValue valueWithCATransform3D:transform];
+    theAnimation.duration = self.animationSlowmoFactor * animationDuration;
+    theAnimation.fillMode = kCAFillModeForwards;     //frozen after animation
+    theAnimation.removedOnCompletion = NO;           //frozen after animation
+    theAnimation.repeatCount = 0;
+    theAnimation.autoreverses = NO;
+    [theAnimation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut]];
+    [layer addAnimation:theAnimation forKey:[NSString stringWithFormat:@"closeBookAnimation_%d_%d", i, rand()]];
   }
 }
 
-- (void)addBookCoverToFirstPageThenRemove:(BOOL)animated
+- (void)addBookCoverToFirstPageThenRemove:(BOOL)toRemove
 {
-  if (self.theBookCover != nil)
+  if (self.theBookCover != nil) {
+    NSLog(@"Warning: bookCover already added");
     return;
+  }
   
   self.theBookCover = [self getBookViewAtIndex:self.currentBookIndex];
-  if (self.theBookCover == nil)
+  if (self.theBookCover == nil) {
+    NSLog(@"Warning: cannot get book cover");
     return;
+  }
   
   //Find the first visible page view
   //This is in case user open at non-zero page
   int firstPageIndex = [self getFirstVisiblePepperPageIndex];
   PPPageViewContentWrapper *firstPageView = [self getPepperPageAtIndex:firstPageIndex];
-  if (firstPageView == nil)
+  if (firstPageView == nil) {
+    NSLog(@"Warning: cannot get first visible page");
     return;
+  }
 
   firstPageView.hidden = NO;
   [firstPageView addSubview:self.theBookCover];
@@ -3341,7 +3351,7 @@ static BOOL iOS5AndAbove = NO;
   self.theBookCover.hidden = NO;
   self.theBookCover.alpha = 1;
 
-  if (!animated)
+  if (!toRemove)
     return;
   
   //This is abit of a hack
@@ -3370,15 +3380,28 @@ static BOOL iOS5AndAbove = NO;
 
 - (void)removeBookCoverFromFirstPage
 { 
-  if (self.theBookCover == nil)
+  if (self.theBookCover == nil) {
+    NSLog(@"Warning: no theBookCover");
     return;
+  }
+  if (self.bookScrollView == nil) {
+    NSLog(@"Warning: no bookScrollView");
+    return;
+  }
   
   //Add it back to book scrollview
   [self.bookScrollView addSubview:self.theBookCover];
   self.theBookCover.hidden = NO;
   self.theBookCover.alpha = 1;
   self.theBookCover.frame = [self getFrameForBookIndex:self.theBookCover.tag];
+  [self.theBookCover.layer removeAllAnimations];
   self.theBookCover.layer.transform = CATransform3DMakeScale(MAX_BOOK_SCALE, MAX_BOOK_SCALE, MAX_BOOK_SCALE);
+  
+  //Force redraw for iOS6.1
+  [self.theBookCover setNeedsDisplay];
+  [self.theBookCover.layer setNeedsDisplay];
+  //self.theBookCover.backgroundColor = [UIColor colorWithWhite:1 alpha:0.02];
+  //self.theBookCover.backgroundColor = [UIColor clearColor];
   
   //De-reference (strong)
   self.theBookCover = nil;
@@ -3410,15 +3433,15 @@ static BOOL iOS5AndAbove = NO;
 {  
   if (self.controlAngle > -THRESHOLD_FULL_ANGLE) {
     [self showFullscreenUsingTimer];
+    return;
   }
   
-  else if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE) {
+  if (self.controlAngle > -THRESHOLD_CLOSE_ANGLE) {
     [self showHalfOpenUsingTimer];
+    return;
   }
   
-  else {
-    [self closeCurrentBook:YES];
-  }
+  [self closeCurrentBook:YES];
 }
 
 // This function controls everything about zooming
@@ -3876,34 +3899,27 @@ static BOOL iOS5AndAbove = NO;
 // Custom delegate from page scrollview
 //
 - (void)scrollViewDidZoom:(UIScrollView *)theScrollView {
-  if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]])
-  {   
-    if (theScrollView.zoomScale > 1.0) {
-      self.controlAngle = 1.0;
-      
-      if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)) {
-        theScrollView.zoomScale = 1;
-        theScrollView.contentOffset = CGPointZero;
-        return;
-      }
-      
-      //Notify the delegate
-      if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
-        [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
+
+  if ([theScrollView isKindOfClass:[PPPageViewDetailWrapper class]] == NO)
+    return;
+  
+  if (theScrollView.zoomScale > 1.0) {
+    self.controlAngle = 1.0;
+    
+    if (!self.enableOneSideZoom && UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation)) {
+      theScrollView.zoomScale = 1;
+      theScrollView.contentOffset = CGPointZero;
       return;
     }
     
-    float scale = theScrollView.zoomScale;      //1.0 and smaller
-
-    //Memory warning kills Pepper view
-    /*
-    if (theScrollView.hidden == YES) {
-      [self setupReusablePoolPepperViews];
-      [self reusePepperViews];
-    }*/
-       
-    self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
+    //Notify the delegate
+    if ([self.delegate respondsToSelector:@selector(ppPepperViewController:didZoomWithPageIndex:zoomScale:)])
+      [self.delegate ppPepperViewController:self didZoomWithPageIndex:self.currentPageIndex zoomScale:theScrollView.zoomScale];
+    return;
   }
+  
+  float scale = theScrollView.zoomScale;      //1.0 and smaller
+  self.controlAngle = fabs(1.0 - scale) * (-THRESHOLD_CLOSE_ANGLE);
 }
 
 - (void)scrollViewDidEndZooming:(UIScrollView *)theScrollView withView:(UIView *)view atScale:(float)scale {
