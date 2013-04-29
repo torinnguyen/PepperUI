@@ -3400,8 +3400,6 @@ static BOOL iOS5AndAbove = NO;
   //Force redraw for iOS6.1
   [self.theBookCover setNeedsDisplay];
   [self.theBookCover.layer setNeedsDisplay];
-  //self.theBookCover.backgroundColor = [UIColor colorWithWhite:1 alpha:0.02];
-  //self.theBookCover.backgroundColor = [UIColor clearColor];
   
   //De-reference (strong)
   self.theBookCover = nil;
