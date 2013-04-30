@@ -6,6 +6,12 @@ The files
   This is the full source code & graphics of the library, you only need to copy this to your own projects.
   You are free to modify any part of the source code to suit your needs.
 
+* PepperSimple folder
+* PepperSimple.xcodeproject
+  Get started with this project.
+  This is a very basic demo project, containing only a few lines of codes to setup PepperUI library.
+  This demo project directly reference the source code in Pepper folder above.
+
 * PepperDemo folder
 * PepperDemo.xcodeproject
   This is the demo project as seen in the screenshots & promotion video.
@@ -26,6 +32,7 @@ The files
 Where to start?
 ===========================
 
+PepperSimple project
 Just run the demo project & explore the source code.
 
 
