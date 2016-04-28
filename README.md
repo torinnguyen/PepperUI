@@ -1,5 +1,5 @@
 PepperUI for iOS
-
+===========================
 [![Demo video](https://img.youtube.com/vi/DtCFtMWC3VI/0.jpg)](https://www.youtube.com/watch?v= DtCFtMWC3VI)
 
 
@@ -26,9 +26,6 @@ The files
   You will need to compile once for device & once more for simulator.
   Please refer to the free-to-try project on Github for using the static library.
   https://github.com/torinnguyen/PepperUIDemoFree
-  If you have purchased the Application License  (as oppose to more expensive Developer License)
-  and need to redistribute your source code as part of a larger project, you will need to redistribute
-  only the static library files, not the full source code.
 
 
 
@@ -64,10 +61,6 @@ Documentation
 Please visit http://torinnguyen.com/components/PepperUI
 
 
-
-Final notes
+License
 ===========================
-New features are being developed to make this component better, more polished. You are entitled to the updates for free.
-Depends on where you have purchased this component, you might get the update 1 or 2 days late, instead of immediately.
-
-
+Do what you want with it
