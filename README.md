@@ -33,6 +33,7 @@ Where to start?
 ===========================
 
 PepperSimple project
+
 Just run the demo project & explore the source code.
 
 
@@ -40,17 +41,17 @@ Just run the demo project & explore the source code.
 Basic setup
 ===========================
 
-Project must be using ARC
-Minimum XCode 4.3 & iOS SDK 5.0
-1. Add Pepper folder into your project
-2. Add QuartzCore Framework
-3. Import PPPepperViewController.h header file into your view controller
-4. Add a few lines of code in viewDidLoad or later
+* Project must be using ARC
+* Minimum XCode 4.3 & iOS SDK 5.0
+* Add Pepper folder into your project
+* Add QuartzCore Framework
+* Import PPPepperViewController.h header file into your view controller
+* Add a few lines of code in viewDidLoad or later
               PPPepperViewController *pepperVC = [[PPPepperViewController alloc] init]; 
               pepperVC.view.frame = self.view.bounds;
               [self.view addSubview:pepperVC.view];
               [pepperVC reload];
-5. That's it. You will get Pepper UI with dummy content to get started with.
+* That's it. You will get Pepper UI with dummy content to get started with.
 
 For the full setup & customization, please refer to the demo project or online documentation.
 
